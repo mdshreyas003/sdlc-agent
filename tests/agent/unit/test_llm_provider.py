@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from hackfront.agent import llm
 
-ENV = ("LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL", "LLM_TIMEOUT",
+ENV = ("LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL", "LLM_TIMEOUT", "LLM_MAX_TOKENS", "LLM_MAX_TOKENS_PARAM",
        "AZURE_FOUNDRY_API_KEY", "AZURE_FOUNDRY_ENDPOINT", "SARVAM_API_KEY")
 
 
@@ -177,3 +177,46 @@ def test_ping_maps_sdk_errors_to_safe_messages(monkeypatch):
     sdk.chat.completions.create.side_effect = None
     sdk.chat.completions.create.return_value = reply("<think>hm</think> ok")
     assert llm.ping("openai") == "ok"
+
+
+# ------------------------------------------------------------------ output-limit settings
+def _generic_with_mock_sdk(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    sdk = mock.Mock()
+    sdk.chat.completions.create.return_value = reply('{"a": 1}')
+    return sdk
+
+
+def test_max_tokens_defaults_and_env_override(monkeypatch):
+    sdk = _generic_with_mock_sdk(monkeypatch)
+    with mock.patch("openai.OpenAI", return_value=sdk):
+        llm.structured("openai", "q", Out)
+        assert sdk.chat.completions.create.call_args.kwargs["max_tokens"] == 16000  # today's default
+        monkeypatch.setenv("LLM_MAX_TOKENS", "2048")
+        llm.structured("openai", "q", Out)
+    assert sdk.chat.completions.create.call_args.kwargs["max_tokens"] == 2048
+
+
+@pytest.mark.parametrize("raw", ["lots", "1.5", "0", "-1"])
+def test_bad_max_tokens_is_a_config_error(monkeypatch, raw):
+    _generic_with_mock_sdk(monkeypatch)
+    monkeypatch.setenv("LLM_MAX_TOKENS", raw)
+    with pytest.raises(llm.LLMConfigError, match="LLM_MAX_TOKENS"):
+        llm.structured("openai", "q", Out)
+
+
+def test_max_tokens_param_switches_argument_name(monkeypatch):
+    sdk = _generic_with_mock_sdk(monkeypatch)
+    monkeypatch.setenv("LLM_MAX_TOKENS_PARAM", "max_completion_tokens")
+    with mock.patch("openai.OpenAI", return_value=sdk):
+        llm.structured("openai", "q", Out)
+    kwargs = sdk.chat.completions.create.call_args.kwargs
+    assert kwargs["max_completion_tokens"] == 16000 and "max_tokens" not in kwargs
+
+
+def test_bad_max_tokens_param_is_a_config_error(monkeypatch):
+    _generic_with_mock_sdk(monkeypatch)
+    monkeypatch.setenv("LLM_MAX_TOKENS_PARAM", "max_output_tokens")
+    with pytest.raises(llm.LLMConfigError, match="LLM_MAX_TOKENS_PARAM must be one of"):
+        llm.client("openai")

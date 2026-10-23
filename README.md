@@ -58,6 +58,8 @@ The agent talks to models through one small interface (`hackfront.agent.llm.LLMC
 | `LLM_MODEL` | model name; required for `openai`, overrides the preset default for `azure` / `sarvam` |
 | `LLM_BASE_URL` | generic provider base URL; empty = `https://api.openai.com/v1` (e.g. `https://openrouter.ai/api/v1`, `http://localhost:11434/v1`) |
 | `LLM_TIMEOUT` | request timeout in seconds (default 180) |
+| `LLM_MAX_TOKENS` | output-token limit per call (default 16000) |
+| `LLM_MAX_TOKENS_PARAM` | `max_tokens` (default) or `max_completion_tokens` (OpenAI reasoning models) |
 | `AZURE_FOUNDRY_ENDPOINT`, `AZURE_FOUNDRY_API_KEY` / `SARVAM_API_KEY` | legacy presets, unchanged |
 
 ```bash

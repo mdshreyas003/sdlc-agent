@@ -31,7 +31,8 @@ from .. import config
 
 log = logging.getLogger(__name__)
 
-MAX_TOKENS = 16000  # Sarvam spends part of this on reasoning_content, which we ignore
+MAX_TOKENS = 16000  # default for LLM_MAX_TOKENS; Sarvam spends part of this on reasoning_content, which we ignore
+MAX_TOKENS_PARAMS = ("max_tokens", "max_completion_tokens")  # LLM_MAX_TOKENS_PARAM; reasoning models want the latter
 DEFAULT_TIMEOUT = 180.0
 SARVAM_URL = "https://api.sarvam.ai/v1/"
 GENERIC = "openai"
@@ -62,18 +63,21 @@ class LLMClient(Protocol):
 class OpenAICompatibleClient:
     """`LLMClient` over the OpenAI SDK chat-completions surface (or any object shaped like it)."""
 
-    def __init__(self, sdk: Any):
+    def __init__(self, sdk: Any, max_tokens_param: str = "max_tokens"):
         self.sdk = sdk
+        self.max_tokens_param = max_tokens_param  # name of the output-limit argument this endpoint accepts
 
     @classmethod
     def connect(cls, *, api_key: str, base_url: str | None, headers: dict[str, str] | None = None,
-                timeout: float = DEFAULT_TIMEOUT) -> OpenAICompatibleClient:
+                timeout: float = DEFAULT_TIMEOUT, max_tokens_param: str = "max_tokens") -> OpenAICompatibleClient:
         from openai import OpenAI
 
-        return cls(OpenAI(base_url=base_url, api_key=api_key, default_headers=headers or None, timeout=timeout))
+        sdk = OpenAI(base_url=base_url, api_key=api_key, default_headers=headers or None, timeout=timeout)
+        return cls(sdk, max_tokens_param)
 
     def complete(self, messages: list[dict[str, str]], *, model: str, max_tokens: int) -> Completion:
-        resp = self.sdk.chat.completions.create(model=model, messages=messages, max_tokens=max_tokens)
+        limit = {self.max_tokens_param: max_tokens}
+        resp = self.sdk.chat.completions.create(model=model, messages=messages, **limit)
         used = getattr(getattr(resp, "usage", None), "total_tokens", 0)
         return Completion(text=resp.choices[0].message.content or "", total_tokens=used if isinstance(used, int) else 0)
 
@@ -216,6 +220,28 @@ def _timeout() -> float:
     return value
 
 
+def max_tokens() -> int:
+    """LLM_MAX_TOKENS (positive int), default MAX_TOKENS."""
+    raw = _env("LLM_MAX_TOKENS")
+    if not raw:
+        return MAX_TOKENS
+    try:
+        value = int(raw)
+    except ValueError:
+        raise LLMConfigError("LLM_MAX_TOKENS must be a whole number") from None
+    if value <= 0:
+        raise LLMConfigError("LLM_MAX_TOKENS must be positive")
+    return value
+
+
+def _max_tokens_param() -> str:
+    """LLM_MAX_TOKENS_PARAM: max_tokens (default) or max_completion_tokens."""
+    value = _env("LLM_MAX_TOKENS_PARAM") or "max_tokens"
+    if value not in MAX_TOKENS_PARAMS:
+        raise LLMConfigError(f"LLM_MAX_TOKENS_PARAM must be one of {', '.join(MAX_TOKENS_PARAMS)}")
+    return value
+
+
 def _as_client(obj: Any) -> LLMClient:
     return obj if isinstance(obj, LLMClient) else OpenAICompatibleClient(obj)
 
@@ -230,13 +256,15 @@ def client(provider: str) -> LLMClient:
     if problem:
         raise LLMConfigError(problem)
     key, url, timeout = _key(provider), _base_url(provider), _timeout()
-    creds = (key, url, timeout)
+    param = _max_tokens_param()
+    creds = (key, url, timeout, param)
     if built is None or built[0] != creds or provider not in _clients:
         header = _spec(provider).key_header
         # The SDK sends Authorization: Bearer; azure and sarvam also read their own header.
         log.debug("building %s LLM client for %s", provider, url or "SDK default base URL")
         _clients[provider] = OpenAICompatibleClient.connect(
-            api_key=key, base_url=url, headers={header: key} if header else None, timeout=timeout)
+            api_key=key, base_url=url, headers={header: key} if header else None, timeout=timeout,
+            max_tokens_param=param)
         _creds[provider] = (creds, _clients[provider])
     return _clients[provider]
 
@@ -268,13 +296,13 @@ def structured[S: BaseModel](provider: str, template: str, schema: type[S], _mod
     Schema goes in the prompt and output is validated locally (no dependence on json_schema support).
     One repair round-trip on invalid JSON.
     """
-    model = model_for(provider, _model)
+    model, limit = model_for(provider, _model), max_tokens()
     messages = [{"role": "user", "content": template.format(**fields)
                  + "\n\nRespond with ONLY a JSON object (no prose, no code fences) matching this JSON Schema:\n"
                  + json.dumps(schema.model_json_schema())}]
     text = ""
     for attempt in range(2):
-        resp = client(provider).complete(messages, model=model, max_tokens=MAX_TOKENS)
+        resp = client(provider).complete(messages, model=model, max_tokens=limit)
         text = clean(resp.text)
         TOKENS[0] += resp.total_tokens
         try:
