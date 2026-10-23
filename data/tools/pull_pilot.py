@@ -53,11 +53,16 @@ def hop_url(u):
     return u
 
 
-def one_hop(rec, text):
+def link_candidates(text):
+    """All links in a record's text, plus the ones worth one hop (also used by fetch_kip_raw.py)."""
     links = list(dict.fromkeys(re.findall(r"https?://[^\s<>\")\]]+", text)))
     jira = [f"https://issues.apache.org/jira/browse/{k}" for k in dict.fromkeys(re.findall(r"\b(KAFKA-\d+)\b", text))]
     cand = [u.rstrip(".,;") for u in links if hop_url(u)] + jira
-    cand = list(dict.fromkeys(cand))
+    return links, list(dict.fromkeys(cand))
+
+
+def one_hop(rec, text):
+    links, cand = link_candidates(text)
     (RAW / rec).mkdir(parents=True, exist_ok=True)
     (RAW / rec / "links.json").write_text(json.dumps({"all": links, "candidates": cand}, indent=1))
     for i, u in enumerate(cand[:HOPS_PER_RECORD]):
