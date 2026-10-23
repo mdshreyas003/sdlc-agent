@@ -1,4 +1,4 @@
-"""Pull the pilot slice: 10 KIPs + 10 PEPs plus one hop of links. stdlib only.
+"""Pull the pilot slice: 10 KIPs plus one hop of links. stdlib only.
 
 Writes data/raw/<id>/... and data/raw/hashes.json (sha256 per file, retrieval time).
 Run: python data/tools/pull_pilot.py
@@ -11,12 +11,10 @@ from urllib.request import Request, urlopen
 
 RAW = Path(__file__).resolve().parents[1] / "raw"
 KIPS = [98, 129, 405, 447, 500, 595, 630, 679, 848, 890]
-PEPS = [557, 563, 572, 584, 604, 618, 634, 649, 695, 703]
 CONF = "https://cwiki.apache.org/confluence/rest/api/content"
 HOPS_PER_RECORD = 6
 # one hop only to these hosts; everything else is recorded as a link but not fetched
-ALLOWED = {"mail.python.org", "discuss.python.org", "lists.apache.org", "mail-archives.apache.org",
-           "issues.apache.org", "github.com", "bugs.python.org"}
+ALLOWED = {"lists.apache.org", "mail-archives.apache.org", "issues.apache.org", "github.com"}
 hashes = {}
 
 
@@ -80,14 +78,6 @@ def kip(n):
     one_hop(rec, res["body"]["storage"]["value"])
 
 
-def pep(n):
-    rec = f"PEP-{n}"
-    url = f"https://raw.githubusercontent.com/python/peps/main/peps/pep-{n:04d}.rst"
-    txt = get(url)
-    save(rec, "pep.rst", txt, url)
-    one_hop(rec, txt.decode("utf-8", "replace"))
-
-
 def kip_titles():
     out = {}
     for n in KIPS:
@@ -104,9 +94,5 @@ if __name__ == "__main__":
     print("KIPs found:", sorted(tmap), "missing:", sorted(set(KIPS) - set(tmap)))
     for n in sorted(tmap):
         print("KIP", n); kip(n)
-    for n in PEPS:
-        print("PEP", n)
-        try: pep(n)
-        except Exception as e: print(f"  FAIL {e}", file=sys.stderr)
     (RAW / "hashes.json").write_text(json.dumps(hashes, indent=1))
     print("files:", len(hashes))
