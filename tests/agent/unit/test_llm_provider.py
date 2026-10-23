@@ -1,0 +1,273 @@
+"""Provider layer: env parsing, the client factory, and OpenAICompatibleClient over a mocked SDK (no network)."""
+
+from types import SimpleNamespace
+from unittest import mock
+
+import pytest
+from pydantic import BaseModel
+
+from hackfront import config
+from hackfront.agent import llm
+
+ENV = ("LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL", "LLM_TIMEOUT", "LLM_MAX_TOKENS", "LLM_MAX_TOKENS_PARAM",
+       "AZURE_FOUNDRY_API_KEY", "AZURE_FOUNDRY_ENDPOINT", "SARVAM_API_KEY")
+
+
+@pytest.fixture(autouse=True)
+def fresh(monkeypatch):
+    monkeypatch.setattr(llm, "_clients", {})
+    monkeypatch.setattr(llm, "_creds", {})
+    for k in ENV:
+        monkeypatch.delenv(k, raising=False)
+
+
+def reply(content, tokens=None):
+    usage = SimpleNamespace(total_tokens=tokens) if tokens is not None else None
+    return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))], usage=usage)
+
+
+class Out(BaseModel):
+    a: int
+
+
+# ------------------------------------------------------------------ config parsing / factory
+def test_nothing_configured_defaults_to_generic_with_a_clear_error():
+    assert llm.default_provider() == "openai"
+    assert not any(p["configured"] for p in llm.providers())
+    with pytest.raises(llm.LLMConfigError, match="LLM_API_KEY and LLM_MODEL"):
+        llm.client(llm.default_provider())
+
+
+def test_generic_needs_key_and_model(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    assert llm.missing_config("openai") and "LLM_MODEL" in llm.missing_config("openai")
+    monkeypatch.setenv("LLM_MODEL", "gpt-4o-mini")
+    assert llm.missing_config("openai") is None
+    assert llm.default_provider() == "openai" and llm.model_for("openai") == "gpt-4o-mini"
+
+
+def test_generic_factory_passes_base_url_key_model_timeout(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("LLM_API_KEY", "sk-or-test")
+    monkeypatch.setenv("LLM_MODEL", "meta-llama/llama-3.1-8b-instruct")
+    monkeypatch.setenv("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+    monkeypatch.setenv("LLM_TIMEOUT", "30")
+    with mock.patch("openai.OpenAI") as sdk:
+        c = llm.client("openai")
+    sdk.assert_called_once_with(base_url="https://openrouter.ai/api/v1", api_key="sk-or-test",
+                                default_headers=None, timeout=30.0)
+    assert isinstance(c, llm.LLMClient) and isinstance(c, llm.OpenAICompatibleClient)
+    assert llm.model_for("openai") == "meta-llama/llama-3.1-8b-instruct"
+
+
+def test_generic_without_base_url_uses_sdk_default(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    monkeypatch.setenv("LLM_MODEL", "gpt-4o-mini")
+    c = llm.client("openai")  # real SDK object, no request is made
+    assert str(c.sdk.base_url).startswith("https://api.openai.com/v1")
+    assert c.sdk.auth_headers["Authorization"] == "Bearer sk-test"
+
+
+def test_client_is_cached_and_rebuilt_when_env_changes(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "k1")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    first = llm.client("openai")
+    assert llm.client("openai") is first
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:8001/v1")
+    second = llm.client("openai")
+    assert second is not first and str(second.sdk.base_url) == "http://localhost:8001/v1/"
+
+
+@pytest.mark.parametrize("raw", ["soon", "0", "-5"])
+def test_bad_timeout_is_a_config_error(monkeypatch, raw):
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("LLM_TIMEOUT", raw)
+    with pytest.raises(llm.LLMConfigError, match="LLM_TIMEOUT"):
+        llm.client("openai")
+
+
+def test_unknown_provider_is_config_and_value_error():
+    with pytest.raises(llm.LLMConfigError) as e:
+        llm.client("nope")
+    assert isinstance(e.value, ValueError) and "choose one of" in str(e.value)
+
+
+def test_azure_needs_endpoint(monkeypatch):
+    monkeypatch.setenv("AZURE_FOUNDRY_API_KEY", "k")
+    assert not llm.configured("azure")
+    with pytest.raises(llm.LLMConfigError, match="AZURE_FOUNDRY_ENDPOINT"):
+        llm.client("azure")
+
+
+def test_legacy_env_still_selects_a_preset(monkeypatch):
+    monkeypatch.setenv("SARVAM_API_KEY", "s")
+    assert llm.default_provider() == "sarvam" and llm.model_for("sarvam") == "sarvam-105b"
+
+
+def test_llm_provider_wins_and_generic_key_never_leaks_to_presets(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "generic")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("SARVAM_API_KEY", "s")
+    monkeypatch.setenv("LLM_PROVIDER", "sarvam")
+    assert llm.default_provider() == "sarvam"
+    assert llm.client("sarvam").sdk.api_key == "s" and llm.client("openai").sdk.api_key == "generic"
+    assert "generic" not in str(llm.providers())
+
+
+# ------------------------------------------------------------------ OpenAICompatibleClient over a mocked SDK
+def test_complete_maps_sdk_response_and_usage():
+    sdk = mock.Mock()
+    sdk.chat.completions.create.return_value = reply("hello", tokens=42)
+    out = llm.OpenAICompatibleClient(sdk).complete([{"role": "user", "content": "hi"}], model="m", max_tokens=5)
+    assert out == llm.Completion("hello", 42)
+    sdk.chat.completions.create.assert_called_once_with(model="m", messages=[{"role": "user", "content": "hi"}],
+                                                        max_tokens=5)
+
+
+def test_complete_tolerates_missing_content_and_usage():
+    sdk = mock.Mock()
+    sdk.chat.completions.create.return_value = reply(None)
+    assert llm.OpenAICompatibleClient(sdk).complete([], model="m", max_tokens=1) == llm.Completion("", 0)
+
+
+def test_structured_through_generic_provider_counts_tokens(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_MODEL", "local-model")
+    sdk = mock.Mock()
+    sdk.chat.completions.create.return_value = reply('<think>x</think>{"a": 3}', tokens=11)
+    with mock.patch("openai.OpenAI", return_value=sdk):
+        before = llm.TOKENS[0]
+        assert llm.structured("openai", "q {x}", Out, x="?").a == 3
+    assert llm.TOKENS[0] - before == 11
+    kwargs = sdk.chat.completions.create.call_args.kwargs
+    assert kwargs["model"] == "local-model" and kwargs["max_tokens"] == llm.MAX_TOKENS
+
+
+def test_injected_protocol_double_is_used_directly(monkeypatch):
+    class Double:
+        def __init__(self):
+            self.calls = []
+
+        def complete(self, messages, *, model, max_tokens):
+            self.calls.append(model)
+            return llm.Completion('{"a": 1}', 2)
+
+    d = Double()
+    monkeypatch.setitem(llm._clients, "openai", d)
+    assert llm.client("openai") is d
+    assert llm.structured("openai", "q", Out, "explicit-model").a == 1 and d.calls == ["explicit-model"]
+
+
+def test_ping_maps_sdk_errors_to_safe_messages(monkeypatch):
+    import httpx
+    import openai
+
+    req = httpx.Request("POST", "http://llm.test/v1/chat/completions")
+    sdk = mock.Mock()
+    monkeypatch.setitem(llm._clients, "openai", sdk)
+    monkeypatch.setenv("LLM_MODEL", "m")
+    sdk.chat.completions.create.side_effect = openai.APIConnectionError(request=req)
+    with pytest.raises(RuntimeError, match="^could not reach openai$"):
+        llm.ping("openai")
+    sdk.chat.completions.create.side_effect = openai.RateLimitError(
+        "slow down sk-secret", response=httpx.Response(429, request=req), body=None)
+    with pytest.raises(RuntimeError) as e:
+        llm.ping("openai")
+    assert str(e.value) == "openai rejected the request (HTTP 429)"
+    sdk.chat.completions.create.side_effect = None
+    sdk.chat.completions.create.return_value = reply("<think>hm</think> ok")
+    assert llm.ping("openai") == "ok"
+
+
+# ------------------------------------------------------------------ output-limit settings
+def _generic_with_mock_sdk(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    sdk = mock.Mock()
+    sdk.chat.completions.create.return_value = reply('{"a": 1}')
+    return sdk
+
+
+def test_max_tokens_defaults_and_env_override(monkeypatch):
+    sdk = _generic_with_mock_sdk(monkeypatch)
+    with mock.patch("openai.OpenAI", return_value=sdk):
+        llm.structured("openai", "q", Out)
+        assert sdk.chat.completions.create.call_args.kwargs["max_tokens"] == 16000  # today's default
+        monkeypatch.setenv("LLM_MAX_TOKENS", "2048")
+        llm.structured("openai", "q", Out)
+    assert sdk.chat.completions.create.call_args.kwargs["max_tokens"] == 2048
+
+
+@pytest.mark.parametrize("raw", ["lots", "1.5", "0", "-1"])
+def test_bad_max_tokens_is_a_config_error(monkeypatch, raw):
+    _generic_with_mock_sdk(monkeypatch)
+    monkeypatch.setenv("LLM_MAX_TOKENS", raw)
+    with pytest.raises(llm.LLMConfigError, match="LLM_MAX_TOKENS"):
+        llm.structured("openai", "q", Out)
+
+
+def test_max_tokens_param_switches_argument_name(monkeypatch):
+    sdk = _generic_with_mock_sdk(monkeypatch)
+    monkeypatch.setenv("LLM_MAX_TOKENS_PARAM", "max_completion_tokens")
+    with mock.patch("openai.OpenAI", return_value=sdk):
+        llm.structured("openai", "q", Out)
+    kwargs = sdk.chat.completions.create.call_args.kwargs
+    assert kwargs["max_completion_tokens"] == 16000 and "max_tokens" not in kwargs
+
+
+def test_bad_max_tokens_param_is_a_config_error(monkeypatch):
+    _generic_with_mock_sdk(monkeypatch)
+    monkeypatch.setenv("LLM_MAX_TOKENS_PARAM", "max_output_tokens")
+    with pytest.raises(llm.LLMConfigError, match="LLM_MAX_TOKENS_PARAM must be one of"):
+        llm.client("openai")
+
+
+# ------------------------------------------------------------------ server keys never reach workspace endpoints
+SERVER_KEY, WS_KEY = "server-key-0123456789", "workspace-key-9876543210"
+SERVER_URL, WS_URL = "https://server.services.ai.azure.com", "https://attacker.example"
+
+
+@pytest.fixture
+def workspace(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "HOME", tmp_path)
+    monkeypatch.delenv("HACKFRONT_STATE", raising=False)
+    monkeypatch.setenv("AZURE_FOUNDRY_API_KEY", SERVER_KEY)
+    monkeypatch.setenv("AZURE_FOUNDRY_ENDPOINT", SERVER_URL)
+    slug = config.create_workspace("Tenant")
+    yield slug
+    llm.set_workspace(None)
+
+
+def test_server_key_never_reaches_a_workspace_endpoint(workspace):
+    config.set_secrets(workspace, {"azure_endpoint": WS_URL})  # endpoint from the workspace, key only from env
+    llm.set_workspace(workspace)
+    with mock.patch("openai.OpenAI") as sdk:
+        with pytest.raises(llm.LLMConfigError, match="workspace-saved key"):
+            llm.client("azure")
+        assert not llm.configured("azure") and not llm.providers(workspace)[0]["configured"]
+        with pytest.raises(RuntimeError, match="workspace-saved key"):
+            llm.ping("azure")
+        config.set_secrets(workspace, {"azure_key": WS_KEY})  # the workspace's own key may go to its own endpoint
+        llm.client("azure")
+    assert sdk.call_count == 1
+    assert sdk.call_args.kwargs["api_key"] == WS_KEY and sdk.call_args.kwargs["base_url"] == f"{WS_URL}/openai/v1/"
+    for call in sdk.call_args_list:  # the server key appears in no constructor argument for a workspace endpoint
+        assert SERVER_KEY not in str(call)
+
+
+def test_server_key_goes_to_server_endpoint(workspace):
+    llm.set_workspace(workspace)  # nothing saved in the workspace: both values come from the environment
+    with mock.patch("openai.OpenAI") as sdk:
+        llm.client("azure")
+    assert sdk.call_args.kwargs["api_key"] == SERVER_KEY
+    assert sdk.call_args.kwargs["base_url"] == f"{SERVER_URL}/openai/v1/"
+    assert sdk.call_args.kwargs["default_headers"] == {"api-key": SERVER_KEY}
+
+
+def test_workspace_key_may_use_server_endpoint(workspace):
+    config.set_secrets(workspace, {"azure_key": WS_KEY})
+    llm.set_workspace(workspace)
+    with mock.patch("openai.OpenAI") as sdk:
+        llm.client("azure")
+    assert sdk.call_args.kwargs["api_key"] == WS_KEY and sdk.call_args.kwargs["base_url"] == f"{SERVER_URL}/openai/v1/"

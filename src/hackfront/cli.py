@@ -37,6 +37,9 @@ def _sync(slug: str, mode: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     config.load_env()
+    from .agent.llm import PROVIDERS
+
+    provider_names = sorted(PROVIDERS)
     cli = argparse.ArgumentParser(prog="hackfront", description=__doc__)
     sub = cli.add_subparsers(dest="cmd", required=True)
     sub.add_parser("demo", help="create the 'demo' workspace if missing and sync it (needs only Neo4j)")
@@ -48,8 +51,8 @@ def main(argv: list[str] | None = None) -> int:
     ev.add_argument("--workspace", default="eval")
     ev.add_argument("--split", choices=["dev", "test"], default="dev")
     ev.add_argument("--systems", default="b0,b1,s-,s", help="comma list of b0,b1,s-,s")
-    ev.add_argument("--provider", choices=["azure", "sarvam"])
-    ev.add_argument("--judge-provider", choices=["azure", "sarvam"])
+    ev.add_argument("--provider", choices=provider_names)
+    ev.add_argument("--judge-provider", choices=provider_names)
     ev.add_argument("--limit", type=int)
     ev.add_argument("--include-unverified", action="store_true", help="dev smoke runs only")
     ev.add_argument("--resume", help="results directory of a stopped run")
@@ -60,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("question")
     ask.add_argument("--workspace", required=True)
     ask.add_argument("--mode", default="why", choices=["why", "debug", "change"])
-    ask.add_argument("--provider", choices=["azure", "sarvam"])
+    ask.add_argument("--provider", choices=provider_names)
     migrate = sub.add_parser("migrate-state", help="copy local workspaces, saved keys and investigations into Neo4j")
     migrate.add_argument("--overwrite", action="store_true", help="replace workspaces that already exist in Neo4j")
     serve = sub.add_parser("serve", help="start the API and web UI")

@@ -5,7 +5,6 @@ Every error message returned here is a fixed, safe string: no exception text, UR
 
 from __future__ import annotations
 
-import json
 from typing import Literal
 
 from fastapi import APIRouter, Body, HTTPException
@@ -64,10 +63,11 @@ class _Missing(Exception):
 
 def _client(slug: str, ws: dict, which: str):
     if ws["demo"]:
-        from ..ingest.demo import demo_clients  # lazy: demo data is only needed for demo workspaces
+        # lazy: demo data is only needed for demo workspaces
+        from ..ingest.demo import demo_clients
 
         return dict(zip(("github", "jira", "slack"), demo_clients()))[which]
-    secret = lambda key: config.get_secret(slug, key)  # noqa: E731
+    secret = lambda key: config.get_secret(slug, key)
     if which == "github":
         if not secret("github_token"):
             raise _Missing("GitHub token not saved")
@@ -138,23 +138,23 @@ def _graph_facts(scopes: dict) -> tuple[list[str], dict]:
 
     try:
         driver = config.neo4j_driver()
-    except Exception:
+    except Exception:  # noqa: BLE001  any driver failure -> fixed safe status
         return [], {"ok": False}
     try:
         flat = [*scopes["repos"], *scopes["jira"], *scopes["slack"]]
         with driver.session(database=config.neo4j_database(), default_access_mode=READ_ACCESS) as session:
             try:
                 indexed = {r["scope"] for r in session.run(INDEXED_Q, repos=scopes["repos"]).data()}
-            except Exception:
+            except Exception:  # noqa: BLE001  index query is best-effort
                 indexed = set()
             counts = {**session.run(ARTIFACTS_Q, scopes=flat).data()[0], **session.run(EDGES_Q, scopes=flat).data()[0]}
         return [r for r in scopes["repos"] if r in indexed], {"ok": True, "counts": counts}
-    except Exception:
+    except Exception:  # noqa: BLE001  any graph failure -> fixed safe status
         return [], {"ok": False}
     finally:
         try:
             driver.close()
-        except Exception:
+        except Exception:  # noqa: BLE001, S110  closing is best-effort
             pass
 
 
@@ -163,14 +163,20 @@ def workbench(ws: str):
     cfg = _workspace(ws)
     scopes = config.scopes(ws)
     status = config.secret_status(ws)
-    have = lambda key: bool(config.get_secret(ws, key))  # noqa: E731
+    have = lambda key: bool(config.get_secret(ws, key))
     demo = cfg["demo"]
     configured = {
         "github": demo or (have("github_token") and bool(scopes["repos"])),
         "jira": demo or (have("jira_email") and have("jira_token") and bool(cfg["jira"]["site"]) and bool(scopes["jira"])),
         "slack": demo or (have("slack_token") and bool(scopes["slack"])),
-        "llm": (have("azure_key") and have("azure_endpoint")) or have("sarvam_key"),
     }
+    try:
+        from ..agent import llm
+
+        providers = llm.providers(ws)
+    except Exception:  # noqa: BLE001  provider listing must never break the workbench
+        providers = []
+    configured["llm"] = any(p["configured"] for p in providers)
     targets = {"github": len(scopes["repos"]), "jira": len(scopes["jira"]), "slack": len(scopes["slack"])}
     integrations = {}
     for name, keys in SECRET_KEYS.items():
@@ -178,12 +184,6 @@ def workbench(ws: str):
         if name in targets:
             integrations[name]["targets"] = targets[name]
     indexed, neo4j = _graph_facts(scopes)
-    try:
-        from ..agent import llm
-
-        providers = llm.providers(ws)
-    except Exception:
-        providers = []
     return {
         "workspace": {"slug": ws, "name": cfg["name"] or ws, "demo": demo, "targets": {
             "github": cfg["github"], "jira": cfg["jira"],
@@ -199,7 +199,7 @@ def workbench(ws: str):
 
 
 @router.put("/api/w/{ws}/workspace")
-def put_workspace(ws: str, body: dict = Body(...)):
+def put_workspace(ws: str, body: dict = Body(...)):  # noqa: B008  FastAPI idiom
     stored = _workspace(ws)
     merged = dict(stored)
     if "name" in body:
@@ -221,7 +221,7 @@ def put_workspace(ws: str, body: dict = Body(...)):
 
 
 @router.put("/api/w/{ws}/secrets")
-def put_secrets(ws: str, body: dict = Body(...)):
+def put_secrets(ws: str, body: dict = Body(...)):  # noqa: B008  FastAPI idiom
     _workspace(ws)
     try:
         config.set_secrets(ws, body)
@@ -269,7 +269,7 @@ def test_integration(ws: str, which: Integration):
     except RuntimeError as error:
         # llm.ping raises only fixed safe messages; source clients' errors are mapped by _safe
         return {"ok": False, "detail": str(error) if which == "llm" else _safe(LABEL[which], error)}
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001  mapped to a fixed safe message
         return {"ok": False, "detail": "Network error" if which == "llm" else _safe(LABEL[which], error)}
 
 
@@ -289,6 +289,6 @@ def resources(ws: str, which: Literal["github", "jira", "slack"]):
         else:
             items = [{"id": c["id"], "name": "#" + c["name"], "private": c["is_private"],
                       "detail": "bot is a member" if c["is_member"] else "bot not invited"} for c in client.channels()]
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001  mapped to a fixed safe message
         raise HTTPException(502, f"{LABEL[which]} discovery failed: {_safe(LABEL[which], error)}") from None
     return {"resources": items}

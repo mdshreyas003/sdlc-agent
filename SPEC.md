@@ -29,7 +29,7 @@ Platform (new):
 - FR-9: Explicit text references. Jira keys of configured projects, GitHub PR/commit URLs, `#N` (inside GitHub records only) and Slack permalinks found in titles/bodies/messages become typed `REFERENCES` edges with `origin=text` and a locator; structural edges carry `origin=structural`. No fuzzy or semantic matching.
 - FR-10: Workspace sync. A `workspace.json` names GitHub repos, Jira projects and Slack channels; `sync` ingests them through the real clients (PR→commits `CONTAINS` edges, Jira project search, Slack channel history + replies). `--demo` replays a linked demo workspace through the same clients and mappers with fake transports.
 - FR-11: Agent harness. The LLM never writes Cypher. It selects from fixed, parameterized, read-only tools (text search, file history, neighbours, evidence chain, fetch); arguments are validated, ids must come from earlier evidence, results are row- and time-capped, and every template is EXPLAIN-checked against the live database.
-- FR-12: LLM providers Azure Foundry and Sarvam AI behind one interface, selected by configuration or per request.
+- FR-12: LLM providers: any OpenAI-compatible provider; Azure/Sarvam presets. One interface, selected by configuration or per request.
 - FR-13: Answer integrity. Every cited URL must belong to retrieved evidence; unsupported citations are removed and confidence is capped; insufficient evidence yields an explicit "not established" answer rather than a guess.
 - FR-14: Modes: `why`, `debug` (paths/keys extracted deterministically from pasted errors seed retrieval) and `change` (what constraints and decisions guard this code).
 - FR-15: API and web UI. The UI is the owner's Next.js "why workbench" (`web/`) wired to the real backend per `docs/workbench-api.md`: connections dialog (real workspace config, sync, demo), code pane with blame, ask box and line-click investigations, live agent trace, claim-level answer, gaps, "still valid?" checks, excluded evidence and the evidence graph. No mock data remains.
@@ -70,7 +70,7 @@ Evaluation (new; plan in `data/EVAL_PLAN.md`):
 - AC-6: Against the demo workspace, "Why are gateway retries capped at 3?" returns an answer citing the PR, the Jira issue and the Slack discussion that are in the graph.
 - AC-7: A question with no evidence in the graph is answered "not established" with low confidence and no citations.
 - AC-8: A citation not present in retrieved evidence never reaches the user.
-- AC-9: The same question works with either configured provider (Azure or Sarvam) without code changes.
+- AC-9: The same question works with any configured provider (any OpenAI-compatible provider; Azure/Sarvam presets) without code changes.
 - AC-10: From a clean checkout, `uv sync`, `docker compose up -d`, `uv run hackfront demo`, `uv run hackfront serve` and `npm run dev` in `web/` yield a working UI.
 - AC-11: In the UI, clicking the `MAX_RETRIES = 3` line of the demo `gateway_client.py` opens an investigation whose supported claims cite the Jira issue, PR and Slack discussion with verified quotes.
 - AC-12: A fabricated citation id or non-verbatim quote returned by a model never appears as a supported citation.
@@ -91,7 +91,7 @@ Evaluation (new; plan in `data/EVAL_PLAN.md`):
 ## Constraints
 
 - Python managed with uv (single project at repo root, `src/hackfront`); Neo4j via the official driver; LangGraph for the agent flow; FastAPI for the API; the UI is the Next.js app in `web/` (dev server proxies `/api/*` to FastAPI).
-- LLM providers use OpenAI-compatible chat endpoints: Azure Foundry (`/openai/v1/`) and Sarvam (`https://api.sarvam.ai/v1/`, `api-subscription-key` header).
+- LLM providers use OpenAI-compatible chat endpoints: any OpenAI-compatible provider; Azure/Sarvam presets (Azure Foundry `/openai/v1/`; Sarvam `https://api.sarvam.ai/v1/`, `api-subscription-key` header).
 - A dedicated Neo4j runs via `docker-compose.yml` on ports 7688/7475; other local Neo4j instances are never touched.
 
 ## Open questions

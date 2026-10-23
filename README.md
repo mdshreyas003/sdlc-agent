@@ -6,7 +6,7 @@ Connect GitHub, Jira and Slack into one **evidence graph**, then ask *why is thi
 flowchart LR
   GH[GitHub] & JI[Jira] & SL[Slack] --> ING[Ingestion<br/>explicit links only]
   ING --> NEO[(Neo4j)]
-  NEO <--> AG[Agent harness<br/>Azure / Sarvam]
+  NEO <--> AG[Agent harness<br/>any OpenAI-compatible LLM]
   AG --> UI[Web UI]
 ```
 
@@ -43,9 +43,30 @@ Open http://localhost:3000. A **workspace** owns its connections, credentials, A
 | GitHub | fine-grained read-only token (Contents, Pull requests, Issues, Metadata) + owner |
 | Jira Cloud | site `https://<you>.atlassian.net`, email, API token (id.atlassian.com) |
 | Slack | bot token with `channels:history`, `groups:history`, `channels:read`, `users:read`; invite the bot to the channels; your Slack subdomain |
-| AI model | Azure Foundry (endpoint + key) or Sarvam (key); optional model name |
+| AI model | Azure Foundry (endpoint + key) or Sarvam (key); optional model name. Any other OpenAI-compatible endpoint is configured through the environment (below). |
 
 Keys are stored per workspace in `.hackfront/workspaces/<id>/secrets.json` on this machine, are write-only (the UI and API show only `••••1234`), and environment variables (`GITHUB_TOKEN`, `SARVAM_API_KEY`, ...) work as a fallback. CLI equivalents: `uv run hackfront demo`, `sync --workspace <id> [--deep]`, `workspaces`, `ask "..." --workspace <id>`.
+
+### LLM provider
+
+The agent talks to models through one small interface (`hackfront.agent.llm.LLMClient`, one `complete()` call) implemented by an OpenAI-SDK client, so any OpenAI-compatible chat-completions endpoint works:
+
+| Variable | Meaning |
+|---|---|
+| `LLM_PROVIDER` | `openai` (generic), `azure` or `sarvam`; empty = first configured provider |
+| `LLM_API_KEY` | key for the generic `openai` provider (environment only) |
+| `LLM_MODEL` | model name; required for `openai`, overrides the preset default for `azure` / `sarvam` |
+| `LLM_BASE_URL` | generic provider base URL; empty = `https://api.openai.com/v1` (e.g. `https://openrouter.ai/api/v1`, `http://localhost:11434/v1`) |
+| `LLM_TIMEOUT` | request timeout in seconds (default 180) |
+| `LLM_MAX_TOKENS` | output-token limit per call (default 16000) |
+| `LLM_MAX_TOKENS_PARAM` | `max_tokens` (default) or `max_completion_tokens` (OpenAI reasoning models) |
+| `AZURE_FOUNDRY_ENDPOINT`, `AZURE_FOUNDRY_API_KEY` / `SARVAM_API_KEY` | legacy presets, unchanged |
+
+```bash
+LLM_PROVIDER=openai LLM_API_KEY=sk-... LLM_MODEL=gpt-4o-mini uv run hackfront ask "Why are gateway retries capped at 3?" --workspace demo
+```
+
+An unconfigured provider fails with a message naming the missing variable. Migration: existing Azure/Sarvam settings keep working; to use Azure through the generic path instead, set `LLM_BASE_URL=https://<resource>.openai.azure.com/openai/v1/`, `LLM_API_KEY` and `LLM_MODEL=<deployment>`.
 
 Demo questions: *Why are gateway retries capped at 3?* · *Why is the session TTL 15 minutes?*; and one it cannot answer (*Why did we choose Redis for the session cache?*), where the agent should say "not established".
 
@@ -57,7 +78,7 @@ Free hosting, two options, everything stateful in Neo4j Aura: **all on Vercel** 
 
 ```bash
 uv run pytest tests/ingest tests/agent tests/api -q   # needs `docker compose up -d` (test Neo4j on 7689)
-uv run pytest tests/e2e -q                             # real LLM calls; skips providers without keys
+uv run pytest tests/e2e -v -rs                         # real LLM calls with every configured provider (HACKFRONT_E2E_PROVIDERS=openai,azure,sarvam pins the list); skips with the missing setting
 ```
 
 Neo4j tests wipe `Artifact` nodes in the **test** database only.
@@ -70,4 +91,4 @@ Neo4j tests wipe `Artifact` nodes in the **test** database only.
 
 - Local single-user tool: the API has no login, credentials sit in a local file (not encrypted), and it binds to 127.0.0.1; do not expose it. Run the agent with a read-only Neo4j user in any shared setup.
 - Sync is a bounded full backfill (20 pages per stream, 100 with Deep history) through idempotent writes, not an incremental cursor; the UI flags incomplete streams. Text-derived edges are rebuilt from current text on every write; deleted source records are not removed from the graph.
-- Real-LLM behaviour (Azure, Sarvam) is covered by `tests/e2e` and needs your keys; unit tests use scripted models.
+- Real-LLM behaviour is covered by `tests/e2e` and needs a configured provider; unit tests use scripted models.
