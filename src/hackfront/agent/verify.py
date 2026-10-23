@@ -129,7 +129,7 @@ def to_legacy(final: dict, evidence: dict[str, dict]) -> dict:
             unknown.append(f"{c['text']} {c['note']}".strip())
             continue
         refs = [evidence[ci["node"]]["url"] for ci in c["cites"] if evidence[ci["node"]].get("url")]
-        urls += [u for u in refs if u not in urls]
+        urls += [u for u in dict.fromkeys(refs) if u not in urls]  # dedupe within and across claims, in order
         tag = "" if c["status"] == "supported" else " (inferred)"
         lines.append(f"- {c['text']}{tag}" + "".join(f" [{u}]" for u in dict.fromkeys(refs)))
     return {"answer": "\n".join(lines), "citations": urls, "confidence": final["confidence"],
