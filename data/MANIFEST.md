@@ -1,5 +1,15 @@
 # Data manifest — slice 1: Apache Kafka (KIPs) + Python (PEPs)
 
+## Fetching the raw Kafka corpus (`data/raw/KIP-*`)
+
+The raw KIP data is **not stored in git**: it is ASF content (Confluence KIP pages, Jira, dev@kafka archives, GitHub API objects) whose redistribution terms are unconfirmed, so it is gitignored and fetched from the original public sources:
+
+```
+uv run --no-project python data/tools/fetch_kip_raw.py   # ~2.5 min, 96 files, ~42 MB, no keys needed
+```
+
+`data/raw/hashes.json` (tracked) lists every expected file, how it is rebuilt and its sha256. The script verifies each file; Jira and GitHub responses carry live metadata (repo star counts, Jira colour names), so those are also checked with a `content_sha256` that ignores those fields and reported as "drift" when only they changed. Any real content change is reported as `CONTENT MISMATCH` and the script exits 1. Then `uv run hackfront eval-load` should load 1,191 artifacts. Set `GITHUB_TOKEN` if you hit GitHub's 60 calls/hour limit (a run needs 25). The PEP pilot data has been removed from the corpus.
+
 Checked 2026-10-19 with live requests. Nothing is downloaded yet; this file records what is reachable and the terms to confirm before download. Update `retrieved` and `hash` columns when data is pulled.
 
 ## Sources
