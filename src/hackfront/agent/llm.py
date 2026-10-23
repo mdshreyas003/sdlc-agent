@@ -22,7 +22,7 @@ import os
 import re
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any, Protocol, TypeVar, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ValidationError
@@ -262,10 +262,7 @@ def clean(text: str | None) -> str:
     return re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL).strip()
 
 
-S = TypeVar("S", bound=BaseModel)
-
-
-def structured(provider: str, template: str, schema: type[S], _model: str | None = None, **fields: Any) -> S:
+def structured[S: BaseModel](provider: str, template: str, schema: type[S], _model: str | None = None, **fields: Any) -> S:
     """One structured LLM call returning a validated pydantic instance.
 
     Schema goes in the prompt and output is validated locally (no dependence on json_schema support).
