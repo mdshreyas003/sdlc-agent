@@ -129,6 +129,12 @@ def _setting(key: str) -> str:
     return (value or "").strip()
 
 
+def _from_workspace(key: str) -> bool:
+    """True when the active workspace's own store supplies `key` (not the environment fallback)."""
+    slug = _workspace.get()
+    return bool(slug) and config.secret_status(slug)[key]["source"] == "workspace"
+
+
 def _spec(provider: str) -> ProviderSpec:
     try:
         return PROVIDERS[provider]
@@ -163,6 +169,10 @@ def missing_config(provider: str) -> str | None:
         return f"provider {provider} is not configured: set {spec.key_env}"
     if provider == "azure" and not _setting("azure_endpoint"):
         return "provider azure is not configured: set AZURE_FOUNDRY_ENDPOINT"
+    if provider == "azure" and _from_workspace("azure_endpoint") and not _from_workspace("azure_key"):
+        # The server's key may only go to the server-configured endpoint, never to a host a workspace chose.
+        return ("provider azure: a workspace-saved endpoint needs a workspace-saved key (azure_key); "
+                "the server key is only sent to AZURE_FOUNDRY_ENDPOINT")
     return None
 
 
@@ -175,7 +185,7 @@ def _ready(provider: str) -> bool:
     if not _key(provider):
         return False
     if provider == "azure":
-        return bool(_setting("azure_endpoint"))
+        return missing_config("azure") is None  # needs the endpoint; never reads the model
     if provider == GENERIC:
         return bool(_env("LLM_MODEL"))
     return True

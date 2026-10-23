@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 from pydantic import BaseModel
 
+from hackfront import config
 from hackfront.agent import llm
 
 ENV = ("LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL", "LLM_TIMEOUT", "LLM_MAX_TOKENS", "LLM_MAX_TOKENS_PARAM",
@@ -220,3 +221,53 @@ def test_bad_max_tokens_param_is_a_config_error(monkeypatch):
     monkeypatch.setenv("LLM_MAX_TOKENS_PARAM", "max_output_tokens")
     with pytest.raises(llm.LLMConfigError, match="LLM_MAX_TOKENS_PARAM must be one of"):
         llm.client("openai")
+
+
+# ------------------------------------------------------------------ server keys never reach workspace endpoints
+SERVER_KEY, WS_KEY = "server-key-0123456789", "workspace-key-9876543210"
+SERVER_URL, WS_URL = "https://server.services.ai.azure.com", "https://attacker.example"
+
+
+@pytest.fixture
+def workspace(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "HOME", tmp_path)
+    monkeypatch.delenv("HACKFRONT_STATE", raising=False)
+    monkeypatch.setenv("AZURE_FOUNDRY_API_KEY", SERVER_KEY)
+    monkeypatch.setenv("AZURE_FOUNDRY_ENDPOINT", SERVER_URL)
+    slug = config.create_workspace("Tenant")
+    yield slug
+    llm.set_workspace(None)
+
+
+def test_server_key_never_reaches_a_workspace_endpoint(workspace):
+    config.set_secrets(workspace, {"azure_endpoint": WS_URL})  # endpoint from the workspace, key only from env
+    llm.set_workspace(workspace)
+    with mock.patch("openai.OpenAI") as sdk:
+        with pytest.raises(llm.LLMConfigError, match="workspace-saved key"):
+            llm.client("azure")
+        assert not llm.configured("azure") and not llm.providers(workspace)[0]["configured"]
+        with pytest.raises(RuntimeError, match="workspace-saved key"):
+            llm.ping("azure")
+        config.set_secrets(workspace, {"azure_key": WS_KEY})  # the workspace's own key may go to its own endpoint
+        llm.client("azure")
+    assert sdk.call_count == 1
+    assert sdk.call_args.kwargs["api_key"] == WS_KEY and sdk.call_args.kwargs["base_url"] == f"{WS_URL}/openai/v1/"
+    for call in sdk.call_args_list:  # the server key appears in no constructor argument for a workspace endpoint
+        assert SERVER_KEY not in str(call)
+
+
+def test_server_key_goes_to_server_endpoint(workspace):
+    llm.set_workspace(workspace)  # nothing saved in the workspace: both values come from the environment
+    with mock.patch("openai.OpenAI") as sdk:
+        llm.client("azure")
+    assert sdk.call_args.kwargs["api_key"] == SERVER_KEY
+    assert sdk.call_args.kwargs["base_url"] == f"{SERVER_URL}/openai/v1/"
+    assert sdk.call_args.kwargs["default_headers"] == {"api-key": SERVER_KEY}
+
+
+def test_workspace_key_may_use_server_endpoint(workspace):
+    config.set_secrets(workspace, {"azure_key": WS_KEY})
+    llm.set_workspace(workspace)
+    with mock.patch("openai.OpenAI") as sdk:
+        llm.client("azure")
+    assert sdk.call_args.kwargs["api_key"] == WS_KEY and sdk.call_args.kwargs["base_url"] == f"{SERVER_URL}/openai/v1/"
