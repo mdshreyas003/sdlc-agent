@@ -148,7 +148,7 @@ def _base_url(provider: str) -> str | None:
     return spec.base_url
 
 
-def _missing(provider: str) -> str | None:
+def missing_config(provider: str) -> str | None:
     """Why `provider` cannot be used, or None when it is fully configured."""
     spec = _spec(provider)
     if provider == GENERIC:
@@ -163,7 +163,7 @@ def _missing(provider: str) -> str | None:
 
 
 def configured(provider: str) -> bool:
-    return _missing(provider) is None
+    return missing_config(provider) is None
 
 
 def _ready(provider: str) -> bool:
@@ -226,7 +226,7 @@ def client(provider: str) -> LLMClient:
     built = _creds.get(provider)  # (credentials, client) of the client we built
     if provider in _clients and (built is None or built[1] is not _clients[provider]):
         return _as_client(_clients[provider])  # injected (tests): not ours, no credentials to compare
-    problem = _missing(provider)
+    problem = missing_config(provider)
     if problem:
         raise LLMConfigError(problem)
     key, url, timeout = _key(provider), _base_url(provider), _timeout()
