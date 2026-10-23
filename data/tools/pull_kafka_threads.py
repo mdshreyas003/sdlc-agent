@@ -1,7 +1,8 @@
 """Rebuild dev@kafka discussion for each pilot KIP via the Pony Mail search API. stdlib only.
 
 Search body text for 'KIP-N', keep messages whose *subject* names the KIP, fetch each full body.
-Writes data/raw/KIP-N/dev_thread.jsonl and adds sha256 entries to data/raw/hashes.json.
+Writes data/raw/KIP-N/dev_thread.jsonl and adds sha256 entries to data/raw/hashes.pull.json.
+Promote: copy reviewed entries from data/raw/hashes.pull.json into data/raw/hashes.json by hand (add kind/fetch), then verify with fetch_kip_raw.py.
 Run: uv run --no-project python -u data/tools/pull_kafka_threads.py
 """
 import hashlib, json, re, time
@@ -28,8 +29,8 @@ def get(url, tries=4):
             time.sleep(3)
 
 
-hp = RAW / "hashes.json"
-hashes = json.loads(hp.read_text())
+PULL = RAW / "hashes.pull.json"  # pull output only; never read or write the curated hashes.json
+hashes = json.loads(PULL.read_text()) if PULL.exists() else {}
 summary = {}
 for n in KIPS:
     pid = json.loads((RAW / f"KIP-{n}/page.json").read_text())["id"]
@@ -53,5 +54,5 @@ for n in KIPS:
         "messages": len(rows), "search_hits": res["hits"], "retrieved": datetime.now(timezone.utc).isoformat()}
     summary[n] = (len(rows), res["hits"])
     print(f"KIP-{n}: {len(rows)} messages with KIP in subject (of {res['hits']} body hits) from {start}", flush=True)
-    hp.write_text(json.dumps(hashes, indent=1))
+    PULL.write_text(json.dumps(hashes, indent=1))
 print(summary)

@@ -13,6 +13,8 @@ Upstream drift: Jira and GitHub API responses carry live metadata (repo star/for
 statusCategory.colorName and comment.maxResults), so their bytes change even when the content does not. Each JSON file
 therefore also has `content_sha256`, the hash of the parsed JSON without those VOLATILE fields (sorted keys). A file whose
 bytes differ but whose content hash matches is reported as "drift" (kept, usable); a content mismatch is a real change.
+Reads only data/raw/hashes.json; the pull_*.py scripts write data/raw/hashes.pull.json (gitignored) and never touch it.
+Promote: copy reviewed entries from hashes.pull.json into hashes.json by hand (add kind/fetch), then rerun this script.
 Set GITHUB_TOKEN to lift GitHub's 60 calls/hour limit (25 calls needed).
 Run: uv run --no-project python data/tools/fetch_kip_raw.py [--out DIR] [--workers 8]
 Exit code: 0 every file matches by bytes or content hash, 1 content mismatch or fetch failure.

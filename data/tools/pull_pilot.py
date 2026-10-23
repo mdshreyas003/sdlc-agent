@@ -1,6 +1,7 @@
 """Pull the pilot slice: 10 KIPs plus one hop of links. stdlib only.
 
-Writes data/raw/<id>/... and data/raw/hashes.json (sha256 per file, retrieval time).
+Writes data/raw/<id>/... and merges sha256 per file + retrieval time into data/raw/hashes.pull.json.
+Promote: copy reviewed entries from data/raw/hashes.pull.json into data/raw/hashes.json by hand (add kind/fetch), then verify with fetch_kip_raw.py.
 Run: python data/tools/pull_pilot.py
 """
 import hashlib, json, re, sys, time
@@ -15,7 +16,8 @@ CONF = "https://cwiki.apache.org/confluence/rest/api/content"
 HOPS_PER_RECORD = 6
 # one hop only to these hosts; everything else is recorded as a link but not fetched
 ALLOWED = {"lists.apache.org", "mail-archives.apache.org", "issues.apache.org", "github.com"}
-hashes = {}
+PULL = RAW / "hashes.pull.json"  # pull output only; never read or write the curated hashes.json
+hashes = {}  # loaded from PULL in __main__ only, so importing link_candidates() reads nothing
 
 
 def get(url, accept=None):
@@ -89,10 +91,12 @@ def kip_titles():
 
 
 if __name__ == "__main__":
+    if PULL.exists():
+        hashes.update(json.loads(PULL.read_text()))
     tmap = kip_titles()
     ids = tmap
     print("KIPs found:", sorted(tmap), "missing:", sorted(set(KIPS) - set(tmap)))
     for n in sorted(tmap):
         print("KIP", n); kip(n)
-    (RAW / "hashes.json").write_text(json.dumps(hashes, indent=1))
+    PULL.write_text(json.dumps(hashes, indent=1))
     print("files:", len(hashes))

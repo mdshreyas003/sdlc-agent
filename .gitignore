@@ -12,3 +12,5 @@ data/raw/KIP-*/
 
 # eval run outputs (written by hackfront eval; not committed)
 data/eval/results/
+# pull_*.py output; curated data/raw/hashes.json stays tracked
+data/raw/hashes.pull.json
