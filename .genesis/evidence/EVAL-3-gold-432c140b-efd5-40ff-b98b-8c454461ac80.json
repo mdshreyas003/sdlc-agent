@@ -1,0 +1,30 @@
+{
+  "task": "EVAL-3",
+  "gate": "gold",
+  "kind": "command",
+  "attempt": "432c140b-efd5-40ff-b98b-8c454461ac80",
+  "command": "uv run --no-project python data/tools/verify_gold.py",
+  "started_at": "2026-10-23T04:40:34.820Z",
+  "observed_at": "2026-10-23T04:41:31.228Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "{'B': 24, 'C': 20, 'A': 16, 'T': 10, 'N': 5} total 75 split {'test': 56, 'dev': 19} human_verified 0\r\ngold ok\r\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "cf55916f7f07dabb17036f43b30d1b0fc6ae574e",
+    "dirty": true
+  },
+  "source_hash": "2b484b9282c56fa4a54085e673b56a09e95da4237a13e62044b4797918bae600",
+  "before_hash": "2b484b9282c56fa4a54085e673b56a09e95da4237a13e62044b4797918bae600",
+  "config_hash": "78edc7f6dcec43b6c4cd7fd102e30d683563b5379ac550e16eff50e7f353ff8e",
+  "environment": {
+    "node": "v24.14.1",
+    "platform": "win32",
+    "arch": "x64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "7e85d18da0146ebf5aeffc302b44e0bf5722aea713f6aa2f0d0c8028d3d81db3"
+}

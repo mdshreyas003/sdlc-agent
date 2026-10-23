@@ -1,0 +1,41 @@
+{
+ "all": [
+  "https://kafka.apache.org/blog#apache_kafka_390_release_announcement",
+  "https://kafka.apache.org/documentation/#tiered_storage_overview",
+  "https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Tiered+Storage+GA+Release+Notes",
+  "https://mail-archives.apache.org/mod_mbox/kafka-dev/202102.mbox/browser",
+  "https://docs.google.com/document/d/1qfkBCWL1e7ZWkHU7brxKDBebq4ie9yK20XJnKbgAlew/edit?ts=5e208ec7#heading=h.y6ht8qd8hbh",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-405%3A+Kafka+Tiered+Storage#KIP-405:KafkaTieredStorage-RemoteStorageManager_Old",
+  "https://docs.google.com/document/d/1qfkBCWL1e7ZWkHU7brxKDBebq4ie9yK20XJnKbgAlew/edit?ts=5e208ec7",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-101+-+Alter+Replication+Protocol+to+use+Leader+Epoch+rather+than+High+Watermark+for+Truncation#KIP101AlterReplicationProtocoltouseLeaderEpochratherthanHighWatermarkforTruncation-LeaderEpoch",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-279%3A+Fix+log+divergence+between+leader+and+follower+after+fast+leader+fail+over",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-320%3A+Allow+fetchers+to+detect+and+handle+log+truncation",
+  "https://docs.google.com/document/d/18tnobSas3mKFZFr8oRguZoj_tkD_sGzivuLRlMloEMs/edit?ts=5ef13aa2#heading=h.ums0h8giy3c",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-516%3A+Topic+Identifiers",
+  "https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/utils/ExponentialBackoff.java#L30",
+  "http://remote.log.metadata.manager.listener.name",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-516%3A+Topic+Identifiers#KIP516:TopicIdentifiers-TopicIdPartition",
+  "https://cwiki.apache.org/confluence/pages/resumedraft.action?draftId=127406438&amp;draftShareId=a771c960-b161-45d2-bf70-7dc0f3e225ab&amp;",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-405%3A+Kafka+Tiered+Storage#KIP405:KafkaTieredStorage-Followerfetchprotocolindetail",
+  "https://kafka.apache.org/documentation/#upgrade",
+  "https://docs.google.com/spreadsheets/d/1XhNJqjzwXvMCcAOhEH0sSXU6RTvyoSf93DHF-YMfGLk/edit?usp=sharing",
+  "https://github.com/apache/kafka/pull/10218",
+  "https://github.com/apache/kafka/pull/10173",
+  "https://docs.google.com/document/d/1dQJL4MCwqQJSPmZkVmVzshFZKuFy_bCPtubav4wBfHQ/edit",
+  "https://docs.google.com/document/d/1dQJL4MCwqQJSPmZkVmVzshFZKuFy_bCPtubav4wBfHQ/edit#",
+  "https://drive.google.com/file/d/1cOLh9JH31nutw52fd4wcnDPtXut1lgO3/view?usp=sharing",
+  "https://drive.google.com/file/d/1dqS4OMBH6XLNz_f2ynP8vjgD83Ggo_pe/view?usp=sharing",
+  "https://drive.google.com/file/d/1sVLxqV6Gwosg30BQutlC6X_0X4qhB3Pb/view?usp=sharing",
+  "https://drive.google.com/file/d/1ynlCSCxLRmQRpi-QqK-8KWJQmPQY1DYY/view?usp=sharing",
+  "https://drive.google.com/file/d/1YRPR71rLVbajUVUSDyD4dYWw0lMUDReG/view?usp=sharing",
+  "https://drive.google.com/file/d/1R1w7qNsnFBkBTJ2fMnmBCXSZo4UWmqpA/view?usp=sharing",
+  "https://drive.google.com/file/d/14PRM7U0OopOOrJR197VlqvRX5SXNtmKj/view?usp=sharing"
+ ],
+ "candidates": [
+  "https://mail-archives.apache.org/mod_mbox/kafka-dev/202102.mbox/browser",
+  "https://github.com/apache/kafka/pull/10218",
+  "https://github.com/apache/kafka/pull/10173",
+  "https://issues.apache.org/jira/browse/KAFKA-7739",
+  "https://issues.apache.org/jira/browse/KAFKA-9393"
+ ]
+}

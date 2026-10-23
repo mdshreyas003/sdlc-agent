@@ -40,6 +40,12 @@ Platform (new):
 - FR-19: Background ingestion with live progress. Sync runs as a per-workspace background job; the UI shows per-stream status, pages, fetched/persisted counts, errors and final graph counts, survives reload, and flags incomplete streams with a "sync deeper" option.
 - FR-20: Workspace isolation. Every artifact carries a `scope` (repo, Jira project, Slack channel); a workspace's graph view, blame, agent retrieval and investigations see only its connected scopes. A one-click demo workspace (synthetic data through the same clients) supports onboarding and demos.
 
+Evaluation (new; plan in `data/EVAL_PLAN.md`):
+
+- FR-21: Benchmark corpus. A public corpus (Apache Kafka KIPs and Python PEPs with their Jira issues, PRs, commits and mailing-list threads) is converted to the system's source shapes and loaded as an `eval` workspace with the decision documents withheld; every raw file is hashed in a manifest.
+- FR-22: Gold question set of about 75 human-verified questions in tiers (single-document, cross-artifact, unanswerable by evidence ablation, time-adjacency traps), each with gold artifacts, verbatim quotes and atomic gold facts, split into dev (30%) and test (70%).
+- FR-23: Runner and scorer. One command runs every system (LLM alone, vector RAG, system without verifier, full system) over the question set with one LLM and one budget, and reports correct-answer, citation-validity, evidence-recall, abstention-accuracy and cost/latency per tier with bootstrap confidence intervals.
+
 ## Non-functional requirements
 
 - NFR-1: Core contract and writer do not depend on provider SDKs.
@@ -71,6 +77,9 @@ Platform (new):
 - AC-13: From an empty install, a user can create a workspace in the UI, enter GitHub/Jira/Slack credentials, test them, pick targets, run the initial sync while watching live progress, and ask a question, without touching files or environment variables.
 - AC-14: Credentials saved through the UI never appear in any API response, log or stored investigation; the demo workspace works with no source credentials.
 - AC-15: A question asked in workspace A never retrieves, cites or displays artifacts from scopes connected only to workspace B.
+- AC-16: `uv run hackfront eval` runs all benchmark systems on the dev split from one command and writes a per-tier results table with confidence intervals.
+- AC-17: Every gold quote verifies verbatim against the raw corpus and carries `human_verified=true` before it counts toward a reported score.
+- AC-18: The test split is scored once for the final report; prompts for every system are committed and none are tuned on test questions.
 
 ## Risks
 

@@ -108,6 +108,19 @@ def verify(answer: dict, evidence: dict[str, dict], sufficient: bool, gap: str =
             "confidence": confidence, "dropped": dropped}
 
 
+def lax(answer: dict, evidence: dict[str, dict], sufficient: bool, gap: str = "") -> dict:
+    """Benchmark ablation, NOT for production: same output shape as verify() but quotes and URLs are not checked.
+    Only cites whose id is not a retrieved node are dropped (the output cannot name a source without one)."""
+    claims = []
+    for c in answer.get("claims") or []:
+        cites = [{"node": ci["id"], **({"quote": ci["quote"]} if ci.get("quote") else {})}
+                 for ci in c.get("cites") or [] if c["status"] != "unknown" and ci["id"] in evidence]
+        claims.append({"text": c.get("text") or "", "status": c["status"], "note": c.get("note") or "", "cites": cites})
+    return {"summary": answer.get("summary") or "", "claims": claims or [{"text": "No claim.", "status": "unknown",
+            "note": "", "cites": []}], "gaps": list(answer.get("gaps") or []), "confidence": "high" if sufficient else "low",
+            "dropped": 0}
+
+
 def to_legacy(final: dict, evidence: dict[str, dict]) -> dict:
     """Claims -> the old {answer, citations, confidence, uncertainty} shape used by /api/ask."""
     lines, urls, unknown = [final["summary"]], [], []

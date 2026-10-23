@@ -1,0 +1,85 @@
+{
+ "threads": [
+  {
+   "id": "jwso4vx1bspp50bt277g6p798tmmg78l",
+   "subject": "[DISCUSS] KIP-595: A Raft Protocol for the Metadata Quorum",
+   "first": 1587080699,
+   "last": 1600415802,
+   "messages": [
+    "jwso4vx1bspp50bt277g6p798tmmg78l",
+    "lpxm9o657l13yowpqvxf2bjj3yhprqjv",
+    "kh9ch99r6x621mrtfbv583yv0p08c7gr",
+    "4mjywz0dwlgjg4mxry7o87ykqsskclvm",
+    "d826452fqq4z56384f76htycg3q0htwg",
+    "ddjoc6nhphf7vq7n8zg2qy8jmww1vbb9",
+    "1h35cj66vb8n26qdgm2gk8yycjf1d47l",
+    "b921gj8o2yqkk3sh2yl1osv1yr3n52ft",
+    "zqv24b6v1xr1w3h8c2ccv1g0sbssbhcj",
+    "1xbmy6hybb64ytzrymc37gtrh82oj9so",
+    "vsyz9vr70bk0lybrfpdwxg1s04575r5w",
+    "2b7x0bpr4yl4om3fcx9wgll8bt11ktog",
+    "5plgkk4lpzfth1y5nw13jv7pc6rk9012",
+    "k124z824bcgcqwcyp60lhp1rmr0wq7cs",
+    "2831kqczbrsrnvhl20czrryjx02xnzo5",
+    "2264gmxvk6qwh9kc8thh81jzk0qrdb66",
+    "n0wp7vc6syq0h86bmts7cob3fyh1p90p",
+    "s15jx0wkyms555swlgfs5pzjvzx0dwgr",
+    "lfhlhf9tgyxq4gy396xxk619jz9x4b7k",
+    "4xhqy8bfnrkh5qxvso5opp93sgjrovd4",
+    "kw4mdhs19lqt06r6w0wjh51j5kjrt3n3",
+    "g19p12vw4sthtgxhj3qwr9lf635m8k6z",
+    "8yr0lhyzv32cbq34sm4cdkz253r22jdw",
+    "c7qzsfc2gspvo4j7k9plf54mzrrps4zt",
+    "ndx9b68p4dxlqqf2obb23s8p7jtvnoc3",
+    "11wgxsxsgk9jjhzz8py1og42j00cw3bl",
+    "noxc9gttfzmnl9pvtwmv9jmrwg2ono8r",
+    "g5onrvdry5q2szxf4z7zc0tkc9427no7",
+    "lycx5xxf0hctqhor42yxrtojbzwco08y",
+    "bgkn916w6cccsb4jhprvh6hm2nz0tr50",
+    "1fv3n81j2ovc57b9vkrgyy7dw38b561q",
+    "03s5bjrczqpf9jybbtgbo30mny35g7rf",
+    "h2tbx4zyfltzstc33lglldnh7wf5rb95",
+    "8fb31qbrjrbwc1wto6d6xd5fn71kh9c2",
+    "wmz9x7s6fs1o7p7s23sc2phpbnrf0hkg",
+    "0xrp1d85whkjt3hm85d8ztosomyyqmt5"
+   ]
+  },
+  {
+   "id": "5f4kt4or81t1rfvk5txwy9ttf9zwrxdf",
+   "subject": "[VOTE] KIP-595: A Raft Protocol for the Metadata Quorum",
+   "first": 1596477764,
+   "last": 1597599497,
+   "messages": [
+    "5f4kt4or81t1rfvk5txwy9ttf9zwrxdf",
+    "3h82g8d5djd9vzd3z9ydgsx15p4nwosc",
+    "tndm9nyo4z8k8wvrtlhls0rom2qbowtr",
+    "py5v7slqfmgx6l7f228nht9w81rhrhok",
+    "88qxmqpltl4t864xpto0q2vxkwot4ch6",
+    "rxt1vhbkx9md2prj8hj0b3q1x2vh3t1j",
+    "8g8xw4lbr7jw076sk2cgs4jtns0nmtg9",
+    "of40k8wocbgol0jjd6c07nrj1btdbmn8",
+    "4wz15vlgkyq8of32v7xqry4lll3dlojm",
+    "3nl7b9jyb8mrfry0yljyfd2wcd90fkmf",
+    "1kgqosgj9rqwxo38d5gs6yxbtqfpq37p"
+   ]
+  },
+  {
+   "id": "j7dbw0n8hv0dp3wpw1j7bybnymy7d3zs",
+   "subject": "[jira] [Created] (KAFKA-10435) Fetch protocol changes for KIP-595",
+   "first": 1598397540,
+   "last": 1598397540,
+   "messages": [
+    "j7dbw0n8hv0dp3wpw1j7bybnymy7d3zs"
+   ]
+  },
+  {
+   "id": "6dyzx81s7q1s9750wh2xfnky51582t3c",
+   "subject": "[jira] [Resolved] (KAFKA-10435) Fetch protocol changes for KIP-595",
+   "first": 1600202400,
+   "last": 1600202400,
+   "messages": [
+    "6dyzx81s7q1s9750wh2xfnky51582t3c"
+   ]
+  }
+ ]
+}

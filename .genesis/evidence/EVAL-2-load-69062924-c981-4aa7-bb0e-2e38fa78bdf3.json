@@ -1,0 +1,30 @@
+{
+  "task": "EVAL-2",
+  "gate": "load",
+  "kind": "command",
+  "attempt": "69062924-c981-4aa7-bb0e-2e38fa78bdf3",
+  "command": "uv run --no-project python data/tools/check_load.py",
+  "started_at": "2026-10-23T03:29:20.738Z",
+  "observed_at": "2026-10-23T03:29:59.525Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "{'commits': 17, 'pulls': 8, 'issues': 16, 'jira_comments': 80} mail messages: 1070\r\nload ok\r\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "cf55916f7f07dabb17036f43b30d1b0fc6ae574e",
+    "dirty": true
+  },
+  "source_hash": "0ac896cdd8abc0cc986f86b102a5189a603b62c7b45d1adae4ec0c3c87d4ba1d",
+  "before_hash": "0ac896cdd8abc0cc986f86b102a5189a603b62c7b45d1adae4ec0c3c87d4ba1d",
+  "config_hash": "4b83b3e7998974a1bf9224a2a5aa33c4912e845441260bb1188a32f0a0e8718f",
+  "environment": {
+    "node": "v24.14.1",
+    "platform": "win32",
+    "arch": "x64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "338af6512a325c7003de6bf067598a97c031d3e9619199af30ff8c263eeb9f9b"
+}

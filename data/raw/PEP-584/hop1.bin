@@ -1,0 +1,2185 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+Issue 36144: Dictionary union. (PEP 584) - Python tracker
+
+</title>
+<link rel="shortcut icon" href="@@file/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="@@file/main.css" />
+<link rel="stylesheet" type="text/css" href="@@file/style.css" />
+<link rel="search" type="application/opensearchdescription+xml" href="@@file/osd.xml" title="Python bug tracker search" />
+<meta http-equiv="Content-Type"
+      content="text/html; charset=utf-8" />
+
+<script nonce="fb7845cfa9647946ac965cce0a45a1ca0cf7aa12f1e9558f96d947e34aef392f" type="text/javascript">
+submitted = false;
+function submit_once() {
+    if (submitted) {
+        alert("Your request is being processed.\nPlease be patient.");
+        return false;
+    }
+    submitted = true;
+    return true;
+}
+
+function help_window(helpurl, width, height) {
+    HelpWin = window.open('https://bugs.python.org/' + helpurl, 'RoundupHelpWindow', 'scrollbars=yes,resizable=yes,toolbar=no,height='+height+',width='+width);
+    HelpWin.focus ()
+}
+</script>
+
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.15/jquery-ui.js"></script>
+<script type="text/javascript" src="@@file/issue.item.js"></script>
+<link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/smoothness/jquery-ui.css" />
+
+
+</head>
+<body>
+  <!--  Logo  -->
+  <h1 id="logoheader">
+    <a accesskey="1" href="." id="logolink">
+       <img src="@@file/python-logo.gif" alt="homepage" border="0" id="logo" /></a>
+  </h1>
+
+<div id="utility-menu">
+<!-- Search Box -->
+<div id="searchbox">
+    <form name="searchform" method="get" action="issue" id="searchform">
+      <div id="search">
+       <input type="hidden" name="@columns"
+              value="id,github,activity,title,creator,assignee,status,type" />
+       <input type="hidden" name="@sort" value="-activity" />
+       <input type="hidden" name="@filter" value="status" />
+       <input type="hidden" name="@action" value="searchid" />
+       <input type="hidden" name="ignore" value="file:content" />
+       <input class="input-text" id="search-text"
+              name="@search_text" size="10" />
+       <input type="submit" id="submit" value="search" name="submit" class="input-button" />
+       <input type="radio" name="status"
+              id="status_notresolved" value="-1,1,3" />
+       <label for="status_notresolved">open</label>
+       <input type="radio" name="status" checked="checked"
+              id="status_all" value="-1,1,2,3" />
+       <label for="status_all">all</label>
+      </div>
+     </form>
+</div>
+</div>
+
+
+<div id="left-hand-navigation">
+<!--  Main Menu NEED LEVEL TWO HEADER AND FOOTER -->
+<div id="menu">
+  <ul class="level-one">
+    <li><a href="https://www.python.org/" title="Go to the Python homepage">Python Home</a></li>
+    <li><a href="https://www.python.org/about/" title="About The Python Language">About</a></li>
+    <li><a href="https://www.python.org/blogs/" title="">News</a></li>
+    <li><a href="https://www.python.org/doc/" title="">Documentation</a></li>
+    <li><a href="https://www.python.org/downloads/" title="">Downloads</a></li>
+    <li><a href="https://www.python.org/community/" title="">Community</a></li>
+    <li><a href="https://www.python.org/psf/" title="Python Software Foundation">Foundation</a></li>
+    <li><a href="https://devguide.python.org/" title="Python Developer's Guide">Developer's Guide</a></li>
+    <li class="selected"><a href="." class="selected" title="Python Issue Tracker">Issue Tracker</a>
+      <ul class="level-two">
+        <li>
+          <strong>Issues</strong>
+          <ul class="level-three">
+            
+            <li><a href="issue?@template=search&amp;status=1">Search</a></li>
+            <li><a href="issue?@action=random">Random Issue</a></li>
+            <li>
+              <form method="post" action="issue36144">
+                <input type="submit" class="form-small"
+                       value="Show issue:" />
+                <input class="form-small" size="4" type="text" name="@number" />
+                <input type="hidden" name="@type" value="issue" />
+                <input type="hidden" name="@action" value="show" />
+              </form>
+            </li>
+          </ul>
+        </li>
+
+
+        <li>
+          <strong>Summaries</strong>
+          <ul class="level-three">
+            
+
+            
+
+            
+
+            <li>
+              <a href="issue?status=1&amp;@sort=-activity&amp;@columns=id%2Cgithub%2Cactivity%2Ctitle%2Ccreator%2Cstatus&amp;@dispname=Issues%20with%20patch&amp;@startwith=0&amp;@group=priority&amp;keywords=2&amp;@action=search&amp;@filter=&amp;@pagesize=50">Issues with patch</a>
+            </li>
+
+            <li>
+              <a href="issue?status=1&amp;@sort=-activity&amp;@columns=id%2Cgithub%2Cactivity%2Ctitle%2Ccreator%2Cstatus&amp;@dispname=Easy%20issues&amp;@startwith=0&amp;@group=priority&amp;keywords=6&amp;@action=search&amp;@filter=&amp;@pagesize=50">Easy issues</a>
+            </li>
+
+            <li>
+              <a href="issue?@template=stats">Stats</a>
+            </li>
+
+          </ul>
+        </li>
+
+
+        <li>
+          <strong>User</strong>
+          <form method="post" action="issue36144">
+          <ul class="level-three">
+            <li>
+                Login<br />
+                <input size="10" name="openid_identifier" style="" /><br />
+                <input size="10" type="password" name="__login_password" /><br />
+                <input type="hidden" name="@action" value="Login" />
+                <input type="checkbox" name="remember" id="remember" />
+                <label for="remember">Remember me?</label><br />
+                <input class="form-small" type="submit"
+                       value="Login" /><br />
+                <input type="hidden" name="__came_from"
+                       value="https://bugs.python.org/issue36144?">
+                
+                <input type="hidden" name="@sort" value=""/>
+<input type="hidden" name="@group" value=""/>
+<input type="hidden" name="@pagesize" value="50"/>
+<input type="hidden" name="@startwith" value="0"/>
+            </li>
+            <li>
+                
+            </li>
+            <li><a href="user?@template=forgotten">Lost&nbsp;your&nbsp;login?</a></li>
+          </ul>
+          </form>
+        </li>
+
+        
+
+        
+
+        <li>
+          <strong>Administration</strong>
+          <ul class="level-three">
+            
+            <li>
+                <a href="user?@sort=username">User List</a></li>
+            <li>
+                <a href="user?iscommitter=1&amp;@action=search&amp;@sort=username&amp;@pagesize=300">Committer List</a></li>
+            
+            
+            
+          </ul>
+        </li>
+
+        <li>
+          <strong>Help</strong>
+          <ul class="level-three">
+            <li><a href="http://docs.python.org/devguide/triaging.html">
+                Tracker Documentation</a></li>
+            <li><a href="http://wiki.python.org/moin/TrackerDevelopment">
+                Tracker Development</a></li>
+            <li><a href="https://github.com/python/psf-infra-meta/issues">
+                Report Tracker Problem</a></li>
+          </ul>
+        </li>
+
+      </ul>
+    </li>
+  </ul>
+</div> <!-- menu -->
+</div> <!-- left-hand-navigation -->
+
+<div id="content-body">
+<div id="body-main">
+<div id="content">
+<div id="breadcrumb">
+ 
+ 
+ Issue36144
+ 
+</div>
+<div id="migration-notice">
+    <div id="migration-images">
+        <img width="32" src="@@file/python-logo-small.png" />
+        ➜
+        <a href="https://github.com/python/cpython/issues"><img width="32" src="@@file/gh-icon.png" /></a>
+    </div>
+    <p>This issue tracker <b>has been migrated to <a href="https://github.com/python/cpython/issues">GitHub</a></b>,
+    and is currently <b>read-only</b>.<br />
+    For more information, <a title="GitHub FAQs" href="https://devguide.python.org/gh-faq/">
+    see the GitHub FAQs in the Python's Developer Guide.</a></p>
+</div>
+ 
+ 
+
+
+
+
+
+<div>
+
+<form method="post" name="itemSynopsis"
+      onsubmit="return submit_once()"
+      enctype="multipart/form-data" action="issue36144">
+
+<div id="gh-issue-link">
+    <a href="https://github.com/python/cpython/issues/80325">
+        <img width="32" src="@@file/gh-icon.png" />
+        <p>
+            <span>This issue has been migrated to GitHub:</span>
+            https://github.com/python/cpython/issues/80325
+        </p>
+    </a>
+</div>
+
+<fieldset><legend>classification</legend>
+<table class="form">
+<tr>
+ <th class="required"><a href="http://docs.python.org/devguide/triaging.html#title" target="_blank">Title</a>:</th>
+ 
+ <td colspan="3">
+  <span>Dictionary union. (PEP 584)</span>
+  <input type="hidden" name="title"
+         value="Dictionary union. (PEP 584)">
+ </td>
+</tr>
+
+<tr>
+ <th class="required"><a href="http://docs.python.org/devguide/triaging.html#type" target="_blank">Type</a>:</th>
+ <td>enhancement</td>
+ <th><a href="http://docs.python.org/devguide/triaging.html#stage" target="_blank">Stage</a>:</th>
+ <td>patch review</td>
+</tr>
+
+<tr>
+ <th><a href="http://docs.python.org/devguide/triaging.html#components" target="_blank">Components</a>:</th>
+ <td>Interpreter Core</td>
+ <th><a href="http://docs.python.org/devguide/triaging.html#versions" target="_blank">Versions</a>:</th>
+ <td>Python 3.9</td>
+</tr>
+</table>
+</fieldset>
+
+<fieldset><legend>process</legend>
+<table class="form">
+<tr>
+  <th><a href="http://docs.python.org/devguide/triaging.html#status" target="_blank">Status</a>:</th>
+  <td>closed</td>
+  <th><a href="http://docs.python.org/devguide/triaging.html#resolution" target="_blank">Resolution</a>:</th>
+  <td>fixed</td>
+</tr>
+
+<tr>
+ <th>
+    <a href="http://docs.python.org/devguide/triaging.html#dependencies"
+       target="_blank">Dependencies</a>:
+ </th>
+ <td>
+  
+  
+ </td>
+ <th><a href="http://docs.python.org/devguide/triaging.html#superseder" target="_blank">Superseder</a>:</th>
+ <td>
+  
+ 
+ </td>
+ </tr>
+ <tr>
+ <th>
+   <a href="http://docs.python.org/devguide/triaging.html#assigned-to"
+      target="_blank">Assigned To</a>:
+ </th>
+ 
+ <td>
+  
+ </td>
+ <th>
+   <a href="http://docs.python.org/devguide/triaging.html#nosy-list"
+      target="_blank">Nosy List</a><!--
+        <span tal:condition="context/nosy_count" tal:replace="python: ' (%d)' % context.nosy_count" /> -->:
+ </th>
+ <td>
+     Aaron Hall, Raps Uk, brandtbucher, chaburkland, curtisbucher, gvanrossum, josh.r, justjais, mark.dickinson, rhettinger, scoder, serhiy.storchaka, slam, steve.dower, xtreak
+     
+ </td>
+</tr>
+<tr>
+ <th>
+   <a href="http://docs.python.org/devguide/triaging.html#priority"
+      target="_blank">Priority</a>:
+ </th>
+ <td>normal</td>
+ <th>
+    <a href="http://docs.python.org/devguide/triaging.html#keywords"
+       target="_blank">Keywords</a>:
+ </th>
+ <td>patch</td>
+
+
+</tr>
+
+
+
+
+
+
+
+
+
+</table>
+</fieldset>
+
+</form>
+
+<p>Created on <strong>2019-02-28 04:18</strong> by <strong>brandtbucher</strong>, last changed <strong>2022-04-11 14:59</strong> by <strong>admin</strong>. This issue is now <strong style="color:#00F; background-color:inherit;">closed</strong>.</p>
+
+
+
+<table class="files">
+ <tr><th class="header" colspan="4">Pull Requests</th></tr>
+ <tr>
+  <th>URL</th>
+  <th>Status</th>
+  <th>Linked</th>
+  <th>Edit</th>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/12088" title="bpo-36144: Dictionary Union (PEP 584)">PR 12088</a></td>
+  <td>merged</td>
+  <td>
+   <span>brandtbucher</span>,
+   <span>2019-02-28 04:19</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/18659" title="bpo-36144: Document PEP 584.">PR 18659</a></td>
+  <td>merged</td>
+  <td>
+   <span>brandtbucher</span>,
+   <span>2020-02-25 19:19</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/18729" title="bpo-36144: Implement defaultdict union.">PR 18729</a></td>
+  <td>merged</td>
+  <td>
+   <span>brandtbucher</span>,
+   <span>2020-03-02 05:36</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/18814" title="bpo-36144: Update MappingProxyType with PEP 584's operators">PR 18814</a></td>
+  <td>merged</td>
+  <td>
+   <span>brandtbucher</span>,
+   <span>2020-03-06 19:13</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/18832" title="bpo-36144: Add PEP 584 operators to collections.ChainMap">PR 18832</a></td>
+  <td>merged</td>
+  <td>
+   <span>curtisbucher</span>,
+   <span>2020-03-07 19:38</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/18911" title="bpo-36144: Update os.environ and os.environb for PEP 584 ">PR 18911</a></td>
+  <td>merged</td>
+  <td>
+   <span>chaburkland</span>,
+   <span>2020-03-11 02:34</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/18931" title="bpo-36144: Simplify defaultdict.__or__">PR 18931</a></td>
+  <td>merged</td>
+  <td>
+   <span>brandtbucher</span>,
+   <span>2020-03-11 16:27</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/18967" title="bpo-36144: OrderedDict Union (PEP 584)">PR 18967</a></td>
+  <td>merged</td>
+  <td>
+   <span>brandtbucher</span>,
+   <span>2020-03-12 19:14</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/19106" title="bpo-36144: Add union operators to WeakKeyDictionary">PR 19106</a></td>
+  <td>merged</td>
+  <td>
+   <span>curtisbucher</span>,
+   <span>2020-03-21 23:00</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/19127" title="bpo-36144: Add union operators to WeakValueDictionary584">PR 19127</a></td>
+  <td>merged</td>
+  <td>
+   <span>curtisbucher</span>,
+   <span>2020-03-23 22:15</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+ <tr>
+  <td><a href="https://github.com/python/cpython/pull/19221" title="bpo-36144: Fixed test in test_collections.py">PR 19221</a></td>
+  <td>merged</td>
+  <td>
+   <span>curtisbucher</span>,
+   <span>2020-03-30 00:12</span>
+  </td>
+  <td>
+    
+  </td>
+ </tr>
+</table>
+
+
+
+
+
+<table class="messages">
+ <tr><th colspan="4" class="header">Messages (66)</th></tr>
+ 
+  <tr>
+    <th>
+     <a href="#msg336798" id="msg336798">msg336798</a> - <a
+    href="msg336798">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 04:18</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>...as discussed in python-ideas. Semantically:
+
+d1 + d2 &lt;-&gt; d3 = d1.copy(); d3.update(d2); d3
+d1 += d2 &lt;-&gt; d1.update(d2)
+
+Attached is a working implementation with new/fixed tests for consideration. I've also updated collections.UserDict with the new __add__/__radd__/__iadd__ methods.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336803" id="msg336803">msg336803</a> - <a
+    href="msg336803">(view)</a></th>
+   <th>Author: Raymond Hettinger (rhettinger) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 06:33</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I believe that Guido rejected this when it was proposed a few years ago.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336808" id="msg336808">msg336808</a> - <a
+    href="msg336808">(view)</a></th>
+   <th>Author: Karthikeyan Singaravelan (xtreak) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 07:07</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Python ideas discussion in 2015 : <a href="https://mail.python.org/pipermail/python-ideas/2015-February/031748.html">https://mail.python.org/pipermail/python-ideas/2015-February/031748.html</a>
+LWN summary : <a href="https://lwn.net/Articles/635397/">https://lwn.net/Articles/635397/</a></pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336810" id="msg336810">msg336810</a> - <a
+    href="msg336810">(view)</a></th>
+   <th>Author: Serhiy Storchaka (serhiy.storchaka) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 07:29</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I believe it was proposed and rejected multiple times.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336811" id="msg336811">msg336811</a> - <a
+    href="msg336811">(view)</a></th>
+   <th>Author: Raymond Hettinger (rhettinger) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 07:36</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>For the record, I'm opposed to the idea.
+
+* Use of the + operator is a temptation to produce new dictionaries rather than update an existing dict in-place which is usually what you want.
+
+* We already have ChainMap() which presents a single view of multiple mappings with any copying.
+
+* It is natural to expect the plus operator to be commutative, but this operation would necessarily be non-commutative.
+
+* Many other APIs are modeled on the dict API, so we should not grow the API unless there is a big win.  The effects would be pervasive.
+
+* I don't see other languages going down this path, nor am I seeing dict subclasses that implement this functionality.  Those are indications that this more of a "fun thing we could do" rather than a "thing that people need".
+
+* The existing code already reads nicely:
+
+     options.update(user_selections)
+
+  That reads more like self explanatory English than:
+
+     options += user_selections
+
+  The latter takes more effort to correctly parse and
+  makes it less clear that you're working with dicts.
+
+* It isn't self-evident that the right operand needs to be another dictionary. If a person is trying to "add a key / value pair" to an existing dictionary, the "+=" operator would be tempting but it wouldn't work.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336812" id="msg336812">msg336812</a> - <a
+    href="msg336812">(view)</a></th>
+   <th>Author: Serhiy Storchaka (serhiy.storchaka) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 07:52</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; * It is natural to expect the plus operator to be commutative, but this operation would necessarily be non-commutative.
+
+In Python, the plus operator for sequences (strings, lists, tuples) is non-commutative.
+
+But I have other arguments against it:
+
+* It conflicts with the plus operator of Counter (which is a specialized dict): Counter(a=2) + Counter(a=3) == Counter(a=5), but the proposed idea makes dict(a=2) + dict(a=3) == dict(a=3).
+
+* We already have a syntax for dict merging: {**d1, **d2}. It works with arbitrary mappings, in contrary to the plus operator, which needs a special support in argument types.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336816" id="msg336816">msg336816</a> - <a
+    href="msg336816">(view)</a></th>
+   <th>Author: Raymond Hettinger (rhettinger) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 08:23</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; In Python, the plus operator for sequences (strings, lists, 
+&gt; tuples) is non-commutative.
+
+For sequences, that is obvious and expected, but not so much with mappings where the order of overlapping keys is determined by the left operand and the value associated with those keys is determined by the right operand.
+
+Also with sequences the + operator actually means "add to", but with dictionaries it means "add/or replace" which is contrary to the normal meaning of plus.  I think that was one of Guido's reasons for favoring "|" instead of "+" for set-to-set operations.
+
+&gt; We already have a syntax for dict merging: {**d1, **d2}. 
+&gt; It works with arbitrary mappings,
+
+This is a good point.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336820" id="msg336820">msg336820</a> - <a
+    href="msg336820">(view)</a></th>
+   <th>Author: Stefan Behnel (scoder) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 09:20</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; We already have a syntax for dict merging: {**d1, **d2}. 
+
+Which doesn't mean that "d1 + d2" isn't much more intuitive than this special-character heavy version. It takes me a while to see the dict merge under that heap of stars. And that's already the shortest example.
+
+
+&gt; It works with arbitrary mappings,
+
+The RHS of "d += M" doesn't have to be a dict IMHO, it could be any mapping. And even "dict(X) + M" doesn't look all too bad to me, even though there's "dict(X, **M)".
+
+
+&gt; Use of the + operator is a temptation to produce new dictionaries rather than update an existing dict in-place which is usually what you want.
+
+That's why there would be support for "+=". The exact same argument already fails for lists, where concatenation is usually much more performance critical than for the average little dict. (And remember that most code isn't performance critical at all.)
+
+
+&gt; We already have ChainMap() which presents a single view of multiple mappings with any copying.
+
+Which is a different use case that is unlikely to go away with this proposal.
+
+
+&gt; makes it less clear that you're working with dicts.
+
+This is a valid argument, although it always depends on the concrete code what the most readable way to express its intentions is. Again, this doesn't really differ for lists.
+
+Let's wait for the PEP, I'd say.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336847" id="msg336847">msg336847</a> - <a
+    href="msg336847">(view)</a></th>
+   <th>Author: Josh Rosenberg (josh.r) <span title="Contributor form received">*</span> <img src="@@file/triager.png" title="Python triager" alt="(Python triager)" /></th>
+   <th>Date: 2019-02-28 16:21</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>scoder: dict(X, **M) is broken unless M is known to be string keyed (it used to work, but in Python 3, it will raise a TypeError). It's part of the argument for the additional unpacking generalizations from <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a>; {**X, **M} does what dict(X, **M) is trying to do, but without abusing the keyword argument passing convention.
+
+You also claim "It takes me a while to see the dict merge under that heap of stars", but that's at least as much about the newness of <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a> (and for many Python coders, a complete lack of familiarity with the pre-existing varargs unpacking rules for functions) as it is about the punctuation; after all, you clearly recognize dict(X, **M) even though it's been wrong in most contexts for years.
+
+In any event, I'm a strong -1 on this, for largely the same reasons as Raymond and others:
+
+1. It doesn't provide any new functionality, just one more way to do it; += is satisfied by .update, + is satisfied (more generally and efficiently) by the unpacking generalizations
+
+2. It's needlessly confusing; addition is, for all existing types in the standard library I can think of, lossless; the information from both sides of the + is preserved in some form, either by addition or concatenation (and in the concatenation case, addition is happening, just to the length of the resulting sequence, and order is preserved). Addition for dictionaries would introduce new rules specific to dicts that do not exist for any other type regarding loss of values, non-additive resulting length, etc. Those rules would likely be similar to those of dict literals and the update method, but they'd need to be made explicit. By contrast, the <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a> unpacking generalization rules followed the existing rules for dict literals; no special rules occur, it just behaves intuitively (if you already knew the rules for dict literals without unpacking being involved).
+
+3. Almost any generic, duck-typing based code for which addition makes sense will not make sense for dicts simply because it loosens the definition of addition too much to be useful, so best case, it still raises TypeError (when dicts added to non-dict things), worst case, it silently operates in a way that violates the rules of both addition and concatenation rather than raising a TypeError that the generic code could use to determine the correct thing to do.
+
+4. The already mentioned conflict with Counter (which already has an addition operator, with lossless semantics)
+
+5. (Minor) It means PyDict_Type needs a non-NULL tp_as_number, so now it's slightly slower to reject dicts as being non-numeric at the C layer
+
+Problem #2 could be used to argue for allowing | instead of + (which would also resolve #4, and parts of #3), since | is already used for unioning with sets, and this operation is much closer to a union operation than addition or concatenation. Even so, it would still be misleading; at least with sets, there is no associated value, so it's still mostly lossless (you lose the input lengths, but the unique input data is kept); with dicts, you'd be losing values too.
+
+Basically, I think the <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a> unpacking syntax should remain as the "one-- and preferably only one --obvious way to" combine dictionaries as a one-liner. It's more composable, since it allows adding arbitrary additional key/value pairs, and more efficient, since it allows combining more than two dicts at once with no additional temporaries: dicta + dictb + dictc requires "dictab" to be made first, then thrown away after dictab + dictc produces dictabc, while {**dicta, **dictb, **dictc} builds dictabc directly.
+
+The only real argument I can see for not sticking to unpacking is that it doesn't allow for arbitrary dict-like things to produce new dict-like things directly; you'd have to rewrap as myspecialdict({**speciala, **specialb}). But I don't think that's a flaw worth fixing if it means major changes to the behavior of what I'm guessing is one of the three most commonly used types in Python (along with int and tuple, thanks to the integration of dicts into so many facets of the implementation).</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336848" id="msg336848">msg336848</a> - <a
+    href="msg336848">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 16:34</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I changed my mind and am now in favor. Most of the arguments against could also be used against list+list. Counter addition is actually a nice special case of this -- it produces the same keys but has a more sophisticated way of merging values for common keys. Please read the python-ideas thread!</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336849" id="msg336849">msg336849</a> - <a
+    href="msg336849">(view)</a></th>
+   <th>Author: Josh Rosenberg (josh.r) <span title="Contributor form received">*</span> <img src="@@file/triager.png" title="Python triager" alt="(Python triager)" /></th>
+   <th>Date: 2019-02-28 16:42</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Also note: That Python ideas thread that xtreak linked ( <a href="https://mail.python.org/pipermail/python-ideas/2015-February/031748.html">https://mail.python.org/pipermail/python-ideas/2015-February/031748.html</a> ) largely rejected the proposal a couple weeks before <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a> was approved. At the time, the proposal wasn't just about +/+=; that was the initial proposal, but operator overloading was heavily criticized for the failure to adhere to either addition or concatenation semantics, so alternate constructors and top-level functions similar to sorted were proposed as alternatives (e.g. merged(dicta, dictb)). The whole thread ended up being about creating an approved, built-in way of one-lining: d3 = d1.copy(); d3.update(d2)
+
+A key quote though is that this was needed because there was no other option without rolling your own merged function. Andrew Barnert summarized it best:
+
+"I'm +1 on constructor, +0.5 on a function (whether it's called updated or merged, whether it's in builtins or collections), +0.5 on both constructor and function, -0.5 on a method, and -1 on an operator.
+
+"Unless someone is seriously championing <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a> for 3.5, in which case I'm -0.5 on anything, because it looks like <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a> would already give us one obvious way to do it, and none of the alternatives are sufficiently nicer than that way to be worth having another."
+
+As it happens, <a href="https://www.python.org/dev/peps/pep-0448/">PEP 448</a> was put in 3.5, and we got the one obvious way to do it.
+
+Side-note: It occurs to me there will be one more "way to do it" in 3.8 already, thanks to <a href="https://www.python.org/dev/peps/pep-0572/">PEP 572</a>:
+
+(d3 := d1.copy()).update(d2)
+
+I think I'll stick with d3 = {**d1, **d2} though. :-)</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg336854" id="msg336854">msg336854</a> - <a
+    href="msg336854">(view)</a></th>
+   <th>Author: Karthikeyan Singaravelan (xtreak) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-02-28 17:30</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Current python-ideas thread for the issue : <a href="https://mail.python.org/pipermail/python-ideas/2019-February/055509.html">https://mail.python.org/pipermail/python-ideas/2019-February/055509.html</a></pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg337094" id="msg337094">msg337094</a> - <a
+    href="msg337094">(view)</a></th>
+   <th>Author: Viktor Kharkovets (slam) <span title="Contributor form received">*</span></th>
+   <th>Date: 2019-03-04 12:09</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>If we're going to forget about commutativity of +, should we also implement +/+= for sets?</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg337107" id="msg337107">msg337107</a> - <a
+    href="msg337107">(view)</a></th>
+   <th>Author: Stefan Behnel (scoder) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-03-04 13:05</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; should we also implement +/+= for sets?
+
+The question is: what would that do? The same as '|=' ? That would be rather confusing, I think. "|" (meaning: "or") seems a very natural operation for sets, in the same way that "|" operates on bits in integers. That suggests that "|" is the right operator for sets.
+
+In any case, this is an unrelated proposal that is better not discussed in this ticket. The only link is whether "|" is the more appropriate operator also for dicts, which is to be discussed in the PEP and thus also not in this ticket.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg337266" id="msg337266">msg337266</a> - <a
+    href="msg337266">(view)</a></th>
+   <th>Author: STINNER Victor (vstinner) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-03-06 01:54</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Is this issue directly or indirectly related to the <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a> "Add + and - operators to the built-in dict class"?
+<a href="https://www.python.org/dev/peps/pep-0584/">https://www.python.org/dev/peps/pep-0584/</a></pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg337267" id="msg337267">msg337267</a> - <a
+    href="msg337267">(view)</a></th>
+   <th>Author: STINNER Victor (vstinner) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2019-03-06 01:55</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; Is this issue directly or indirectly related to the <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a> "Add + and - operators to the built-in dict class"?
+&gt; <a href="https://www.python.org/dev/peps/pep-0584/">https://www.python.org/dev/peps/pep-0584/</a>
+
+Ah yes, it's written in the title of the PR. I add it to the bug title as well.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg358305" id="msg358305">msg358305</a> - <a
+    href="msg358305">(view)</a></th>
+   <th>Author: Aaron Hall (Aaron Hall) <span title="Contributor form received">*</span></th>
+   <th>Date: 2019-12-12 21:16</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Another obvious way to do it, but I'm +1 on it.
+
+A small side point however - <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a> reads:
+
+&gt; To create a new dict containing the merged items of two (or more) dicts, one can currently write:
+
+&gt; {**d1, **d2}
+
+&gt; but this is neither obvious nor easily discoverable. It is only guaranteed to work if the keys are all strings. If the keys are not strings, it currently works in CPython, but it may not work with other implementations, or future versions of CPython[2].
+
+...
+
+&gt; [2] Non-string keys: <a href="https://bugs.python.org/issue35105">https://bugs.python.org/issue35105</a> and <a href="https://mail.python.org/pipermail/python-dev/2018-October/155435.html">https://mail.python.org/pipermail/python-dev/2018-October/155435.html</a>
+
+The references cited does not back this assertion up. Perhaps the intent is to reference the "cool/weird hack" dict(d1, **d2) (see <a href="https://mail.python.org/pipermail/python-dev/2010-April/099485.html">https://mail.python.org/pipermail/python-dev/2010-April/099485.html</a> and <a href="https://mail.python.org/pipermail/python-dev/2010-April/099459.html">https://mail.python.org/pipermail/python-dev/2010-April/099459.html</a>), which allowed any hashable keys in Python 2 but only strings in Python 3.
+
+If I see {**d1, **d2}, my expectations are that this is the new generalized unpacking and I currently expect any keys to be allowed, and the PEP should be updated to accurately reflect this to prevent future misunderstandings.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362619" id="msg362619">msg362619</a> - <a
+    href="msg362619">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 03:46</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre><a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a> has been approved by the Steering Council (at my recommendation). We will shortly begin landing PRs related to this.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362620" id="msg362620">msg362620</a> - <a
+    href="msg362620">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 03:47</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/eb8ac57af26c4eb96a8230eba7492ce5ceef7886">eb8ac57af26c4eb96a8230eba7492ce5ceef7886</a> by Brandt Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Dictionary Union (<a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a>) (<a class="closed" title="[closed] tarfile.extractall fails to overwrite unresolved symlinks and hard links" href="issue12088">#12088</a>)
+<a href="https://github.com/python/cpython/commit/eb8ac57af26c4eb96a8230eba7492ce5ceef7886">https://github.com/python/cpython/commit/eb8ac57af26c4eb96a8230eba7492ce5ceef7886</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362621" id="msg362621">msg362621</a> - <a
+    href="msg362621">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 03:49</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>While the main code has been merged now, I propose to keep this issue open until some other things have happened:
+
+- Documentation
+- Add | operators to some dict subclasses in the stdlib
+- (What else?)</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362626" id="msg362626">msg362626</a> - <a
+    href="msg362626">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 06:29</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>My current PR plans are:
+
+- Docs. This will include the dict docs and the whatsnew 3.9. I assume we have no plans to cover this in the tutorials, etc. Let me know if I'm missing anything here.
+- collections.defaultdict, with tests. I don't think this needs docs beyond a short "changed in version 3.9" note.
+- collections.OrderedDict, with tests. Ditto defaultdict on docs.
+- collections.ChainMap, ditto.
+- types.MappingProxy, ditto.
+
+I'll also create a BPO issue to discuss whether the dict subclasses in http.cookies should be updated.
+
+That should do it for CPython; I'm planning on updating typeshed and adding a handful of tests to mypy for TypedDict, etc. after these are landed.
+
+Guido, okay to tag you on these for review?</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362645" id="msg362645">msg362645</a> - <a
+    href="msg362645">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 15:07</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Yup, great plan.
+
+On Mon, Feb 24, 2020 at 22:29 Brandt Bucher &lt;<a href="mailto:report@bugs.python.org">report@bugs.python.org</a>&gt; wrote:
+
+&gt;
+&gt; Brandt Bucher &lt;<a href="mailto:brandtbucher@gmail.com">brandtbucher@gmail.com</a>&gt; added the comment:
+&gt;
+&gt; My current PR plans are:
+&gt;
+&gt; - Docs. This will include the dict docs and the whatsnew 3.9. I assume we
+&gt; have no plans to cover this in the tutorials, etc. Let me know if I'm
+&gt; missing anything here.
+&gt; - collections.defaultdict, with tests. I don't think this needs docs
+&gt; beyond a short "changed in version 3.9" note.
+&gt; - collections.OrderedDict, with tests. Ditto defaultdict on docs.
+&gt; - collections.ChainMap, ditto.
+&gt; - types.MappingProxy, ditto.
+&gt;
+&gt; I'll also create a BPO issue to discuss whether the dict subclasses in
+&gt; http.cookies should be updated.
+&gt;
+&gt; That should do it for CPython; I'm planning on updating typeshed and
+&gt; adding a handful of tests to mypy for TypedDict, etc. after these are
+&gt; landed.
+&gt;
+&gt; Guido, okay to tag you on these for review?
+&gt;
+&gt; ----------
+&gt;
+&gt; _______________________________________
+&gt; Python tracker &lt;<a href="mailto:report@bugs.python.org">report@bugs.python.org</a>&gt;
+&gt; &lt;<a href="https://bugs.python.org/issue36144">https://bugs.python.org/issue36144</a>&gt;
+&gt; _______________________________________
+&gt;
+-- 
+--Guido (mobile)</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362660" id="msg362660">msg362660</a> - <a
+    href="msg362660">(view)</a></th>
+   <th>Author: Steve Dower (steve.dower) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 20:05</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Not sure if this is a big deal or not, and it seems likely that the preexisting behaviour of .update() and ** unpacking have already decided it, but is it intentional that you end up with the first-seen key and the last-seen value in the case of collisions?
+
+class C:
+    def __init__(self, *a): self.a = a
+    def __hash__(self): return hash(self.a[0])
+    def __eq__(self, o): return self.a[0] == o.a[0]
+    def __repr__(self): return f"C{self.a}"
+
+&gt;&gt;&gt; c1 = C(1, 1); c1
+C(1, 1)
+&gt;&gt;&gt; c2 = C(1, 2); c2
+C(1, 2)
+
+For set union we get the first seen value:
+&gt;&gt;&gt; {c1} | {c2}
+{C(1, 1)}
+
+For dict union we get the first seen key and the last seen value:
+&gt;&gt;&gt; {c1: 'a'} | {c2: 'b'}
+{C(1, 1): 'b'}
+
+But similarly for dict unpack (and .update(); code left as an exercise to the reader):
+&gt;&gt;&gt; {**{c1: 'a'}, **{c2: 'b'}}
+{C(1, 1): 'b'}
+
+So the union of two dicts may contain .items() elements that were not in either of the inputs.
+
+Honestly, I've never noticed this before, as the only time I create equivalent objects with meaningfully-distinct identities is to use with sets. I just figured I'd try it out after seeing suggestions that the dict union operands were transposed from set union.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362663" id="msg362663">msg362663</a> - <a
+    href="msg362663">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 20:19</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>As a somewhat simpler example:
+
+&gt;&gt;&gt; f = {False: False}
+&gt;&gt;&gt; z = {0: 0}
+&gt;&gt;&gt; f | z
+{False: 0}
+&gt;&gt;&gt; {**f, **z}
+{False: 0}
+&gt;&gt;&gt; f.update(z); f
+{False: 0}
+
+Though these hairier cases aren't explicitly addressed, the conflict behavior is covered in the Rationale and Reference Implementation sections of the PEP. All of the above examples share code (`dict_update_arg`), and that's definitely intentional. I for one think it would be confusing (and probably a bug) if one of the examples above gave a different key-value pair!
+
+I find it makes more sense if you see a set as valueless keys (rather than keyless values).</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362666" id="msg362666">msg362666</a> - <a
+    href="msg362666">(view)</a></th>
+   <th>Author: Steve Dower (steve.dower) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-25 20:42</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>That's a much simpler example. And of course:
+
+&gt;&gt;&gt; z[False] = False
+&gt;&gt;&gt; z
+{0: False}
+
+So the precedent is well established that the key doesn't get updated with the value.
+
+No further questions, yer honour ;)</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362726" id="msg362726">msg362726</a> - <a
+    href="msg362726">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-26 20:01</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/d0ca9bd93bb9d8d4aa9bbe939ca7fd54ac870c8f">d0ca9bd93bb9d8d4aa9bbe939ca7fd54ac870c8f</a> by Brandt Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Document <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a> (<a href="https://github.com/python/cpython/pull/18659" class="closed" title="GitHub PR 18659: [merged] bpo-36144: Document PEP 584.">GH-18659</a>)
+<a href="https://github.com/python/cpython/commit/d0ca9bd93bb9d8d4aa9bbe939ca7fd54ac870c8f">https://github.com/python/cpython/commit/d0ca9bd93bb9d8d4aa9bbe939ca7fd54ac870c8f</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362729" id="msg362729">msg362729</a> - <a
+    href="msg362729">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-26 20:03</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>@Brandt: you have some more followup PRs planned right? Let's keep this issue open until you've done all of those.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362740" id="msg362740">msg362740</a> - <a
+    href="msg362740">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-26 21:20</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Yep. I'm currently working on OrderedDict, defaultdict, and MappingProxyType.
+
+My brother is looking to make his first contribution, so he'll be taking care of ChainMap.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362757" id="msg362757">msg362757</a> - <a
+    href="msg362757">(view)</a></th>
+   <th>Author: Josh Rosenberg (josh.r) <span title="Contributor form received">*</span> <img src="@@file/triager.png" title="Python triager" alt="(Python triager)" /></th>
+   <th>Date: 2020-02-27 00:29</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>What is ChainMap going to do? Normally, the left-most argument to ChainMap is the "top level" dict, but in a regular union scenario, last value wins. 
+
+Seems like layering the right hand side's dict on top of the left hand side's would match dict union semantics best, but it feels... wrong, given ChainMap's normal left-to-right precedence. And top-mostness affects which dict receives all writes, so if  chain1 |= chain2 operates with dict-like precedence (chain2 layers over chain1), then that also means the target of writes/deletions/etc. changes to what was on top in chain2.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362759" id="msg362759">msg362759</a> - <a
+    href="msg362759">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 00:56</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>The plan is to follow dict’s semantics. The |= operator will basically delegate to the first map in the chain. The | operator will create a new ChainMap where the first map is the merged result of the old first map, and the others are the same.
+
+So, basically update / copy-and-update, respectively.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362761" id="msg362761">msg362761</a> - <a
+    href="msg362761">(view)</a></th>
+   <th>Author: Josh Rosenberg (josh.r) <span title="Contributor form received">*</span> <img src="@@file/triager.png" title="Python triager" alt="(Python triager)" /></th>
+   <th>Date: 2020-02-27 01:26</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Sorry, I think I need examples to grok this in the general case. ChainMap unioned with dict makes sense to me (it's equivalent to update or copy-and-update on the top level dict in the ChainMap). But ChainMap unioned with another ChainMap is less clear. Could you give examples of what the expected end result is for:
+
+    d1 = {'a': 1, 'b': 2}
+    d2 = {'b': 3, 'c': 4}
+    d3 = {'a': 5, 'd': 6}
+    d4 = {'d': 7, 'e': 8}
+    cm1 = ChainMap(d1, d2)
+    cm2 = ChainMap{d3, d4)
+
+followed by either:
+
+    cm3 = cm1 | cm2
+
+or
+    cm1 |= cm2
+
+? As in, what is the precise state of the ChainMap cm3 or the mutated cm1, referencing d1, d2, d3 and d4 when they are still incorporated by references in the chain?
+
+My impression from what you said is that the plan would be for the updated cm1 to preserve references to d1 and d2 only, with the contents of cm2 (d3 and d4) effectively flattened and applied as an in-place update to d1, with an end result equivalent to having done:
+
+    cm1 = ChainMap(d1, d2)
+    d1 |= d4
+    d1 |= d3
+
+(except the key ordering would actually follow d3 first, and d4 second), while cm3 would effectively be equivalent to having done (note ordering):
+
+    cm3 = ChainMap(d1 | d4 | d3, d2)
+
+though again, key ordering would be based on d1, then d3, then d4, not quite matching the union behavior. And a reference to d2 would be preserved in the final result, but not any other original dict. Is that correct? If so, it seems like it's wasting ChainMap's key feature (lazy accumulation of maps), where:
+
+    cm1 |= cm2
+
+could be equivalent to either:
+
+    cm1.maps += cm2.maps
+
+though that means cm1 wins overlaps, where normal union would have cm2 win, or to hew closer to normal union behavior, make it equivalent to:
+
+    cm1.map[:0] = cm2.maps
+
+prepending all of cm2's maps to have the same duplicate handling rules as regular dicts (right side wins) at the expense of changing which map cm1 uses as the target for writes and deletes. In either case it would hew to the spirit of ChainMap, making dict "union"-ing an essentially free operation, in exchange for increasing the costs of lookups that don't hit the top dict.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362774" id="msg362774">msg362774</a> - <a
+    href="msg362774">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 05:59</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I think for `|=` the only choice is for it to be essentially an alias to `.update()`. So that means `cm |= other` becomes `cm.maps[0].update(other)`.
+
+For `|` we are breaking new ground and we could indeed make `cm | other` do something like `ChainMap(other, *cm.maps)`.
+
+I've not used ChainMap much (though I've seen some code that uses it) so I'm probably not the best judge of whether this is a good feature to have.
+
+Note that `other | cm` will just do whatever `other.__or__` does, since ChainMap isn't a true subclass of dict, so it will not fall back to `cm.__ror__`. Basically ChainMap will not get control in this case.
+
+Other thoughts:
+
+- Maybe `cm1 | cm2` (both ChainMaps) ought to return `ChainMap(*cm2.maps, *cm1.maps)`?
+
+- These semantics make `|=` behave rather differently from `|`. Is that okay? If not, which of them should change, and how?</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362779" id="msg362779">msg362779</a> - <a
+    href="msg362779">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 07:04</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; I think for `|=` the only choice is for it to be essentially an alias to `.update()`. So that means `cm |= other` becomes `cm.maps[0].update(other)`.
+
+Agreed.
+
+&gt; These semantics make `|=` behave rather differently from `|`. Is that okay? If not, which of them should change, and how?
+
+I don’t like this. Let me try to explain why:
+
+So far (and to the best of my knowledge), setting and updating values on a ChainMap works exactly the same as it does for dict, with all of the same semantics (the docs themselves even say that “all of the usual dictionary methods are supported”… which now could be interpreted as meaning | and |= as well). It’s only when deleting or using the new interfaces that things get more specialized.
+
+But that doesn’t really apply here. Having different (or worse, inconsistent) behavior for these operators, I feel, would be more confusing than helpful. Remember, a major goal of this proposal is to aid in duck typing.
+
+So, Josh’s understanding of my intended semantics is correct, I propose that, for:
+
+    d1 = {'a': 1, 'b': 2}
+    d2 = {'b': 3, 'c': 4}
+    d3 = {'a': 5, 'd': 6}
+    d4 = {'d': 7, 'e': 8}
+    cm1 = ChainMap(d1, d2)
+    cm2 = ChainMap{d3, d4)
+
+    cm3 = cm1 | cm2
+
+Gives cm3 a value of:
+
+    ChainMap(d1 | d4 | d3, d2)  # Or, equivalently: ChainMap(d1 | dict(cm2), d2)
+
+And:
+
+    cm1 |= cm2
+
+Is equivalent to:
+
+    d1 |= cm2
+
+I don’t want to change which map is "first", and I think changing the winning behavior from that of dict will create more problems than it solves. We only need to look at how ChainMap handles the update method… it keeps the same exact behavior, rather than trying to be lazy or reversed or something.
+
+If we *are* deciding to do something different, then I think it should have no relationship to <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a>, which reasons out a carefully considered merge operation for dict, not ChainMap. But, it would also probably need a different operator, and be able to stand on its own merits.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362810" id="msg362810">msg362810</a> - <a
+    href="msg362810">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 15:43</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I had just come to a different conclusion. Maybe ChainMap should just not
+grow `|` and `|=` operators? That way there can be no confusion. `dict() |
+ChainMap()` and `ChainMap() | dict()` will fail because ChainMap doesn't
+inherit from dict. (Note that in your last message, `d1 |= cm2` will fail
+for this reason. You can of course fix that with `d1 |= dict(cm2)`,
+although IIUC there's no reason one of the maps couldn't be some other
+[Mutable]Mapping.)</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362813" id="msg362813">msg362813</a> - <a
+    href="msg362813">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 15:57</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; Note that in your last message, `d1 |= cm2` will fail for this reason. You can of course fix that with `d1 |= dict(cm2)`, although IIUC there's no reason one of the maps couldn't be some other [Mutable]Mapping.
+
+Mappings and iterables are fine for the in-place variant. :)
+
+&gt;&gt;&gt; from collections import ChainMap
+&gt;&gt;&gt; d = {}
+&gt;&gt;&gt; c = ChainMap({"r": 2, "d":2})
+&gt;&gt;&gt; d |= c
+&gt;&gt;&gt; d
+{'r': 2, 'd': 2}
+
+I think it would be confusing to have `ChainMap | ChainMap` behave subtly different than `dict | ChainMap`. It would be *especially* odd if it also differed subtly from `ChainMap | dict`.
+
+To recap:
+
++1 on adding the operators with dict semantics,
++0 on no <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a> for ChainMap.
+-0 on implementing them, but changing the winning behavior by concatenating the maps lists or something. This would probably make more sense to me as a `+` operator, honestly. :(
+-1 for having the operators behave differently (other than performance shortcuts) for `cm | d`, `cm | cm`, `cm |= d`, `cm |= cm`.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362816" id="msg362816">msg362816</a> - <a
+    href="msg362816">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 17:01</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>OK, assuming `|=` gets the same semantics as update(), can you repeat once
+more (without motivation) what the specification for `cm | other` will be?</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362817" id="msg362817">msg362817</a> - <a
+    href="msg362817">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 17:10</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I believe that:
+
+    cm | other
+
+Should return the equivalent of:
+
+    ChainMap(cm.maps[0] | dict(other), *cm.maps[1:])</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362819" id="msg362819">msg362819</a> - <a
+    href="msg362819">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 17:18</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>...however, I could also see the (similar):
+
+    ChainMap(other, *cm.maps)  # Note that `other` is the original reference here.
+
+Being okay as well. Maybe even better, now that I've written it out.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362821" id="msg362821">msg362821</a> - <a
+    href="msg362821">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 17:26</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>OK, that makes sense, it works similar to ChainMap.copy(), which copies maps[0] and keeps links to the rest. So in particular `cm | {}` will do the same thing as cm.copy().
+
+Im not sure if the dict(other) cast is the best way to go about it. Maybe this would work?
+
+def __or__(self, other):
+    new = self.copy()
+    new |= other  # OR new.update(other) ???
+    return new
+
+def __ior__(self, other):
+    self.update(other)
+    return self
+
+Note that there is no ChainMap.update() definition -- it relies on MutableMapping.update().
+
+I guess we need a __ror__ as well, in case there's some other mapping that doesn't implement __or__:
+
+def __ror__(self, other):
+    new = other.copy()
+    new.update(self)
+    return new
+
+Note that this doesn't return a ChainMap but an instance of type(other).  If other doesn't have a copy() method it'll fail.
+
+As a refinement, __or__ and __ror__ should perhaps check whether the operation can possibly succeed and return NotImplemented instead of raising? (Based on the type of other only, not its contents.)</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362823" id="msg362823">msg362823</a> - <a
+    href="msg362823">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 17:28</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I didn't see your second reply, with `ChainMap(other, *cm.maps)`.
+
+I'm not so keen on that, because its special behavior can't be mimicked by `|=`.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362827" id="msg362827">msg362827</a> - <a
+    href="msg362827">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 17:49</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>&gt; Im not sure if the dict(other) cast is the best way to go about it. Maybe this would work?
+
+Yeah, I was imagining something like that... I used the cast for brevity in my reply but that probably wasn't helpful.
+
+Note that for __or__, we probably want to check the type of the argument (for either dict or ChainMap, or maybe just Mapping), to keep it from working on an iterable of key-value pairs.
+
+&gt; I guess we need a __ror__ as well, in case there's some other mapping that doesn't implement __or__:
+
+Agreed. Again, we can check for Mapping here to assure success for the copy() move.
+
+&gt; As a refinement, __or__ and __ror__ should perhaps check whether the operation can possibly succeed and return NotImplemented instead of raising? (Based on the type of other only, not its contents.)
+
+Yup, see above. I think a check for Mapping should be fine.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362828" id="msg362828">msg362828</a> - <a
+    href="msg362828">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 17:52</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Just to clarify:
+
+If we decide to check isinstance(other, (ChainMap, dict)), '|' should probably be used.
+
+If we decide to check isinstance(other, Mapping), I think the copy/update methods should be used.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362831" id="msg362831">msg362831</a> - <a
+    href="msg362831">(view)</a></th>
+   <th>Author: Serhiy Storchaka (serhiy.storchaka) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 20:00</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>1.
+
+def __or__(self, other):
+    return self.__class__(self.maps[0] | other, *self.maps[1:])
+
+def __ror__(self, other):
+    return other | dict(self)
+
+
+2.
+
+def __or__(self, other):
+    return self.__class__(other, *self.maps)
+
+def __ror__(self, other):
+    return self.__class__(*self.maps, other)
+
+
+There are problems with both variants, so I think it may be better to not add this operator to ChainMap.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362835" id="msg362835">msg362835</a> - <a
+    href="msg362835">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-27 20:12</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I think we're only seriously considering the first variant (although implemented slightly differently, see my last two messages). And __ror__ would probably change, returning the type of self.
+
+What are the "problems" with it, exactly? We seem to be in agreement that the update behavior is reasonable, even for ChainMaps.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362852" id="msg362852">msg362852</a> - <a
+    href="msg362852">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-28 00:48</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>We already have somewhat different semantics of `|` for Counter, and hence I think it's fine to give it the most useful semantics for ChainMap given that class's special behavior. I think we've come up with the right solution there.
+
+Let's stop the debate and put up a PR.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg362855" id="msg362855">msg362855</a> - <a
+    href="msg362855">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-02-28 00:58</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Sounds good, I'll have these up soon.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg363526" id="msg363526">msg363526</a> - <a
+    href="msg363526">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-06 17:24</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/57c9d1725689dde068a7fccaa7500772ecd16d2e">57c9d1725689dde068a7fccaa7500772ecd16d2e</a> by Brandt Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Implement defaultdict union (<a href="https://github.com/python/cpython/pull/18729" class="closed" title="GitHub PR 18729: [merged] bpo-36144: Implement defaultdict union.">GH-18729</a>)
+<a href="https://github.com/python/cpython/commit/57c9d1725689dde068a7fccaa7500772ecd16d2e">https://github.com/python/cpython/commit/57c9d1725689dde068a7fccaa7500772ecd16d2e</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg363527" id="msg363527">msg363527</a> - <a
+    href="msg363527">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-06 17:34</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Still waiting for ChainMap -- what else?</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg363528" id="msg363528">msg363528</a> - <a
+    href="msg363528">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-06 17:51</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>My brother will have a ChainMap PR up soon. I'm just finishing up MappingProxyType, myself. Probably both this weekend.
+
+Then I'll move on to OrderedDict, which looks like it could be tricky. I'll need to familiarize myself with the implementation better (unless there's somebody who is already familiar with it who wants to take over). It looks well-commented, though.
+
+I think we can pass on the http.cookies subclasses since there don't appear to be any experts/maintainers for that module.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg363613" id="msg363613">msg363613</a> - <a
+    href="msg363613">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-07 19:03</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/4663f66f3554dd8e2ec130e40f6abb3c6a514775">4663f66f3554dd8e2ec130e40f6abb3c6a514775</a> by Brandt Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Update MappingProxyType with <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a>'s operators (<a class="open" title="[open] Add utilities to 'clean' surrogate code points from strings" href="issue18814">#18814</a>)
+<a href="https://github.com/python/cpython/commit/4663f66f3554dd8e2ec130e40f6abb3c6a514775">https://github.com/python/cpython/commit/4663f66f3554dd8e2ec130e40f6abb3c6a514775</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg363625" id="msg363625">msg363625</a> - <a
+    href="msg363625">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-08 02:36</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre><a class="closed" title="[closed] subprocess.run: add an extra_env kwarg to complement existing env kwarg" href="issue39857">Issue 39857</a> just reminded me that we should update os._Environ as well (the type of os.environ and os.environb).
+
+I have another first-timer who will probably want to take it.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg363889" id="msg363889">msg363889</a> - <a
+    href="msg363889">(view)</a></th>
+   <th>Author: STINNER Victor (vstinner) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-11 09:14</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Once this issue will be done, would you mind to update <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a>? Currently, it only says "This PEP proposes adding merge (|) and update (|=) operators to the built-in dict class." It doesn't mention that other types like OrderedDict, MappingProxy or ChainMap are updated as well.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg363953" id="msg363953">msg363953</a> - <a
+    href="msg363953">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-11 18:04</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Yes, I can add a section explaining that after the PEP was accepted, we decided to add the operators to several non-dict mappings as well. I'm also going to add some explanation as to why Mapping/MutableMapping didn't grow them, too.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364106" id="msg364106">msg364106</a> - <a
+    href="msg364106">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-13 16:04</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/d648ef10c5c7659ed3c9f34d5c751dc55e2c6007">d648ef10c5c7659ed3c9f34d5c751dc55e2c6007</a> by Charles Burkland in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Update os.environ and os.environb for <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a>  (<a class="closed" title="[closed] minidom does not encode correctly when calling Document.writexml" href="issue18911">#18911</a>)
+<a href="https://github.com/python/cpython/commit/d648ef10c5c7659ed3c9f34d5c751dc55e2c6007">https://github.com/python/cpython/commit/d648ef10c5c7659ed3c9f34d5c751dc55e2c6007</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364107" id="msg364107">msg364107</a> - <a
+    href="msg364107">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-13 16:06</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/6d674a1bf456945eb758e85c11484a9f1494f2b4">6d674a1bf456945eb758e85c11484a9f1494f2b4</a> by Brandt Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: OrderedDict Union (<a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a>) (<a class="closed" title="[closed] Find a less conflict prone approach to Misc/NEWS" href="issue18967">#18967</a>)
+<a href="https://github.com/python/cpython/commit/6d674a1bf456945eb758e85c11484a9f1494f2b4">https://github.com/python/cpython/commit/6d674a1bf456945eb758e85c11484a9f1494f2b4</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364195" id="msg364195">msg364195</a> - <a
+    href="msg364195">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-14 19:31</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Three other MutableMappings we might want to update:
+
+- shelve.Shelf
+- weakref.WeakKeyDictionary
+- weakref.WeakValueDictionary
+
+Shelf is up in the air, since it doesn't look like it defines a copy() equivalent... I also have no experience with it. Since it's a MutableMapping subclass, (not a dict subclass), we could in theory hold off on updating this until someone asks for it, without backward compatibility issues.
+
+I think the other two should be updated, though. I can coordinate PRs for them this week.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364196" id="msg364196">msg364196</a> - <a
+    href="msg364196">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-14 20:05</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I definitely think we should leave Shelf alone, it's a toy class from a different era.
+
+It makes sense to update the weak dicts; hopefully the | and |= operators can be implemented in terms of other, more primitive operations, so we will have assurance that these classes' essential behavior is preserved.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364887" id="msg364887">msg364887</a> - <a
+    href="msg364887">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-23 19:02</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/f393b2c588559162dc2e77f8079a42e48558870a">f393b2c588559162dc2e77f8079a42e48558870a</a> by Curtis Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Add <a href="https://www.python.org/dev/peps/pep-0584/">PEP 584</a> operators to collections.ChainMap (<a class="closed" title="[closed] New regex module degrades re performance" href="issue18832">#18832</a>)
+<a href="https://github.com/python/cpython/commit/f393b2c588559162dc2e77f8079a42e48558870a">https://github.com/python/cpython/commit/f393b2c588559162dc2e77f8079a42e48558870a</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364900" id="msg364900">msg364900</a> - <a
+    href="msg364900">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-23 20:49</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/25e580a73c163f472fdeb5489bebef85da21655c">25e580a73c163f472fdeb5489bebef85da21655c</a> by Curtis Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Add union operators to WeakKeyDictionary (<a class="closed" title="[closed] Prepare .hgtouch and Tools/hg/hgtouch.py to run on the	bots" href="issue19106">#19106</a>)
+<a href="https://github.com/python/cpython/commit/25e580a73c163f472fdeb5489bebef85da21655c">https://github.com/python/cpython/commit/25e580a73c163f472fdeb5489bebef85da21655c</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364969" id="msg364969">msg364969</a> - <a
+    href="msg364969">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-25 01:51</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>
+New changeset <a href="https://hg.python.org/lookup/8f1ed21ecf57cc8b8095d9d1058af2b9b3ed0413">8f1ed21ecf57cc8b8095d9d1058af2b9b3ed0413</a> by Curtis Bucher in branch 'master':
+<a class="closed" title="[closed] Dictionary union. (PEP 584)" href="issue36144">bpo-36144</a>: Add union operators to WeakValueDictionary584 (<a class="closed" title="[closed] duplicate test name in Lib/xml/dom/minidom.py" href="issue19127">#19127</a>)
+<a href="https://github.com/python/cpython/commit/8f1ed21ecf57cc8b8095d9d1058af2b9b3ed0413">https://github.com/python/cpython/commit/8f1ed21ecf57cc8b8095d9d1058af2b9b3ed0413</a>
+</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg364992" id="msg364992">msg364992</a> - <a
+    href="msg364992">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-25 15:24</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>And... that's it! Big thanks to everybody who had a part in making this happen.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg365245" id="msg365245">msg365245</a> - <a
+    href="msg365245">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-29 04:56</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I'm guessing this can be closed?</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg365333" id="msg365333">msg365333</a> - <a
+    href="msg365333">(view)</a></th>
+   <th>Author: Guido van Rossum (gvanrossum) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-03-30 16:54</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>I guess we should keep this open until Raymond Hettinger has given feedback on <a href="https://github.com/python/cpython/pull/18832">https://github.com/python/cpython/pull/18832</a> (where we have the option of changing to Brandt's proposal from <a href="https://github.com/python/cpython/pull/18832#issuecomment-596910350">https://github.com/python/cpython/pull/18832#issuecomment-596910350</a>).</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg371520" id="msg371520">msg371520</a> - <a
+    href="msg371520">(view)</a></th>
+   <th>Author: Sumit Jaiswal (justjais)</th>
+   <th>Date: 2020-06-15 05:50</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>First off, thanks for adding the feature, it's much appreciated.
+
+But it'd be great if you guys can enable list merge for the dict having list as its value, in current form I believe it's handling only "key: value" merge.
+
+for e.g.:
+&gt;&gt;&gt; d1 = {'spam': [1, 2, 3]}
+&gt;&gt;&gt; d2 = {'spam': [2, 3, 4]}
+&gt;&gt;&gt; d1 | d2
+&gt;&gt;&gt; {'spam': [1, 2, 3, 4]}</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg371549" id="msg371549">msg371549</a> - <a
+    href="msg371549">(view)</a></th>
+   <th>Author: Brandt Bucher (brandtbucher) <span title="Contributor form received">*</span> <img src="@@file/committer.png" title="Python committer" alt="(Python committer)" /></th>
+   <th>Date: 2020-06-15 14:24</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Similar behavior was considered and ultimately rejected by the PEP as being too specialized:
+
+<a href="https://www.python.org/dev/peps/pep-0584/#concatenate-values-in-a-list">https://www.python.org/dev/peps/pep-0584/#concatenate-values-in-a-list</a>
+
+What you're asking for it subtly different, and even *more* specialized than that. I'd recommend just subclassing dict and overriding the operator, as the PEP suggests.</pre>
+   </td>
+  </tr>
+ 
+ 
+  <tr>
+    <th>
+     <a href="#msg373205" id="msg373205">msg373205</a> - <a
+    href="msg373205">(view)</a></th>
+   <th>Author: Raps Uk (Raps Uk)</th>
+   <th>Date: 2020-07-07 05:39</th>
+  </tr>
+  <tr>
+   <td colspan="4" class="content">
+    
+    <pre>Taking the union of items() in Python 3 (viewitems() in Python 2.7) will also fail when values are unhashable objects (like lists, for example). Even if your values are hashable, since sets are semantically unordered, the behavior is undefined in regards to precedence. So don't do this:
+
+&gt;&gt;&gt; c = dict(a.items() | b.items())
+This example demonstrates what happens when values are unhashable:
+
+&gt;&gt;&gt; x = {'a': []}
+&gt;&gt;&gt; y = {'b': []}
+&gt;&gt;&gt; dict(x.items() | y.items())
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+TypeError: unhashable type: 'list'
+Here's an example where y should have precedence, but instead the value from x is retained due to the arbitrary order of sets:
+
+&gt;&gt;&gt; x = {'a': 2}
+&gt;&gt;&gt; y = {'a': 1}
+&gt;&gt;&gt; dict(x.items() | y.items())
+{'a': 2}
+
+<a href="http://net-informations.com/python/ds/merge.htm">http://net-informations.com/python/ds/merge.htm</a></pre>
+   </td>
+  </tr>
+ 
+</table>
+
+<table class="history table table-condensed table-striped"><tr><th colspan="4" class="header">
+History
+</th></tr><tr>
+<th>Date</th>
+<th>User</th>
+<th>Action</th>
+<th>Args</th>
+</tr>
+<tr><td>2022-04-11&nbsp;14:59:11</td><td>admin</td><td>set</td><td>github: 80325</td></tr>
+<tr><td>2020-07-07&nbsp;05:39:40</td><td>Raps Uk</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user35173">Raps Uk</a><br />messages:
+  + <a rel="nofollow" href="msg373205">msg373205</a><br /></td></tr>
+<tr><td>2020-06-15&nbsp;14:24:34</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg371549">msg371549</a></td></tr>
+<tr><td>2020-06-15&nbsp;05:50:31</td><td>justjais</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user34958">justjais</a><br />messages:
+  + <a rel="nofollow" href="msg371520">msg371520</a><br /></td></tr>
+<tr><td>2020-03-30&nbsp;16:54:02</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg365333">msg365333</a></td></tr>
+<tr><td>2020-03-30&nbsp;00:12:40</td><td>curtisbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18583">pull_request18583</a></td></tr>
+<tr><td>2020-03-29&nbsp;04:56:12</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg365245">msg365245</a><br />stage: resolved -> patch review</td></tr>
+<tr><td>2020-03-25&nbsp;15:24:24</td><td>brandtbucher</td><td>set</td><td>status: open -> closed<br />resolution: fixed<br />messages:
+  + <a rel="nofollow" href="msg364992">msg364992</a><br /><br />stage: patch review -> resolved</td></tr>
+<tr><td>2020-03-25&nbsp;01:51:35</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg364969">msg364969</a></td></tr>
+<tr><td>2020-03-23&nbsp;22:15:37</td><td>curtisbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18488">pull_request18488</a></td></tr>
+<tr><td>2020-03-23&nbsp;20:49:53</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg364900">msg364900</a></td></tr>
+<tr><td>2020-03-23&nbsp;19:02:12</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg364887">msg364887</a></td></tr>
+<tr><td>2020-03-21&nbsp;23:43:55</td><td>vstinner</td><td>set</td><td>nosy:
+  - <a rel="nofollow" href="user2377">vstinner</a><br /></td></tr>
+<tr><td>2020-03-21&nbsp;23:00:46</td><td>curtisbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18467">pull_request18467</a></td></tr>
+<tr><td>2020-03-14&nbsp;20:05:43</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg364196">msg364196</a></td></tr>
+<tr><td>2020-03-14&nbsp;19:31:31</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg364195">msg364195</a></td></tr>
+<tr><td>2020-03-13&nbsp;16:06:08</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg364107">msg364107</a></td></tr>
+<tr><td>2020-03-13&nbsp;16:04:47</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg364106">msg364106</a></td></tr>
+<tr><td>2020-03-12&nbsp;19:14:27</td><td>brandtbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18315">pull_request18315</a></td></tr>
+<tr><td>2020-03-11&nbsp;18:04:08</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg363953">msg363953</a></td></tr>
+<tr><td>2020-03-11&nbsp;16:27:33</td><td>brandtbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18283">pull_request18283</a></td></tr>
+<tr><td>2020-03-11&nbsp;09:14:19</td><td>vstinner</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user2377">vstinner</a><br />messages:
+  + <a rel="nofollow" href="msg363889">msg363889</a><br /></td></tr>
+<tr><td>2020-03-11&nbsp;02:34:44</td><td>chaburkland</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user34012">chaburkland</a><br />pull_requests:
+  + <a rel="nofollow" href="pull_request18266">pull_request18266</a><br /></td></tr>
+<tr><td>2020-03-08&nbsp;02:36:48</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg363625">msg363625</a></td></tr>
+<tr><td>2020-03-07&nbsp;19:38:52</td><td>curtisbucher</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user33909">curtisbucher</a><br />pull_requests:
+  + <a rel="nofollow" href="pull_request18189">pull_request18189</a><br /></td></tr>
+<tr><td>2020-03-07&nbsp;19:03:13</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg363613">msg363613</a></td></tr>
+<tr><td>2020-03-06&nbsp;19:13:51</td><td>brandtbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18172">pull_request18172</a></td></tr>
+<tr><td>2020-03-06&nbsp;17:51:08</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg363528">msg363528</a></td></tr>
+<tr><td>2020-03-06&nbsp;17:34:15</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg363527">msg363527</a></td></tr>
+<tr><td>2020-03-06&nbsp;17:24:14</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg363526">msg363526</a></td></tr>
+<tr><td>2020-03-02&nbsp;05:36:21</td><td>brandtbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18086">pull_request18086</a></td></tr>
+<tr><td>2020-02-28&nbsp;00:58:56</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362855">msg362855</a></td></tr>
+<tr><td>2020-02-28&nbsp;00:48:12</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362852">msg362852</a></td></tr>
+<tr><td>2020-02-27&nbsp;20:12:28</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362835">msg362835</a></td></tr>
+<tr><td>2020-02-27&nbsp;20:00:33</td><td>serhiy.storchaka</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362831">msg362831</a></td></tr>
+<tr><td>2020-02-27&nbsp;17:52:25</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362828">msg362828</a></td></tr>
+<tr><td>2020-02-27&nbsp;17:49:23</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362827">msg362827</a></td></tr>
+<tr><td>2020-02-27&nbsp;17:28:42</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362823">msg362823</a></td></tr>
+<tr><td>2020-02-27&nbsp;17:26:54</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362821">msg362821</a></td></tr>
+<tr><td>2020-02-27&nbsp;17:18:57</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362819">msg362819</a></td></tr>
+<tr><td>2020-02-27&nbsp;17:10:59</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362817">msg362817</a></td></tr>
+<tr><td>2020-02-27&nbsp;17:01:25</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362816">msg362816</a></td></tr>
+<tr><td>2020-02-27&nbsp;15:57:52</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362813">msg362813</a></td></tr>
+<tr><td>2020-02-27&nbsp;15:43:45</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362810">msg362810</a></td></tr>
+<tr><td>2020-02-27&nbsp;07:04:31</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362779">msg362779</a></td></tr>
+<tr><td>2020-02-27&nbsp;05:59:41</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362774">msg362774</a></td></tr>
+<tr><td>2020-02-27&nbsp;01:26:37</td><td>josh.r</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362761">msg362761</a></td></tr>
+<tr><td>2020-02-27&nbsp;00:56:25</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362759">msg362759</a></td></tr>
+<tr><td>2020-02-27&nbsp;00:29:35</td><td>josh.r</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362757">msg362757</a></td></tr>
+<tr><td>2020-02-26&nbsp;21:20:54</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362740">msg362740</a></td></tr>
+<tr><td>2020-02-26&nbsp;20:03:22</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362729">msg362729</a></td></tr>
+<tr><td>2020-02-26&nbsp;20:01:54</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362726">msg362726</a></td></tr>
+<tr><td>2020-02-25&nbsp;21:16:20</td><td>brandtbucher</td><td>set</td><td>title: Dictionary addition. (PEP 584) -> Dictionary union. (PEP 584)</td></tr>
+<tr><td>2020-02-25&nbsp;20:42:02</td><td>steve.dower</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362666">msg362666</a></td></tr>
+<tr><td>2020-02-25&nbsp;20:19:59</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362663">msg362663</a></td></tr>
+<tr><td>2020-02-25&nbsp;20:05:25</td><td>steve.dower</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user16632">steve.dower</a><br />messages:
+  + <a rel="nofollow" href="msg362660">msg362660</a><br /></td></tr>
+<tr><td>2020-02-25&nbsp;19:19:08</td><td>brandtbucher</td><td>set</td><td>pull_requests:
+  + <a rel="nofollow" href="pull_request18020">pull_request18020</a></td></tr>
+<tr><td>2020-02-25&nbsp;15:07:40</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362645">msg362645</a></td></tr>
+<tr><td>2020-02-25&nbsp;06:29:00</td><td>brandtbucher</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362626">msg362626</a></td></tr>
+<tr><td>2020-02-25&nbsp;03:49:09</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362621">msg362621</a></td></tr>
+<tr><td>2020-02-25&nbsp;03:47:37</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362620">msg362620</a></td></tr>
+<tr><td>2020-02-25&nbsp;03:46:03</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg362619">msg362619</a><br />versions:
+  + Python 3.9, - Python 3.8</td></tr>
+<tr><td>2019-12-12&nbsp;21:16:45</td><td>Aaron Hall</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user23232">Aaron Hall</a><br />messages:
+  + <a rel="nofollow" href="msg358305">msg358305</a><br /></td></tr>
+<tr><td>2019-03-06&nbsp;01:55:57</td><td>vstinner</td><td>set</td><td>nosy:
+  - <a rel="nofollow" href="user2377">vstinner</a><br /></td></tr>
+<tr><td>2019-03-06&nbsp;01:55:53</td><td>vstinner</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg337267">msg337267</a><br />title: Dictionary addition. -> Dictionary addition. (PEP 584)</td></tr>
+<tr><td>2019-03-06&nbsp;01:54:38</td><td>vstinner</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user2377">vstinner</a><br />messages:
+  + <a rel="nofollow" href="msg337266">msg337266</a><br /></td></tr>
+<tr><td>2019-03-04&nbsp;13:05:30</td><td>scoder</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg337107">msg337107</a></td></tr>
+<tr><td>2019-03-04&nbsp;12:09:17</td><td>slam</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user25502">slam</a><br />messages:
+  + <a rel="nofollow" href="msg337094">msg337094</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;17:30:25</td><td>xtreak</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg336854">msg336854</a></td></tr>
+<tr><td>2019-02-28&nbsp;16:42:22</td><td>josh.r</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg336849">msg336849</a></td></tr>
+<tr><td>2019-02-28&nbsp;16:34:00</td><td>gvanrossum</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg336848">msg336848</a></td></tr>
+<tr><td>2019-02-28&nbsp;16:21:02</td><td>josh.r</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user19135">josh.r</a><br />messages:
+  + <a rel="nofollow" href="msg336847">msg336847</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;10:12:23</td><td>mark.dickinson</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user1118">mark.dickinson</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;09:20:07</td><td>scoder</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user2153">scoder</a><br />messages:
+  + <a rel="nofollow" href="msg336820">msg336820</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;08:23:10</td><td>rhettinger</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg336816">msg336816</a></td></tr>
+<tr><td>2019-02-28&nbsp;07:52:06</td><td>serhiy.storchaka</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg336812">msg336812</a></td></tr>
+<tr><td>2019-02-28&nbsp;07:36:52</td><td>rhettinger</td><td>set</td><td>messages:
+  + <a rel="nofollow" href="msg336811">msg336811</a></td></tr>
+<tr><td>2019-02-28&nbsp;07:29:11</td><td>serhiy.storchaka</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user15623">serhiy.storchaka</a><br />messages:
+  + <a rel="nofollow" href="msg336810">msg336810</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;07:07:07</td><td>xtreak</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user28746">xtreak</a><br />messages:
+  + <a rel="nofollow" href="msg336808">msg336808</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;06:33:14</td><td>rhettinger</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user5">gvanrossum</a><br />messages:
+  + <a rel="nofollow" href="msg336803">msg336803</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;05:01:17</td><td>xtreak</td><td>set</td><td>nosy:
+  + <a rel="nofollow" href="user114">rhettinger</a><br /></td></tr>
+<tr><td>2019-02-28&nbsp;04:19:14</td><td>brandtbucher</td><td>set</td><td>keywords:
+  + <a rel="nofollow" href="keyword2">patch</a><br />stage: patch review<br />pull_requests:
+  + <a rel="nofollow" href="pull_request12098">pull_request12098</a></td></tr>
+<tr><td>2019-02-28&nbsp;04:18:58</td><td>brandtbucher</td><td>create</td><td></td></tr>
+</table>
+
+</div>
+
+
+</div> <!-- content-body -->
+<div id="footer">
+<div id="credits">
+  Supported by <a href="https://python.org/psf-landing/" title="The Python Software Foundation">The Python Software Foundation</a>,
+  <br>
+  Powered by <a href="http://roundup.sourceforge.net" title="Powered by the Roundup Issue Tracker">Roundup</a>
+</div> <!-- credits -->
+Copyright &copy; 1990-2022, <a href="http://python.org/psf">Python Software Foundation</a><br />
+<a href="http://python.org/about/legal">Legal Statements</a>
+</div> <!-- footer -->
+</div> <!-- body-main -->
+</div> <!-- content -->
+
+
+
+</body>
+</html>
+

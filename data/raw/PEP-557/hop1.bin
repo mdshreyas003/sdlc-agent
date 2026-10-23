@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Python-ideas] JavaScript-Style Object Creation in Python (using a constructor function instead of a class to create objects)
+   </TITLE>
+   <LINK REL="Index" HREF="index.html" >
+   <LINK REL="made" HREF="mailto:python-ideas%40python.org?Subject=Re%3A%20%5BPython-ideas%5D%20JavaScript-Style%20Object%20Creation%20in%20Python%20%28using%20a%0A%20constructor%20function%20instead%20of%20a%20class%20to%20create%20objects%29&In-Reply-To=%3CCAL0tCQEsOUG1wLuf984o%3DEk4_z77Lcmv7QWBuTM31mFdpQDUjg%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="045617.html">
+   <LINK REL="Next"  HREF="045619.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Python-ideas] JavaScript-Style Object Creation in Python (using a constructor function instead of a class to create objects)</H1>
+    <B>Simon Ramstedt</B> 
+    <A HREF="mailto:python-ideas%40python.org?Subject=Re%3A%20%5BPython-ideas%5D%20JavaScript-Style%20Object%20Creation%20in%20Python%20%28using%20a%0A%20constructor%20function%20instead%20of%20a%20class%20to%20create%20objects%29&In-Reply-To=%3CCAL0tCQEsOUG1wLuf984o%3DEk4_z77Lcmv7QWBuTM31mFdpQDUjg%40mail.gmail.com%3E"
+       TITLE="[Python-ideas] JavaScript-Style Object Creation in Python (using a constructor function instead of a class to create objects)">simonramstedt at gmail.com
+       </A><BR>
+    <I>Sun May 14 00:07:44 EDT 2017</I>
+    <P><UL>
+        <LI>Previous message (by thread): <A HREF="045617.html">[Python-ideas] add a LogReader to the logging module
+</A></li>
+        <LI>Next message (by thread): <A HREF="045619.html">[Python-ideas] JavaScript-Style Object Creation in Python (using a constructor function instead of a class to create objects)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#45618">[ date ]</a>
+              <a href="thread.html#45618">[ thread ]</a>
+              <a href="subject.html#45618">[ subject ]</a>
+              <a href="author.html#45618">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi, do you have an opinion on the following?
+
+Wouldn't it be nice to define classes via a simple constructor function (as
+below) instead of a conventional class definition?
+
+*conventional*:
+
+    class MyClass(ParentClass):
+      def __init__(x):
+        self._x = x
+      def my_method(y):
+        z = self._x + y
+        return z
+
+
+*proposed*:
+
+    def MyClass(x):
+      self = ParentClass()
+      def my_method(y):
+        z = x + y
+        return z
+      self.my_method = my_method  # that's cumbersome (see comments below)
+      return self
+
+
+Here are the pros and cons I could come up with for the proposed method:
+
+(+) Simpler and more explicit.
+
+(+) No need to create attributes (like `self._x`) just to pass something
+from `__init__` to another method.
+
+(+) Default arguments / annotations for methods could be different for each
+class instance. Adaptive defaults wouldn't have to simulated with a None.
+
+(+) Class/instance level imports would work.
+
+(-/+) Speed: The `def`-based objects take 0.6 &#956;s to create while the
+`class`-based objects take only 0.4 &#956;s. For method execution however the
+closure takes only 0.15 &#956;s while the proper method takes 0.22 &#956;s (script
+&lt;<A HREF="https://gist.github.com/rmst/78b2b0f56a3d9ec13b1ec6f3bd50aa9c">https://gist.github.com/rmst/78b2b0f56a3d9ec13b1ec6f3bd50aa9c</A>&gt;).
+
+(-/+) Checking types: In the proposed example above the returned object
+wouldn't know that it has been created by `MyClass`. There are a couple of
+solutions to that, though. The easiest to implement would be to change the
+first line to `self = subclass(ParentClass())` where the subclass function
+looks at the next item in the call stack (i.e. `MyClass`) and makes it the
+type of the object. Another solution would be to have a special rule for
+functions with capital first letter returning a single object to append
+itself to the list of types of the returned object. Alternatively there
+could be a special keyword e.g. `classdef` that would be used instead of
+`def` if we wouldn't want to rely on the name.
+
+(-) The current syntax for adding a function to an object is cumbersome.
+That's what is preventing me from actually using the proposed pattern. But
+is this really the only reason for not using it? And if so, wouldn't that
+be a good argument for enabling something like below?
+
+*attribute function definitions*:
+
+    def MyClass(x):
+      self = ParentClass()
+      def self.my_method(y):
+        z = x + y
+        return z
+      return self
+
+
+or alternatively *multiline lambdas*:
+
+    def MyClass(x):
+      self = ParentClass()
+      self.my_method = (y):
+        z = x + y
+        return z
+      return self
+
+
+Cheers,
+
+Simon
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="http://mail.python.org/pipermail/python-ideas/attachments/20170514/5d0da83e/attachment-0001.html">http://mail.python.org/pipermail/python-ideas/attachments/20170514/5d0da83e/attachment-0001.html</A>&gt;
+</PRE>
+
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message (by thread): <A HREF="045617.html">[Python-ideas] add a LogReader to the logging module
+</A></li>
+	<LI>Next message (by thread): <A HREF="045619.html">[Python-ideas] JavaScript-Style Object Creation in Python (using a constructor function instead of a class to create objects)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#45618">[ date ]</a>
+              <a href="thread.html#45618">[ thread ]</a>
+              <a href="subject.html#45618">[ subject ]</a>
+              <a href="author.html#45618">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://mail.python.org/mailman/listinfo/python-ideas">More information about the Python-ideas
+mailing list</a><br>
+</body></html>

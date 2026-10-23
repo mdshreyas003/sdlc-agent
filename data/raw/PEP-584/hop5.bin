@@ -1,0 +1,714 @@
+
+
+
+
+
+
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="ROBOTS" content="INDEX, FOLLOW" />
+        <title>Mailman 3 
+Dict joining using + and += - Python-ideas - python.org
+</title>
+        <meta name="author" content="" />
+        <meta name="dc.language" content="en" />
+        <link rel="shortcut icon" href="/static/hyperkitty/img/favicon.ico" />
+        <link rel="stylesheet" href="/static/hyperkitty/libs/jquery/smoothness/jquery-ui-1.13.1.min.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/static/hyperkitty/libs/fonts/font-awesome/css/font-awesome.min.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/static/CACHE/css/output.6c1559a13d2c.css" type="text/css" media="all"><link rel="stylesheet" href="/static/CACHE/css/output.333a5a6f2a40.css" type="text/css"><link rel="stylesheet" href="/static/CACHE/css/output.cda4f100d432.css" type="text/css" media="all">
+         
+        
+        
+
+    </head>
+
+    <body>
+
+    
+
+
+    <nav class="navbar sticky-top navbar-expand-md mb-2" id="navbar-main">
+        <div class="container-xxl">
+            <div class="navbar-header"> <!--part of navbar that's always present-->
+                <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="fa fa-bars"></span>
+                </button>
+                <a class="navbar-brand" href="/archives/">Mailman 3 python.org</a>
+
+            </div> <!-- /navbar-header -->
+            <div class="d-flex">
+                <div class="auth dropdown d-md-none">
+                        
+                </div>
+                
+                <a  href="/accounts/login/?next=/archives/list/python-ideas%40python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/" class="nav-link d-md-none">
+                    <span class="fa fa-sign-in"></span>
+                    Sign In
+                </a>
+                
+                <a  href="/accounts/signup/?next=/archives/list/python-ideas%40python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/" class="nav-link d-md-none">
+                    <span class="fa fa-user-plus"></span>
+                    Sign Up
+                </a>
+                
+                
+            </div>
+            <div class="navbar-collapse collapse justify-content-end"> <!--part of navbar that's collapsed on small screens-->
+                <!-- show dropdown for smaller viewports b/c login name/email may be too long -->
+                <!-- only show this extra button/dropdown if we're in small screen sizes -->
+            
+                
+                <a href="/mailman3/lists/python-ideas.python.org/" class="nav-link">
+                    <span class="fa fa-cog"></span>
+                    Manage this list
+                </a>
+                
+            
+            
+            <a  href="/accounts/login/?next=/archives/list/python-ideas%40python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/" class="nav-link d-none d-md-block">
+                <span class="fa fa-sign-in"></span>
+                Sign In
+            </a>
+            
+            <a  href="/accounts/signup/?next=/archives/list/python-ideas%40python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/" class="nav-link d-none d-md-block">
+                <span class="fa fa-user-plus"></span>
+                Sign Up
+            </a>
+            
+            
+                <form name="search" method="get" action="/archives/search" class="navbar-form navbar-right my-2 my-lg-2 ms-2" role="search">
+                    <input type="hidden" name="mlist" value="python-ideas@python.org" />
+                    <div class="input-group">
+                    <input name="q" type="text" class="form-control rounded-4 search"
+                            
+                                placeholder="Search this list"
+                                aria-label="Search this list"
+                            
+                            
+                            />
+                    <button class="btn search-button" aria-label="Search"><span class="fa fa-search"></span></button>
+                    </div>
+                </form>
+                <!-- larger viewports -->
+                <ul class="nav navbar-nav auth d-none d-md-flex">
+                    
+                </ul>
+            </div> <!--/navbar-collapse -->
+        </div><!-- /container for navbar -->
+    </nav>
+
+    
+
+     <div class="modal fade" tabindex="-1" role="dialog" id="keyboard-shortcuts">
+       <div class="modal-dialog" role="document">
+         <div class="modal-content">
+           <div class="modal-header">
+             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+             <h4 class="modal-title">Keyboard Shortcuts</h4>
+           </div>
+           <div class="modal-body">
+             <h3>Thread View</h3>
+             <ul>
+               <li><code>j</code>: Next unread message </li>
+               <li><code>k</code>: Previous unread message </li>
+               <li><code>j a</code>: Jump to all threads
+               <li><code>j l</code>: Jump to MailingList overview
+             </ul>
+           </div>
+         </div><!-- /.modal-content -->
+       </div><!-- /.modal-dialog -->
+     </div><!-- /.modal -->
+
+     <div class="container-xxl" role="main">
+        
+
+<div class="row view-thread d-flex">
+
+        <!-- thread header: navigation (older/newer), thread title -->
+        <div class="thread-header">
+          <div class="d-flex">
+            
+            <div>
+                
+                <a id="next-thread" class="btn btn-secondary btn-sm "
+                        title="PEP: Dict addition and subtraction"
+                        href="/archives/list/python-ideas@python.org/thread/KLDQAPOIJEANCKYCHQZ536WHQ45I6UVW/">
+                    <span class="fa fa-chevron-left"></span>
+                    <span class="d-none d-md-inline">newer</span>
+                </a>
+                <br />
+                <a href="/archives/list/python-ideas@python.org/thread/KLDQAPOIJEANCKYCHQZ536WHQ45I6UVW/"
+                title="PEP: Dict addition and subtraction" class="thread-titles d-none d-md-block">
+                    PEP: Dict addition and subtraction
+                </a>
+               
+            </div>
+            <div class="flex-grow-1">
+                <h3>Dict joining using + and +=</h3>
+            </div>
+            <div class="right">
+                <a id="prev-thread" class="btn btn-secondary btn-sm "
+                    
+                    title="Report an issue of Python"
+                    href="/archives/list/python-ideas@python.org/thread/LY6JJG2FBJXRBMPFS5BSDIA7B5YSVCSU/"
+                    >
+                    <span class="fa fa-chevron-right"></span>
+                    <span class="d-none d-md-inline">older</span>
+                </a><br />
+                
+                <a href="/archives/list/python-ideas@python.org/thread/LY6JJG2FBJXRBMPFS5BSDIA7B5YSVCSU/"
+                    title="Report an issue of Python" class="thread-titles d-none d-md-block">
+                    Report an issue of Python
+                </a>
+                
+            </div>
+          </div>
+         
+         </div>
+        </div> <!-- /thread-header -->
+
+        <div class="row">
+            <div class="col-sm-12 col-md-9">
+                <!-- main section, the email thread -->
+                <div id="thread-content">
+
+                    <!-- Start first email -->
+                    
+
+
+
+
+
+<div class="email email-first">
+
+    <div id="BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42" class="email-header">
+        <div class="gravatar-wrapper d-flex">
+            <div class="gravatar circle">
+                <img class="gravatar" src="https://secure.gravatar.com/avatar/9f8fca5b19d06862ca3d9151f97b393c.jpg?s=120&amp;d=mm&amp;r=g" width="120" height="120" alt="" />
+            </div>
+            <div class="email-author d-flex">
+                <h2 class="name">
+                    
+                    <a href="/archives/users/5d5c4f6363b94c28b1e3211ad05738c3/"
+                       title="See the profile for João Matos"
+                       >João Matos</a>
+                    
+                </h2>
+            </div>
+        </div>
+        <div class="email-date right">
+            
+            
+            <span class="date">
+                Feb. 27, 2019
+            </span>
+            
+            <div class="time">
+                <span title="Sender's time: Feb. 27, 2019, 4:25 p.m.">4:25 p.m.</span>
+            </div>
+
+        </div>
+        
+    </div> <!-- /email-header: gravatar, author-info, date, peramlink, changed_subject -->
+    <div class="email-body ">
+      <p></p>
+
+    </div>
+
+    
+    <div class="attachments">
+        <p class="attachments">Attachments:</p>
+        <ul class="attachments-list list-unstyled">
+        
+            <li><a href="/archives/list/python-ideas@python.org/message/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/attachment/1/attachment.htm">attachment.htm</a>
+                (text/html &mdash; 529 bytes)
+            </li>
+        
+            <li><a href="/archives/list/python-ideas@python.org/message/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/attachment/2/smime.p7s">smime.p7s</a>
+                (application/pkcs7-signature &mdash; 3.9 KB)
+            </li>
+        
+        </ul>
+    </div>
+    
+
+    <div class="email-info">
+      <div class="likeform-wrapper right">
+        <div class="messagelink pull-right">
+          <button class="toggle-font btn btn-sm"
+                title="Display in fixed font"
+                data-bs-toggle="tooltip" data-placement="bottom">
+                <i class="fa fa-font"></i>
+          </button>
+          <a href="/archives/list/python-ideas@python.org/message/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/"
+             title="Permalink for this message"
+             data-bs-toggle="tooltip" data-placement="bottom"><i class="fa fa-link"></i></a>
+        </div>
+        
+
+    <form method="post" class="likeform"
+          action="/archives/list/python-ideas@python.org/message/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/vote">
+    <input type="hidden" name="csrfmiddlewaretoken" value="bSbUm5Luv31WK5w8aHzLjZuUOO5IlAvbJNxVFMEwVIJU1lnti4RBNfiOZaQk4xJJ">
+    
+		
+			<a class="youlike vote  disabled" title="You must be logged-in to vote."
+			href="#like" data-vote="1" aria-label="Like thread">
+					<i class="fa fa-thumbs-o-up"></i> 0
+			</a>
+			<a class="youdislike vote disabled" title="You must be logged-in to vote."
+			href="#dislike" data-vote="-1" aria-label="Dislike thread">
+				<i class="fa fa-thumbs-o-down"></i> 0
+			</a>
+		
+    
+
+    </form>
+
+        </div>
+
+        <!-- Reply link -->
+        
+        
+        <a class="reply reply-mailto" title="Reply" href="#">
+            <i class="fa fa-reply"></i>
+            Reply
+        </a>
+        
+        
+
+        <!-- Attachments -->
+        
+        <!-- Reply form -->
+        
+        <div class="reply-form-unauthenticated">
+            <a class="btn btn-sm btn-primary" href="/accounts/login/?next=/archives/list/python-ideas%40python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/#">
+                Sign in to reply online
+            </a>
+            <a class="btn btn-sm btn-secondary reply-mailto"
+                       href="mailto:python-ideas@python.org?Subject=Re%3A%20%5BPython-ideas%5D%20Dict%20joining%20using%20%2B%20and%20%2B%3D&amp;In-Reply-To=&lt;0433166f-4f88-93d6-327b-ed1708c17fa7%40gmail.com&gt;"
+                       >Use email software</a></li>
+        </div>
+        
+
+        
+
+    </div>
+
+</div>
+
+                    <!-- End first email -->
+
+                    <p class="sort-mode">
+                        
+                        <a href="/archives/list/python-ideas@python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/?sort=date"
+                            >Show replies by date</a>
+                        
+                    </p>
+
+                    <div class="anchor-link">
+                        <a id="replies"></a>
+                    </div>
+                    <div class="replies">
+                        
+                            <img alt="Loading..." class="ajaxloader" src="/static/hyperkitty/img/ajax-loader.gif" />
+                            <noscript>
+                              <a href="/archives/list/python-ideas@python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/?noscript">Visit here for a non-javascript version of this page.</a>
+                            </noscript>
+                        
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <div class="anchor-link">
+                    <a id="stats"></a>
+                </div>
+                
+
+
+
+
+<!-- right column -->
+<section id="thread-overview-info">
+    <!-- Start stats re: dates -->
+    <div id="thread-date-info" class="row">
+      <div class="col">
+        <span class="days-num">2768</span>
+        <div class="days-text">
+          Age (days ago)
+        </div>
+      </div>
+      <div class="col">
+        <span class="days-num">2791</span>
+        <div class="days-text">
+          Last active (days ago)
+        </div>
+        </div>
+    </div> <!-- /Stats re: dates -->
+
+    <p>
+        <a href="/archives/list/python-ideas@python.org/" class="btn btn-outline-primary btn-sm">
+            List overview
+        </a>
+    </p>
+
+    
+
+    
+    <a href="/archives/list/python-ideas@python.org/export/python-ideas@python.org-BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42.mbox.gz?thread=BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42" title="This thread in gzipped mbox format"
+          class="btn btn-outline-primary">
+        <i class="fa fa-download"></i> Download</a>
+    
+
+    <p class="thread-overview-details">
+    <div>
+        <i class="fa fa-fw fa-comment"></i>
+        94 comments
+    </div>
+    <div>
+        <i class="fa fa-fw fa-user"></i>
+        35 participants
+    </div>
+    
+    </p>
+
+    <form id="fav_form" name="favorite" method="post" class="favorite"
+          action="/archives/list/python-ideas@python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/favorite">
+        <input type="hidden" name="csrfmiddlewaretoken" value="bSbUm5Luv31WK5w8aHzLjZuUOO5IlAvbJNxVFMEwVIJU1lnti4RBNfiOZaQk4xJJ">
+        <input type="hidden" name="action" value="add" />
+        <p>
+            <a href="#AddFav" class="notsaved disabled" title="You must be logged-in to have favorites.">
+                <i class="fa fa-fw fa-star"></i>Add to favorites</a>
+            <a href="#RmFav" class="saved">
+                <i class="fa fa-fw fa-star"></i>Remove from favorites</a>
+        </p>
+    </form>
+
+    
+
+    <div id="tags">
+        
+
+        <h3 id="tag-title">tags </h3>
+        
+
+    </div>
+    
+    
+    <div id="participants">
+        <h3 id="participants_title">participants (35)</h3>
+        <ul class="list-unstyled">
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/559f9b4a76982a9c3e496e2e7686d4b1.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Amber Yust</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/03cdc3c813a8646f783f97f7c66b8f3f.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Anders Hovmöller</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/db5f70d2f2520ef725839f046bdc32fb.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Antoine Pitrou</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/2f030aadc9b778ceda33bad2b0141c76.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Brandt Bucher</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/e8600d16ba667cc8d7f00ddc9f254340.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Brett Cannon</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/d67ab5d94c2fed8ab6b727b62dc1b213.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Chris Angelico</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/176220408ba450411279916772c36066.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Christopher Barker</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/5426055f54148a02d5d724ccbfdeca19.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Dan Sommers</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/92136170d43d61a5eeb6ea8784294aa2.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>David Mertz</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/8dbb5107f2450a2ec6087193cbad6adf.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Davide Rizzo</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/c7d341e2b002754f2b21fbab3a3fd072.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>E. Madison Bray</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/2828041405aa313004b6549acf918228.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Eric V. Smith</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/6c371f35178d02dfdacef102f3843b51.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>francismb</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/0afceab8a877d414775dd31fe3f1f4b0.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>George Castillo</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/72ee673975357d43d79069ac1cd6abda.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Greg Ewing</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/047f2332cde3730f1ed661eebb0c5686.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Guido van Rossum</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/895a112c66d93cefcd06d2cf371219e6.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Hasan Diwan</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/351a10f392414345ed67a05e986dc4dd.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Inada Naoki</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/351a10f392414345ed67a05e986dc4dd.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>INADA Naoki</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/337fb6df3cf57f5b7f47e573f1558cfa.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Ivan Levkivskyi</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/887e8dcd0dc913a9516e6ad0f5ab5a56.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>James Lu</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/7c5778aa6be432b25e88100f5ae6801d.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Jimmy Girardet</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/9f8fca5b19d06862ca3d9151f97b393c.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>João Matos</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/9bc5d17b17349ded8ebc925b2a87df43.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Karthikeyan</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/89b67ecc87148f077c349f4fb6f705f6.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Michael Selik</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/5ce43469c0402a7db8d0cf86fa49da5a.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>MRAB</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/0f393da4b8265592816178e5ff6c1c62.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Neil Girdhar</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/512cfbaf98d63ca4acd57b2df792aec6.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Oleg Broytman</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/d995b462a98fea412efa79d17ba3787a.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Paul Moore</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/1c7341a658c6919983f6d5bfd0e8f6d9.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Pål Grønås Drange</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/60cac87fb9e2b5689242622999656cb0.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Raymond Hettinger</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/3d07afbc6277770ca981b1982d3badb8.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Rhodri James</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/4c01705256aa2160c1354790e8c154db.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Serhiy Storchaka</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/8b97b5aad24c30e4a1357b38cc39aeaa.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Stefan Behnel</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/5615a372d9866f203a22b2c437527bbb.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Steven D&#x27;Aprano</span>
+                </div>
+            </li>
+            
+        </ul>
+    </div>
+    
+</section>
+
+
+
+            </div>
+
+        </div>
+
+</div>
+
+<!-- end of content -->
+
+    </div> <!-- /container for content -->
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">
+            <img class="logo" alt="HyperKitty" src="/static/hyperkitty/img/logo.png" />
+            Powered by <a href="http://hyperkitty.readthedocs.org">HyperKitty</a> version 1.3.12.
+        </p>
+      </div>
+    </footer>
+
+    <script src="/static/hyperkitty/libs/jquery/jquery-3.6.0.min.js"></script>
+    <script src="/static/hyperkitty/libs/jquery/jquery-ui-1.13.1.min.js"></script>
+    <script src="/static/CACHE/js/output.fb4db16e32a4.js"></script>
+    <script>
+      // Add the .js-enabled class to the body so we can style the elements
+      // depending on whether Javascript is enabled.
+      $(document).ready(function(){
+          $("body").addClass("js-enabled");
+          $(".gravatar").addClass("rounded-circle");
+      });
+    </script>
+    
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        //enable tooltips for thread buttons
+        $("btn#next-thread").tooltip();
+        $("btn#prev-thread").tooltip();
+
+        setup_category();
+        setup_tags();
+        setup_favorites();
+        // Hide quotes by default in the thread view
+        fold_quotes("div.container-xxl");
+        // Load the replies
+        update_thread_replies("/archives/list/python-ideas@python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/replies?sort=thread&last_view=");
+        setup_unreadnavbar("#unreadnavbar");
+        setup_thread_keyboard_shortcuts();
+    });
+</script>
+
+
+
+    
+
+
+    </body>
+</html>

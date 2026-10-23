@@ -1,0 +1,10 @@
+{
+ "all": [
+  "https://lists.apache.org/thread.html/cce5313ebe72bde34bf0da3af5a1723db3ee871667b1fd8edf2ee7ab@%3Cdev.kafka.apache.org%3E",
+  "https://raft.github.io/raft.pdf",
+  "http://www.cs.cornell.edu/~taozou/sosp13/tangososp.pdf"
+ ],
+ "candidates": [
+  "https://issues.apache.org/jira/browse/KAFKA-9119"
+ ]
+}

@@ -1,0 +1,467 @@
+
+
+
+
+
+
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="ROBOTS" content="INDEX, FOLLOW" />
+        <title>Mailman 3 
+[Python-ideas] Why operators are useful - Python-ideas - python.org
+</title>
+        <meta name="author" content="" />
+        <meta name="dc.language" content="en" />
+        <link rel="shortcut icon" href="/static/hyperkitty/img/favicon.ico" />
+        <link rel="stylesheet" href="/static/hyperkitty/libs/jquery/smoothness/jquery-ui-1.13.1.min.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/static/hyperkitty/libs/fonts/font-awesome/css/font-awesome.min.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/static/CACHE/css/output.6c1559a13d2c.css" type="text/css" media="all"><link rel="stylesheet" href="/static/CACHE/css/output.333a5a6f2a40.css" type="text/css"><link rel="stylesheet" href="/static/CACHE/css/output.cda4f100d432.css" type="text/css" media="all">
+         
+        
+        
+
+    </head>
+
+    <body>
+
+    
+
+
+    <nav class="navbar sticky-top navbar-expand-md mb-2" id="navbar-main">
+        <div class="container-xxl">
+            <div class="navbar-header"> <!--part of navbar that's always present-->
+                <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="fa fa-bars"></span>
+                </button>
+                <a class="navbar-brand" href="/archives/">Mailman 3 python.org</a>
+
+            </div> <!-- /navbar-header -->
+            <div class="d-flex">
+                <div class="auth dropdown d-md-none">
+                        
+                </div>
+                
+                <a  href="/accounts/login/?next=/archives/list/python-ideas%40python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/" class="nav-link d-md-none">
+                    <span class="fa fa-sign-in"></span>
+                    Sign In
+                </a>
+                
+                <a  href="/accounts/signup/?next=/archives/list/python-ideas%40python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/" class="nav-link d-md-none">
+                    <span class="fa fa-user-plus"></span>
+                    Sign Up
+                </a>
+                
+                
+            </div>
+            <div class="navbar-collapse collapse justify-content-end"> <!--part of navbar that's collapsed on small screens-->
+                <!-- show dropdown for smaller viewports b/c login name/email may be too long -->
+                <!-- only show this extra button/dropdown if we're in small screen sizes -->
+            
+                
+                <a href="/mailman3/lists/python-ideas.python.org/" class="nav-link">
+                    <span class="fa fa-cog"></span>
+                    Manage this list
+                </a>
+                
+            
+            
+            <a  href="/accounts/login/?next=/archives/list/python-ideas%40python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/" class="nav-link d-none d-md-block">
+                <span class="fa fa-sign-in"></span>
+                Sign In
+            </a>
+            
+            <a  href="/accounts/signup/?next=/archives/list/python-ideas%40python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/" class="nav-link d-none d-md-block">
+                <span class="fa fa-user-plus"></span>
+                Sign Up
+            </a>
+            
+            
+                <form name="search" method="get" action="/archives/search" class="navbar-form navbar-right my-2 my-lg-2 ms-2" role="search">
+                    <input type="hidden" name="mlist" value="python-ideas@python.org" />
+                    <div class="input-group">
+                    <input name="q" type="text" class="form-control rounded-4 search"
+                            
+                                placeholder="Search this list"
+                                aria-label="Search this list"
+                            
+                            
+                            />
+                    <button class="btn search-button" aria-label="Search"><span class="fa fa-search"></span></button>
+                    </div>
+                </form>
+                <!-- larger viewports -->
+                <ul class="nav navbar-nav auth d-none d-md-flex">
+                    
+                </ul>
+            </div> <!--/navbar-collapse -->
+        </div><!-- /container for navbar -->
+    </nav>
+
+    
+
+     <div class="modal fade" tabindex="-1" role="dialog" id="keyboard-shortcuts">
+       <div class="modal-dialog" role="document">
+         <div class="modal-content">
+           <div class="modal-header">
+             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+             <h4 class="modal-title">Keyboard Shortcuts</h4>
+           </div>
+           <div class="modal-body">
+             <h3>Thread View</h3>
+             <ul>
+               <li><code>j</code>: Next unread message </li>
+               <li><code>k</code>: Previous unread message </li>
+               <li><code>j a</code>: Jump to all threads
+               <li><code>j l</code>: Jump to MailingList overview
+             </ul>
+           </div>
+         </div><!-- /.modal-content -->
+       </div><!-- /.modal-dialog -->
+     </div><!-- /.modal -->
+
+     <div class="container-xxl" role="main">
+        
+
+<div class="row">
+
+    <div class="col-12 col-md-10">
+
+        <div class="message-header row">
+        <div class="col-tn-2 message-back">
+            <a href="/archives/list/python-ideas@python.org/thread/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/#52DLME5DKNZYFEETCTRENRNKWJ2B4DD5">
+                <span class="fa fa-chevron-left icon"></span>
+                <span class="d-none d-md-inline hidden-tn hidden-xs">thread</span>
+            </a>
+        </div>
+        <div class="col-10">
+            <h1>[Python-ideas] Why operators are useful</h1>
+        </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-9">
+                <section id="thread-content">
+                    
+
+
+
+
+
+<div class="email email-first">
+
+    <div id="52DLME5DKNZYFEETCTRENRNKWJ2B4DD5" class="email-header">
+        <div class="gravatar-wrapper d-flex">
+            <div class="gravatar circle">
+                <img class="gravatar" src="https://secure.gravatar.com/avatar/047f2332cde3730f1ed661eebb0c5686.jpg?s=120&amp;d=mm&amp;r=g" width="120" height="120" alt="" />
+            </div>
+            <div class="email-author d-flex">
+                <h2 class="name">
+                    
+                    <a href="/archives/users/4b924b2124224c7d8d071e487deb4fd1/"
+                       title="See the profile for Guido van Rossum"
+                       >Guido van Rossum</a>
+                    
+                </h2>
+            </div>
+        </div>
+        <div class="email-date right">
+            
+            
+            <span class="date">
+                March 15, 2019
+            </span>
+            
+            <div class="time">
+                <span title="Sender's time: March 15, 2019, 10:51 a.m.">5:51 p.m.</span>
+            </div>
+
+        </div>
+        
+    </div> <!-- /email-header: gravatar, author-info, date, peramlink, changed_subject -->
+    <div class="email-body ">
+      <p>There's been a lot of discussion about an operator to merge two dicts. I
+participated in the beginning but quickly felt overwhelmed by the endless
+repetition, so I muted most of the threads.
+
+But I have been thinking about the reason (some) people like operators, and
+a discussion I had with my mentor Lambert Meertens over 30 years ago came
+to mind.
+
+For mathematicians, operators are essential to how they think. Take a
+simple operation like adding two numbers, and try exploring some of its
+behavior.
+
+    add(x, y) == add(y, x)    (1)
+
+Equation (1) expresses the law that addition is commutative. It's usually
+written using an operator, which makes it more concise:
+
+    x + y == y + x    (1a)
+
+That feels like a minor gain.
+
+Now consider the associative law:
+
+    add(x, add(y, z)) == add(add(x, y), z)    (2)
+
+Equation (2) can be rewritten using operators:
+
+    x + (y + z) == (x + y) + z    (2a)
+
+This is much less confusing than (2), and leads to the observation that the
+parentheses are redundant, so now we can write
+
+    x + y + z    (3)
+
+without ambiguity (it doesn't matter whether the + operator binds tighter
+to the left or to the right).
+
+Many other laws are also written more easily using operators.  Here's one
+more example, about the identity element of addition:
+
+    add(x, 0) == add(0, x) == x    (4)
+
+compare to
+
+    x + 0 == 0 + x == x    (4a)
+
+The general idea here is that once you've learned this simple notation,
+equations written using them are easier to *manipulate* than equations
+written using functional notation -- it is as if our brains grasp the
+operators using different brain machinery, and this is more efficient.
+
+I think that the fact that formulas written using operators are more easily
+processed *visually* has something to do with it: they engage the brain's
+visual processing machinery, which operates largely subconsciously, and
+tells the conscious part what it sees (e.g. "chair" rather than "pieces of
+wood joined together"). The functional notation must take a different path
+through our brain, which is less subconscious (it's related to reading and
+understanding what you read, which is learned/trained at a much later age
+than visual processing).
+
+The power of visual processing really becomes apparent when you combine
+multiple operators. For example, consider the distributive law:
+
+    mul(n, add(x, y)) == add(mul(n, x), mul(n, y))  (5)
+
+That was painful to write, and I believe that at first you won't see the
+pattern (or at least you wouldn't have immediately seen it if I hadn't
+mentioned this was the distributive law).
+
+Compare to:
+
+    n * (x + y) == n * x + n * y    (5a)
+
+Notice how this also uses relative operator priorities. Often
+mathematicians write this even more compact:
+
+    n(x+y) == nx + ny    (5b)
+
+but alas, that currently goes beyond the capacities of Python's parser.
+
+Another very powerful aspect of operator notation is that it is convenient
+to apply them to objects of different types. For example, laws (1) through
+(5) also work when n, x, y and z are same-size vectors (substituting a
+vector of zeros for the literal "0"), and also if x, y and z are matrices
+(note that n has to be a scalar).
+
+And you can do this with objects in many different domains. For example,
+the above laws (1) through (5) apply to functions too (n being a scalar
+again).
+
+By choosing the operators wisely, mathematicians can employ their visual
+brain to help them do math better: they'll discover new interesting laws
+sooner because sometimes the symbols on the blackboard just jump at you and
+suggest a path to an elusive proof.
+
+Now, programming isn't exactly the same activity as math, but we all know
+that Readability Counts, and this is where operator overloading in Python
+comes in. Once you've internalized the simple properties which operators
+tend to have, using + for string or list concatenation becomes more
+readable than a pure OO notation, and (2) and (3) above explain (in part)
+why that is.
+
+Of course, it's definitely possible to overdo this -- then you get Perl.
+But I think that the folks who point out "there is already a way to do
+this" are missing the point that it really is easier to grasp the meaning
+of this:
+
+    d = d1 + d2
+
+compared to this:
+
+    d = d1.copy()
+    d = d1.update(d2)
+
+and it is not just a matter of fewer lines of code: the first form allows
+us to use our visual processing to help us see the meaning quicker -- and
+without distracting other parts of our brain (which might already be
+occupied by keeping track of the meaning of d1 and d2, for example).
+
+Of course, everything comes at a price. You have to learn the operators,
+and you have to learn their properties when applied to different object
+types. (This is true in math too -- for numbers, x*y == y*x, but this
+property does not apply to functions or matrices; OTOH x+y == y+x applies
+to all, as does the associative law.)
+
+"But what about performance?" I hear you ask. Good question. IMO,
+readability comes first, performance second. And in the basic example (d =
+d1 + d2) there is no performance loss compared to the two-line version
+using update, and a clear win in readability. I can think of many
+situations where performance difference is irrelevant but readability is of
+utmost importance, and for me this is the default assumption (even at
+Dropbox -- our most performance critical code has already been rewritten in
+ugly Python or in Go). For the few cases where performance concerns are
+paramount, it's easy to transform the operator version to something else --
+*once you've confirmed it's needed* (probably by profiling).
+
+-- 
+--Guido van Rossum (python.org/~guido)</p>
+
+    </div>
+
+    
+    <div class="attachments">
+        <p class="attachments">Attachments:</p>
+        <ul class="attachments-list list-unstyled">
+        
+            <li><a href="/archives/list/python-ideas@python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/attachment/2/attachment.htm">attachment.htm</a>
+                (text/html &mdash; 6.8 KB)
+            </li>
+        
+        </ul>
+    </div>
+    
+
+    <div class="email-info">
+      <div class="likeform-wrapper right">
+        <div class="messagelink pull-right">
+          <button class="toggle-font btn btn-sm"
+                title="Display in fixed font"
+                data-bs-toggle="tooltip" data-placement="bottom">
+                <i class="fa fa-font"></i>
+          </button>
+          <a href="/archives/list/python-ideas@python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/"
+             title="Permalink for this message"
+             data-bs-toggle="tooltip" data-placement="bottom"><i class="fa fa-link"></i></a>
+        </div>
+        
+
+    <form method="post" class="likeform"
+          action="/archives/list/python-ideas@python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/vote">
+    <input type="hidden" name="csrfmiddlewaretoken" value="HaRMWFvg3CQVtoeDbpe8UoQSMB0dSk5N4mZrz0ZZLN1fP5Bufhb1G5T1YnA3KDdh">
+    
+		
+			<a class="youlike vote  disabled" title="You must be logged-in to vote."
+			href="#like" data-vote="1" aria-label="Like thread">
+					<i class="fa fa-thumbs-o-up"></i> 0
+			</a>
+			<a class="youdislike vote disabled" title="You must be logged-in to vote."
+			href="#dislike" data-vote="-1" aria-label="Dislike thread">
+				<i class="fa fa-thumbs-o-down"></i> 0
+			</a>
+		
+    
+
+    </form>
+
+        </div>
+
+        <!-- Reply link -->
+        
+        
+        <a class="reply reply-mailto" title="Reply" href="#">
+            <i class="fa fa-reply"></i>
+            Reply
+        </a>
+        
+        
+
+        <!-- Attachments -->
+        
+        <!-- Reply form -->
+        
+        <div class="reply-form-unauthenticated">
+            <a class="btn btn-sm btn-primary" href="/accounts/login/?next=/archives/list/python-ideas%40python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/#">
+                Sign in to reply online
+            </a>
+            <a class="btn btn-sm btn-secondary reply-mailto"
+                       href="mailto:python-ideas@python.org?Subject=Re%3A%20%5BPython-ideas%5D%20Why%20operators%20are%20useful&amp;In-Reply-To=&lt;CAP7%2BvJKjH4rbDNuQKFybFG2EzGBQbQm0Y2s0LTYN%3DtVz9h3AaQ%40mail.gmail.com&gt;"
+                       >Use email software</a></li>
+        </div>
+        
+
+        
+
+    </div>
+
+</div>
+
+                </section>
+            </div>
+            <div class="col-lg-3">
+                
+
+
+
+<!-- right column -->
+<section id="message-overview-info">
+
+    <p>
+        <a href="/archives/list/python-ideas@python.org/thread/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/#52DLME5DKNZYFEETCTRENRNKWJ2B4DD5">
+            <i class="fa fa-fw fa-comments"></i>
+            <span class="hidden-tn hidden-xs">Back to the thread</span>
+        </a>
+    </p>
+
+    <p>
+        <a href="/archives/list/python-ideas@python.org/">
+            <i class="fa fa-fw fa-envelope-o"></i>
+            Back to the list
+        </a>
+    </p>
+
+    
+
+</section>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+    </div> <!-- /container for content -->
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">
+            <img class="logo" alt="HyperKitty" src="/static/hyperkitty/img/logo.png" />
+            Powered by <a href="http://hyperkitty.readthedocs.org">HyperKitty</a> version 1.3.12.
+        </p>
+      </div>
+    </footer>
+
+    <script src="/static/hyperkitty/libs/jquery/jquery-3.6.0.min.js"></script>
+    <script src="/static/hyperkitty/libs/jquery/jquery-ui-1.13.1.min.js"></script>
+    <script src="/static/CACHE/js/output.fb4db16e32a4.js"></script>
+    <script>
+      // Add the .js-enabled class to the body so we can style the elements
+      // depending on whether Javascript is enabled.
+      $(document).ready(function(){
+          $("body").addClass("js-enabled");
+          $(".gravatar").addClass("rounded-circle");
+      });
+    </script>
+     
+
+    
+
+
+    </body>
+</html>

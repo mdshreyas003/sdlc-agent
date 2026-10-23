@@ -17,7 +17,7 @@ from langgraph.graph import END, StateGraph
 from . import llm, prompts as P
 from .harness import ID_RE, Harness, HarnessError
 from .text2cypher import SCHEMA_CARD
-from .verify import NOT_ESTABLISHED, to_legacy, verify
+from .verify import NOT_ESTABLISHED, lax, to_legacy, verify
 
 MAX_ATTEMPTS = int(os.environ.get("AGENT_MAX_ATTEMPTS", "3"))
 MAX_QUESTION = 20_000
@@ -94,7 +94,7 @@ def route(s: State) -> str:
     return "synthesize" if s["check"].sufficient or s["attempts"] >= MAX_ATTEMPTS else "plan"
 
 
-def build(h: Harness, provider: str, model: str):
+def build(h: Harness, provider: str, model: str, check_claims: bool = True):
     ask = lambda template, schema, **f: llm.structured(provider, template, schema, model, **f)  # noqa: E731
 
     def run_calls(calls, s):
@@ -163,7 +163,8 @@ def build(h: Harness, provider: str, model: str):
     def verify_node(s):
         if not s["evidence"]:
             return {"final": dict(NOT_ESTABLISHED)}
-        return {"final": verify(s["answer"], s["evidence"], s["check"].sufficient, s["check"].gap)}
+        check = verify if check_claims else lax  # lax = benchmark ablation "system without the verifier"
+        return {"final": check(s["answer"], s["evidence"], s["check"].sufficient, s["check"].gap)}
 
     g = StateGraph(State)
     for name, fn in [("understand", understand), ("seed", seed), ("plan", plan), ("retrieve", retrieve),
@@ -209,7 +210,8 @@ def _anchor(anchor: dict | None) -> dict | None:
 
 def stream(question: str, mode: str = "why", provider: str | None = None, model: str | None = None,
            driver=None, anchor: dict | None = None, scopes: list[str] | None = None,
-           workspace: str | None = None) -> Iterator[dict]:
+           workspace: str | None = None, exclude: set[str] | None = None,
+           check_claims: bool = True) -> Iterator[dict]:
     """Yield {event:trace,node,data,ms,update} per node, then {event:done,state,h,provider,model}; failures become one
     error event. `update` is the raw node output (the investigation assembler reads it).
     scopes: the only artifact scopes the run may see (production always passes it); workspace: LLM credentials owner."""
@@ -238,7 +240,7 @@ def stream(question: str, mode: str = "why", provider: str | None = None, model:
             return llm.structured(provider, P.CYPHER_GEN, P.CypherOut, model, card=SCHEMA_CARD, question=q,
                                   error=hint).cypher
 
-        h = Harness(driver, cypher_llm=gen, scopes=scopes)
+        h = Harness(driver, cypher_llm=gen, scopes=scopes, exclude=exclude)
         asked = question
         if anchor:
             asked += (f"\n\n(This question is about line {anchor['line']} of {anchor['file']}: {anchor['text']!r}."
@@ -246,7 +248,7 @@ def stream(question: str, mode: str = "why", provider: str | None = None, model:
                       + ")")
         state: dict = {}
         t = time.perf_counter()
-        for chunk in build(h, provider, model).stream({"question": asked, "mode": mode, "anchor": anchor},
+        for chunk in build(h, provider, model, check_claims).stream({"question": asked, "mode": mode, "anchor": anchor},
                                                       stream_mode="updates"):
             for node, update in chunk.items():
                 update, now = update or {}, time.perf_counter()

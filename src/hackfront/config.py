@@ -136,7 +136,7 @@ def validate_workspace(data: dict) -> dict:
     site = out["jira"]["site"]
     if site:
         host = urlsplit(site).hostname or ""
-        if not site.startswith("https://") or not host.endswith(".atlassian.net"):
+        if not site.startswith("https://") or not (host.endswith(".atlassian.net") or host == "issues.apache.org"):
             raise ValueError("jira.site must be an https Jira Cloud URL (*.atlassian.net); the API token is sent to this host")
     return out
 

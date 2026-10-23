@@ -1,0 +1,15 @@
+{
+ "all": [
+  "http://search-hadoop.com/m/Kafka/uyzND1DARfi3fFnV1?subj=+VOTE+KIP+129+Kafka+Streams+Exactly+Once+Semantics",
+  "http://search-hadoop.com/m/Kafka/uyzND1eLuVS6n6v4?subj=+DISCUSS+KIP+129+Kafka+Streams+Exactly+Once+Semantics",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-98+-+Exactly+Once+Delivery+and+Transactional+Messaging",
+  "http://kafka.apache.org/documentation/streams",
+  "https://docs.google.com/document/d/1pGZ8xtOOyGwDYgH5vA6h19zOMMaduFK1DAB8_gBYA2c/",
+  "https://docs.google.com/document/d/1pGZ8xtOOyGwDYgH5vA6h19zOMMaduFK1DAB8_gBYA2c",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.nogouvgyxtup",
+  "https://docs.google.com/document/d/1CfOJaa6mdg5o7pLf_zXISV4oE0ZeMZwT_sG1QWgL4EE/edit"
+ ],
+ "candidates": [
+  "https://issues.apache.org/jira/browse/KAFKA-4923"
+ ]
+}

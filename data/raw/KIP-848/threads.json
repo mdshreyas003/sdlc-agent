@@ -1,0 +1,693 @@
+{
+ "threads": [
+  {
+   "id": "39hvrlz7b5c10v68q6pc8qb4s8zdtobv",
+   "subject": "[DISCUSS] KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+   "first": 1657097070,
+   "last": 1665480153,
+   "messages": [
+    "39hvrlz7b5c10v68q6pc8qb4s8zdtobv",
+    "zcvpl2rl3x172961d7sog0w3qkvl0f79",
+    "745x2983vbybyg11qh9vr09q76fd8hx5",
+    "zdrxsjd0hh6683s6ywjmpk99gyp6xfqm",
+    "gzlcts564qq44srgtsggh2vjdymzbcjn",
+    "2bs3gbtgh7mm8lpcb9trh68jl3vtcssh",
+    "smhl8hxlxdbnd29plpn8k6p9h9vbk1vh",
+    "hj0n1yx7ybv3v80m71fm7d0htsp74pqg",
+    "vcmrh36zf0t03d9gwcpdqs7dbjtjmtg7",
+    "nbvcd914pmsy73scko1z9gv328sh7p54",
+    "2mhjwh9c3jrhtfq41m8x34fjh40zzf0n",
+    "6fvwco82b91f4rw1d75hop1mhty6fr3j",
+    "ctpwk19l0gdvjk0glg549wqz9nvk4610",
+    "2ygo462zdssdykhy86owzo77l2p0yrho",
+    "lhfz83obth4tlz9f55kptwjclb8vhcn3",
+    "sgkvlfzlo0ros1y8wv7j6398b0fm2t02",
+    "1rjf6qls4kjdhqs937gpkfpb1477mz2s",
+    "w0rjbcn976vbdp78sf4d3kvxympql2th",
+    "hth83bkz4lpnl5nqbjb9c7j2gjr2vttp",
+    "ssnc4xhw6b2gs1py0nqh8ns0cdlpr54k",
+    "moh6g5gvp203mnm182yqt1bx9hdh230d",
+    "vgv8pnf4cwnlq9hoor05wrqlro9wvjdk",
+    "5ph0yccf5l8q2vj18dkjdb6rlbcm0dhv",
+    "c6hssf64o56v5zv26v5rfol6z6hy00y7",
+    "r40byfp5nykrwhvrj1z74jlowk6s3p6p",
+    "52qcbp5o0kqbymf70tco8w4kngqjyjzd",
+    "9jbl7g2hw68wg6hxbpsgwbfncrdg5py6",
+    "sdvnwn8sn3mj335vsr2oqpkq7tgnk8v0",
+    "s3zyv1yvng0h7lnyxq6ohvthsohpnr14",
+    "z749c3xmmmcr7fgm1h53476c69hf19mv",
+    "6pb1b7q7xv6s3yw0pyq7gvf2dj5p75kd",
+    "85k42k1dlrj6xplowfrq1fkbf4vqzn8m",
+    "z0spcggow39qcdptr7sc7g2lyycbj4m0",
+    "zmb2mkb59yyxdgwsy3v9v8o7qx8l4c9j",
+    "wvx98zpx9oy7v1wp38xgf6b80sdnhoct",
+    "d4xhjrf7kwskjs96dh9nt06z4771ssmz",
+    "52npt2j884211yqqqbkdvscgf17l9qb2",
+    "hwhwy6c8knc53p47zdrdrgxw0zosj6b0",
+    "f71ryj13bwt2oyvqxqlgw25g05z6h77s",
+    "txwbybwc9lb8m18nqgz039sppo5srxnz",
+    "x9cvx7z0by3j4mgdomzkt0qntr1wlq9o",
+    "42z4lp4zdd5ro3c5hqdmgdppnb3k1ny4",
+    "wofkf074fo2t5brwlkohcgn2qsmtjkyc",
+    "qjgnt794sl07bbkljmppgy1880mqqbdg",
+    "vos4krsbmggr6xygg84g85pdz9ktm2ol",
+    "7kgrwckcz3rm051s8tf2vhz0bqpqzm2b",
+    "kq8wfth31ny1tw59rxv6fhg8t691xn6s",
+    "jd7fkg7oyof0fkhhlth3d9p2131q7kjf",
+    "4hkz8gzzyrbdy81j3pzz5onw5fh2szp7",
+    "c537t9x5ys6lf09o2v9ohqvzxw2hb65d",
+    "8lgxmjcmvyjp40hslfbr9b2hg0nq5p7b",
+    "vkocx0d703t219co3do93ntq42mjozwm",
+    "75wjj0zgyqybgvbwvp8tt12h7418yjc2",
+    "6w0qqf1jv8jcqqtfk6rrbyj4qv663k6v",
+    "ws97346mtlmb62xlblxoowbztvn31tkl",
+    "j11kyook5ytzcoqmrs951rmxgxd49oxn",
+    "zh22shgcyr3mqw9hvygt23r979rmxn56",
+    "b90pp7qpff5wsbkhqhql5o7w6dyncv8s",
+    "1wlhjf69fq00gy6p5gf8mjoxtp4fntmb",
+    "mtfnt7tytbomgrrqqj4oqv89cklpsffc",
+    "oz42w6gbcsxdzh7jmbpv5x346jpfbofy",
+    "opwymm4phrmlwdx25t71q68zwmyyslkb",
+    "05kvtg4903pdlvk6xfg0mf1tyg4xbqt8",
+    "47btqvv6l008m6byoy2wlj4fcdmcbmch",
+    "yjyfnn497gwmwn3cghtlcprfn2lmcb45",
+    "xh1dzsoondw11p6hkrs6r409qpdz6zgq",
+    "w9j1q8s7kkk2hpfojyhgdwmmw7ocysfq",
+    "708gpsprtl3jqj3vpoxybrd37qv75vdk",
+    "fn23hylbqx7htcc7owjyy00g8ddxnlyz",
+    "omhn83n50rqhn8lfp6553x5sd4t8ftog",
+    "t5n4bdloknr4d6lkohmfgbgqrtbmg5of",
+    "9o24yfb1bp0mw3h4fnzgylhq411r9zgy",
+    "xsf5nhqdw5r8xl6pqwqslm80d1nzn3vk",
+    "nk9tjygjrtpwpg469mp9hkbl960cxptz",
+    "mfy6jl1t84c4tt8h5zcptyocojx36k37",
+    "s8rvjwgv8m8f71n3x8yvh98z1h0wdotb",
+    "x9fhs116rjvcb66jt98rnvg8j989o97y",
+    "o22n82pfr4t8d7pklktg8cyvylnv7vb7",
+    "olxzzhobpyoqq45kmh8328pdg2t3lb35",
+    "b70v4cmr13g0z916m1rcbf9pmw818jwo",
+    "hrwg0ckrrk7jb7x6nmw3pw1r6b5ok9ld",
+    "2o9n08jdbb1vc2m26wd3oc3jtlkx99k5",
+    "3jltwtc6s7fv7qp2cd0jhb48m2h15bxx",
+    "op8whcdk3tdqbszby5o7z98gxh8bkzp9",
+    "p4l66v82lk6vqcfr1ls897z9godpsh1c",
+    "bl5jw7tr8dkcjc8gnd6s6hqshcm8oqy6",
+    "tg6knnhqlccp5l6n81x9mcbbqoydm9nf",
+    "1m4824ppo4xwns7zovrs5hs72469jprm",
+    "jxhc5777msjx0vysq50pfyxmop2g28wh",
+    "6f6rh8w3tnr36l0zgxfftj9ov4yc8ncn"
+   ]
+  },
+  {
+   "id": "2yv3lx50w5nmlrsjn4t84y8z1qx2cb62",
+   "subject": "[VOTE] KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+   "first": 1662712339,
+   "last": 1666975532,
+   "messages": [
+    "2yv3lx50w5nmlrsjn4t84y8z1qx2cb62",
+    "rb3kbq3p4o9zkd50xv1mq2wp50dxt3bm",
+    "5cnpjno1d21l85gcz7yvl6mp3ql1k5vm",
+    "2hx9x93f44db3bxvyqs2c8mscvn00kg8",
+    "r2pkk63fppgv2tgght3c9bv32tgx9tjn",
+    "17f3xbg2gn3dofj0rmgoozwd2sr48q0s",
+    "8gsnzblkyznvx7t5ck1kyygqof8r5so9",
+    "h0o86govh99rrw15o334mc1fmbxpbmwt",
+    "87my43s9222w2pxrzn1t0b6cvp6ttcwm",
+    "r5c1zph79qvhql5cyykw9f68lwmrczfr"
+   ]
+  },
+  {
+   "id": "oym1hyolwkpwyozozxydcpvdtg6p68fd",
+   "subject": "[DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+   "first": 1665678101,
+   "last": 1666730971,
+   "messages": [
+    "oym1hyolwkpwyozozxydcpvdtg6p68fd",
+    "rv9f4kxn57km0sjvt6jm7ydz9sw5rb90",
+    "8c21n2l4g86951rpz437m2vkx2v09h6l",
+    "p85wol7y77vfqfx7wgxovl6g9ofjp2h3",
+    "5khgvogp381stbtor4yzx4clox3lsh1w",
+    "zzxov82xbt2k4lntjfmyg93xlokqc7oc",
+    "djztz3j2ytm71gclpoozhd3990ptw602",
+    "pymvtjk6sf8rmlxyp5b7dnxmsc9h9b9m",
+    "nzwj5z34r8rpgn0hshct2ft7nxhw0fnv",
+    "glromvy7gsgrg73wyshohd498j3gc4jn",
+    "87bhsdw6j0tvn0ddpm5pdtxphdw05rb1",
+    "ffxfxqy7mw3byok03mh7lkook1czlgs3",
+    "dvjzbmfqyy2fzy9pb77phgkgt9bdrrj0",
+    "jd39b2snn0l0yzjl24xbofd3pc7m135v",
+    "5xdw17gpczd252q1350gf22bo76mv2r0",
+    "6lc52b23544r8ph94tlbrgd29ynlp2rz",
+    "zr37c07nqhr5mh92jx7ptytzq8pv2t29",
+    "rshkwqj6v5w3p1ox0dmfp1rmfrbrntyd",
+    "30vtombgpq09todwbglqyxpcd8wvjhfj",
+    "9byq03g7wdxm28sgt8gv7l2d96d73p58",
+    "f5r1z24ssft9254xt4nq9m8jntftp6rf",
+    "90p7hkj4sp4wf1yjot865j9h8026014o",
+    "lkqlmh9qpgys6xogxzqy8d196pdr25ox",
+    "r0ghfkojx3wzcor1287vtrv4rx5s0zom",
+    "qvn7w68qq2ofzz1lhcmnomff0h9x3xct",
+    "ytkhkxb1khjqvdh12rpfz50f4t1y6r49",
+    "rg6zj2bgt0xxj50y495d7o67zylxcxl9",
+    "yoflgsrzk4o7d18fg764sm8tvhgcdck4",
+    "n6wfcrqqx0y178f90xsf1jtc62ks2zzt"
+   ]
+  },
+  {
+   "id": "3x1n90fp3gd0b0og0cq06k8ct54ntjhz",
+   "subject": "[jira] [Created] (KAFKA-15278) Implement client support for KIP-848 ConsumerGroupHeartbeat protocol RPC",
+   "first": 1690849020,
+   "last": 1690849020,
+   "messages": [
+    "3x1n90fp3gd0b0og0cq06k8ct54ntjhz"
+   ]
+  },
+  {
+   "id": "syrnmqqpkpbthhnmxtrvcgs4ordxgnfg",
+   "subject": "[jira] [Created] (KAFKA-15279) Implement client support for KIP-848 assignment RPCs",
+   "first": 1690849140,
+   "last": 1690849140,
+   "messages": [
+    "syrnmqqpkpbthhnmxtrvcgs4ordxgnfg"
+   ]
+  },
+  {
+   "id": "ctvbnsgwx7179m2c5xwqtgztq7tymcgb",
+   "subject": "[jira] [Created] (KAFKA-15280) Implement client support for KIP-848 server-side assignors",
+   "first": 1690849260,
+   "last": 1690849260,
+   "messages": [
+    "ctvbnsgwx7179m2c5xwqtgztq7tymcgb"
+   ]
+  },
+  {
+   "id": "vl6opdth6wn0s15h5978rxnpt8p7d1m7",
+   "subject": "[jira] [Created] (KAFKA-15282) Implement client support for KIP-848 client-side assignors",
+   "first": 1690850400,
+   "last": 1690850400,
+   "messages": [
+    "vl6opdth6wn0s15h5978rxnpt8p7d1m7"
+   ]
+  },
+  {
+   "id": "9rqgb23r1y7jrqn0388gzhns2r3t361h",
+   "subject": "[jira] [Resolved] (KAFKA-15278) Implement client support for KIP-848 ConsumerGroupHeartbeat protocol RPC",
+   "first": 1696872900,
+   "last": 1696872900,
+   "messages": [
+    "9rqgb23r1y7jrqn0388gzhns2r3t361h"
+   ]
+  },
+  {
+   "id": "bhom287k0obvzqscjfj6j5mx4wnfw098",
+   "subject": "[jira] [Created] (KAFKA-15932) Flaky test - PlaintextConsumerTest.testSeek(\"kraft+kip-848\",\"consumer\")",
+   "first": 1701262260,
+   "last": 1701262260,
+   "messages": [
+    "bhom287k0obvzqscjfj6j5mx4wnfw098"
+   ]
+  },
+  {
+   "id": "04zwr0t60s8jkwy04wl7o5j5806xt47x",
+   "subject": "[jira] [Resolved] (KAFKA-15932) Flaky test - PlaintextConsumerTest.testSeek(\"kraft+kip-848\",\"consumer\")",
+   "first": 1701884940,
+   "last": 1701884940,
+   "messages": [
+    "04zwr0t60s8jkwy04wl7o5j5806xt47x"
+   ]
+  },
+  {
+   "id": "bx80z7c297ot6bg0416vxodo1ctcltp4",
+   "subject": "[jira] [Created] (KAFKA-16143) New metrics for KIP-848 protocol",
+   "first": 1705354380,
+   "last": 1705354380,
+   "messages": [
+    "bx80z7c297ot6bg0416vxodo1ctcltp4"
+   ]
+  },
+  {
+   "id": "c14ozxkqkptkqxoqnqnmtfyck3vt6y1h",
+   "subject": "[jira] [Resolved] (KAFKA-16135) kafka.api.PlaintextConsumerTest.testPerPartitionLeadMetricsCleanUpWithSubscribe(String, String).quorum=kraft+kip848.groupProtocol=consumer is flaky",
+   "first": 1706114460,
+   "last": 1706114460,
+   "messages": [
+    "c14ozxkqkptkqxoqnqnmtfyck3vt6y1h"
+   ]
+  },
+  {
+   "id": "16dm8s50dh1xdz2yrcjxc06sqsbrbmj2",
+   "subject": "[jira] [Resolved] (KAFKA-16134) kafka.api.PlaintextConsumerTest.testPerPartitionLagMetricsCleanUpWithSubscribe(String, String).quorum=kraft+kip848.groupProtocol=consumer is flaky",
+   "first": 1706114640,
+   "last": 1706114640,
+   "messages": [
+    "16dm8s50dh1xdz2yrcjxc06sqsbrbmj2"
+   ]
+  },
+  {
+   "id": "opmty1617t2l6fhjy54h4c1o31xm7bk9",
+   "subject": "[jira] [Created] (KAFKA-16230) Update verifiable_consumer to support KIP-848\u2019s group protocol config",
+   "first": 1707247800,
+   "last": 1707247800,
+   "messages": [
+    "opmty1617t2l6fhjy54h4c1o31xm7bk9"
+   ]
+  },
+  {
+   "id": "737n36r0k6mwnzgdw4mvjjm2vrknmxbk",
+   "subject": "[jira] [Created] (KAFKA-16231) Update consumer_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1707247980,
+   "last": 1707247980,
+   "messages": [
+    "737n36r0k6mwnzgdw4mvjjm2vrknmxbk"
+   ]
+  },
+  {
+   "id": "yz14n79kwxpcf47tf3m4rcrcmvyzj2tl",
+   "subject": "[jira] [Created] (KAFKA-16267) Update consumer_group_command_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708195380,
+   "last": 1708195380,
+   "messages": [
+    "yz14n79kwxpcf47tf3m4rcrcmvyzj2tl"
+   ]
+  },
+  {
+   "id": "8jrl7d39d7jfsybbw5m8pz3w7q7ng7v3",
+   "subject": "[jira] [Created] (KAFKA-16268) Update fetch_from_follower_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708195500,
+   "last": 1708195500,
+   "messages": [
+    "8jrl7d39d7jfsybbw5m8pz3w7q7ng7v3"
+   ]
+  },
+  {
+   "id": "kp9ho79j3k8705tvx6lx2cvyfgxcfcg4",
+   "subject": "[jira] [Created] (KAFKA-16269) Update reassign_partitions_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708195500,
+   "last": 1708195500,
+   "messages": [
+    "kp9ho79j3k8705tvx6lx2cvyfgxcfcg4"
+   ]
+  },
+  {
+   "id": "sy28xzjtztk0v844wk1tbvcnf3nn85gq",
+   "subject": "[jira] [Created] (KAFKA-16270) Update snapshot_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708195620,
+   "last": 1708195620,
+   "messages": [
+    "sy28xzjtztk0v844wk1tbvcnf3nn85gq"
+   ]
+  },
+  {
+   "id": "50906mo8ttopvkmmw8tcd05dfm8lso2m",
+   "subject": "[jira] [Created] (KAFKA-16272) Update connect_distributed_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708195860,
+   "last": 1708195860,
+   "messages": [
+    "50906mo8ttopvkmmw8tcd05dfm8lso2m"
+   ]
+  },
+  {
+   "id": "1kqpovzgnoyxp6kylwknx500626lj83m",
+   "subject": "[jira] [Created] (KAFKA-16271) Update consumer_rolling_upgrade_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708195860,
+   "last": 1708195860,
+   "messages": [
+    "1kqpovzgnoyxp6kylwknx500626lj83m"
+   ]
+  },
+  {
+   "id": "sg2mmptb711dxldqjh6bovrg2z6r2xw1",
+   "subject": "[jira] [Created] (KAFKA-16273) Update consume_bench_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708195920,
+   "last": 1708195920,
+   "messages": [
+    "sg2mmptb711dxldqjh6bovrg2z6r2xw1"
+   ]
+  },
+  {
+   "id": "8xyy77n9smj417gtx8t8op6k8zlz660l",
+   "subject": "[jira] [Created] (KAFKA-16274) Update replica_scale_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708196040,
+   "last": 1708196040,
+   "messages": [
+    "8xyy77n9smj417gtx8t8op6k8zlz660l"
+   ]
+  },
+  {
+   "id": "g54xofwj47h1pf6ldcgfpf7cjtvd4gm2",
+   "subject": "[jira] [Created] (KAFKA-16275) Update kraft_upgrade_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708196160,
+   "last": 1708196160,
+   "messages": [
+    "g54xofwj47h1pf6ldcgfpf7cjtvd4gm2"
+   ]
+  },
+  {
+   "id": "t6ynhtb20868lyxk5hl68lqln1j3jky6",
+   "subject": "[jira] [Created] (KAFKA-16276) Update transactions_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1708196280,
+   "last": 1708196280,
+   "messages": [
+    "t6ynhtb20868lyxk5hl68lqln1j3jky6"
+   ]
+  },
+  {
+   "id": "5btyydh0v7ksmpvztqzdy9hwsf2c6nps",
+   "subject": "[jira] [Resolved] (KAFKA-16271) Update consumer_rolling_upgrade_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1711647420,
+   "last": 1711647420,
+   "messages": [
+    "5btyydh0v7ksmpvztqzdy9hwsf2c6nps"
+   ]
+  },
+  {
+   "id": "4tgbjopz430ofl83qvmov4yg3q5fszvx",
+   "subject": "[jira] [Created] (KAFKA-16438) Update consumer_test.py\u2019s static tests to support KIP-848\u2019s group protocol config",
+   "first": 1711647900,
+   "last": 1711647900,
+   "messages": [
+    "4tgbjopz430ofl83qvmov4yg3q5fszvx"
+   ]
+  },
+  {
+   "id": "h6y3nof0g9vqcms64sq833m7b781jw4k",
+   "subject": "[jira] [Created] (KAFKA-16439) Update replication_replica_failure_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1711648200,
+   "last": 1711648200,
+   "messages": [
+    "h6y3nof0g9vqcms64sq833m7b781jw4k"
+   ]
+  },
+  {
+   "id": "275z180w100v0m3jg7ro8b3z3mo8mzmf",
+   "subject": "[jira] [Created] (KAFKA-16440) Update security_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1711648320,
+   "last": 1711648320,
+   "messages": [
+    "275z180w100v0m3jg7ro8b3z3mo8mzmf"
+   ]
+  },
+  {
+   "id": "cjdc9rgx89n854fb83q73ff8olv0smmf",
+   "subject": "[jira] [Created] (KAFKA-16441) Update streams_broker_down_resilience_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1711648380,
+   "last": 1711648380,
+   "messages": [
+    "cjdc9rgx89n854fb83q73ff8olv0smmf"
+   ]
+  },
+  {
+   "id": "63mv88hy1bk6qnsh2o85gs930l8yxlzq",
+   "subject": "[jira] [Created] (KAFKA-16442) Update streams_standby_replica_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1711648440,
+   "last": 1711648440,
+   "messages": [
+    "63mv88hy1bk6qnsh2o85gs930l8yxlzq"
+   ]
+  },
+  {
+   "id": "cp9b0vm0vq9x589lhm8t8r8mf8bdol5j",
+   "subject": "[jira] [Created] (KAFKA-16443) Update streams_static_membership_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1711648500,
+   "last": 1711648500,
+   "messages": [
+    "cp9b0vm0vq9x589lhm8t8r8mf8bdol5j"
+   ]
+  },
+  {
+   "id": "vg2732lcymswckntg22xc25h2r9b89bl",
+   "subject": "[jira] [Created] (KAFKA-16444) Run KIP-848 unit tests under code coverage",
+   "first": 1711649280,
+   "last": 1711649280,
+   "messages": [
+    "vg2732lcymswckntg22xc25h2r9b89bl"
+   ]
+  },
+  {
+   "id": "rtghrww26w3xmz8wt0r3omvpy8oo213m",
+   "subject": "[jira] [Created] (KAFKA-16637) KIP-848 does not work well",
+   "first": 1714308600,
+   "last": 1714308600,
+   "messages": [
+    "rtghrww26w3xmz8wt0r3omvpy8oo213m"
+   ]
+  },
+  {
+   "id": "xn297z2b1yhtk5jrxpmqno0o13zttj7w",
+   "subject": "[jira] [Created] (KAFKA-16648) Question: KIP-848 and KafkaTestKit.java",
+   "first": 1714472760,
+   "last": 1714472760,
+   "messages": [
+    "xn297z2b1yhtk5jrxpmqno0o13zttj7w"
+   ]
+  },
+  {
+   "id": "0y9m3bymd28p6jwtlj6bh8omz0hrvtog",
+   "subject": "[jira] [Created] (KAFKA-16657) KIP-848 does not work well on Zookeeper Mode",
+   "first": 1714648980,
+   "last": 1714648980,
+   "messages": [
+    "0y9m3bymd28p6jwtlj6bh8omz0hrvtog"
+   ]
+  },
+  {
+   "id": "tdgtz3czfd7g8kq47zgofk0qy3hsr88g",
+   "subject": "[jira] [Created] (KAFKA-16670) KIP-848 : Consumer will not receive assignment forever because of concurrent issue.",
+   "first": 1714961580,
+   "last": 1714961580,
+   "messages": [
+    "tdgtz3czfd7g8kq47zgofk0qy3hsr88g"
+   ]
+  },
+  {
+   "id": "b6s5l5c9g8p8d5czsr8bt63owfm4ttmj",
+   "subject": "[PR] KIP-848 is preview in 3.8 [kafka-site]",
+   "first": 1722413542,
+   "last": 1722417063,
+   "messages": [
+    "b6s5l5c9g8p8d5czsr8bt63owfm4ttmj",
+    "3poc0h7y20cwz61o7mjd8bvsd7g4n0qh",
+    "8dg5znqovoh4ob9hl4o2mfrt85v134py",
+    "9lxmywb3pl62vch1d3t6fgmbvkts9zxy",
+    "kr3pbovk4bcpfkcn1541s83bh51rysd8",
+    "5sntxqtyo77v55mdj5hno0kwfc3wbkfd",
+    "wpbskj6fqz44ynfbxt0djqfj23r112jo",
+    "cook4t5v0dodvm6p1yw15nvsk122mvc3"
+   ]
+  },
+  {
+   "id": "wfs6pkz7q1pmnc0t1sd1w89dv90qx7hw",
+   "subject": "[jira] [Resolved] (KAFKA-16443) Update streams_static_membership_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1724271000,
+   "last": 1724271000,
+   "messages": [
+    "wfs6pkz7q1pmnc0t1sd1w89dv90qx7hw"
+   ]
+  },
+  {
+   "id": "30sh6x66cz049hj1tn0zwtpbbz84j1wf",
+   "subject": "[jira] [Resolved] (KAFKA-16442) Update streams_standby_replica_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1724271000,
+   "last": 1724271000,
+   "messages": [
+    "30sh6x66cz049hj1tn0zwtpbbz84j1wf"
+   ]
+  },
+  {
+   "id": "j23gf64957793g8zsxqy5vnjdxthmn68",
+   "subject": "[jira] [Resolved] (KAFKA-16441) Update streams_broker_down_resilience_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1724271000,
+   "last": 1724271000,
+   "messages": [
+    "j23gf64957793g8zsxqy5vnjdxthmn68"
+   ]
+  },
+  {
+   "id": "pgd2kjmqrq82lw7wwb655kthr4fdtow6",
+   "subject": "New Group Coordinator (KIP-848)",
+   "first": 1724660486,
+   "last": 1725635160,
+   "messages": [
+    "pgd2kjmqrq82lw7wwb655kthr4fdtow6",
+    "9279rnv5ljbk8bb5jjwmztmm1f621zyd",
+    "yxgvl154kr7fpp3ksm7m6ydbvjs5y2p1"
+   ]
+  },
+  {
+   "id": "2vjo2h60t03nf9bpgzn8jfr2nn3171gc",
+   "subject": "[jira] [Resolved] (KAFKA-16272) Update connect_distributed_test.py to support KIP-848\u2019s group protocol config",
+   "first": 1728273420,
+   "last": 1728273420,
+   "messages": [
+    "2vjo2h60t03nf9bpgzn8jfr2nn3171gc"
+   ]
+  },
+  {
+   "id": "1nx8y9ybq9bgh2mxf0dktkpf5dczdj9z",
+   "subject": "[jira] [Resolved] (KAFKA-16444) Run KIP-848 unit tests under code coverage",
+   "first": 1728335160,
+   "last": 1728335160,
+   "messages": [
+    "1nx8y9ybq9bgh2mxf0dktkpf5dczdj9z"
+   ]
+  },
+  {
+   "id": "8gyglqwyk4mdl6wk4n79bwlhkw7xrf21",
+   "subject": "[jira] [Reopened] (KAFKA-16444) Run KIP-848 unit tests under code coverage",
+   "first": 1729116240,
+   "last": 1729116240,
+   "messages": [
+    "8gyglqwyk4mdl6wk4n79bwlhkw7xrf21"
+   ]
+  },
+  {
+   "id": "mqczzpwpzrsmrl4dstkfhcbkol7d5y03",
+   "subject": "[jira] [Resolved] (KAFKA-17363) Flaky test: kafka.api.PlaintextConsumerCommitTest.testAutoCommitOnRebalance(String, String).quorum=kraft+kip848.groupProtocol=consumer",
+   "first": 1730904300,
+   "last": 1730904300,
+   "messages": [
+    "mqczzpwpzrsmrl4dstkfhcbkol7d5y03"
+   ]
+  },
+  {
+   "id": "2n14j3okz9krcwh41s1qbjkddkm4nn5v",
+   "subject": "[jira] [Resolved] (KAFKA-16657) KIP-848 does not work well on Zookeeper Mode",
+   "first": 1731383460,
+   "last": 1731383460,
+   "messages": [
+    "2n14j3okz9krcwh41s1qbjkddkm4nn5v"
+   ]
+  },
+  {
+   "id": "wm9r8hmpc2s7k1fgq8f8ltkpdrpk32k4",
+   "subject": "[jira] [Created] (KAFKA-18169) Mark KIP-848's API & Records as stable",
+   "first": 1733471160,
+   "last": 1733471160,
+   "messages": [
+    "wm9r8hmpc2s7k1fgq8f8ltkpdrpk32k4"
+   ]
+  },
+  {
+   "id": "ql5fm27jxswjox8f70cx47b8zlkqhy3z",
+   "subject": "Update on KIP-848 in Apache Kafka 4.0",
+   "first": 1734530903,
+   "last": 1734593312,
+   "messages": [
+    "ql5fm27jxswjox8f70cx47b8zlkqhy3z",
+    "y91zokyccz5npnhvnv69tmg3wklmbbbh",
+    "jbgp3qvvmzkc10svzv12yqssh2r28g57",
+    "zcbop29wx16fl8xmqwgojrj7f9rjt82d"
+   ]
+  },
+  {
+   "id": "sfhm3520hkzzczqm2p3r0xkdbdzoh62b",
+   "subject": "[jira] [Created] (KAFKA-18327) Client Side Assignors (KIP-848)",
+   "first": 1734637620,
+   "last": 1734637620,
+   "messages": [
+    "sfhm3520hkzzczqm2p3r0xkdbdzoh62b"
+   ]
+  },
+  {
+   "id": "kcmbntl4dmkv1pkcq454o0jmb5lswgt8",
+   "subject": "[jira] [Created] (KAFKA-18328) Support for Topic Ids in Offset Fetch/Commit APIs (KIP-848)",
+   "first": 1734637860,
+   "last": 1734637860,
+   "messages": [
+    "kcmbntl4dmkv1pkcq454o0jmb5lswgt8"
+   ]
+  },
+  {
+   "id": "2t0ybzt0brkot2rx6486y18jb02krsf5",
+   "subject": "[jira] [Resolved] (KAFKA-18169) Mark KIP-848's API & Records as stable",
+   "first": 1734638460,
+   "last": 1734638460,
+   "messages": [
+    "2t0ybzt0brkot2rx6486y18jb02krsf5"
+   ]
+  },
+  {
+   "id": "x6qgyjknjbw6s7nvnhxk178j4clkdcjl",
+   "subject": "[jira] [Resolved] (KAFKA-18329) Delete old group coordinator (KIP-848)",
+   "first": 1742569740,
+   "last": 1742569740,
+   "messages": [
+    "x6qgyjknjbw6s7nvnhxk178j4clkdcjl"
+   ]
+  },
+  {
+   "id": "hootyfnzgryp4ww4kt3spl37q0lkgo2n",
+   "subject": "[jira] [Created] (KAFKA-19233) Members cannot rejoin with epoch=0 for KIP-848",
+   "first": 1746202320,
+   "last": 1746202320,
+   "messages": [
+    "hootyfnzgryp4ww4kt3spl37q0lkgo2n"
+   ]
+  },
+  {
+   "id": "3th75h8njork5vhcdom1nxj0xp24z8r1",
+   "subject": "[jira] [Created] (KAFKA-19235) STALE_MEMBER_EPOCH is mostly non-recoverable and forces lost commits when leaving a group (KIP-848)",
+   "first": 1746225540,
+   "last": 1746225540,
+   "messages": [
+    "3th75h8njork5vhcdom1nxj0xp24z8r1"
+   ]
+  },
+  {
+   "id": "z54vxrdhrlmsblf0pg176b1rzn5to9sw",
+   "subject": "[jira] [Resolved] (KAFKA-15282) Implement client support for KIP-848 client-side assignors",
+   "first": 1750091760,
+   "last": 1750091760,
+   "messages": [
+    "z54vxrdhrlmsblf0pg176b1rzn5to9sw"
+   ]
+  },
+  {
+   "id": "2r09r5wfx1lvc8hm8lv3s0jxrpv063to",
+   "subject": "[jira] [Resolved] (KAFKA-15279) Implement client support for KIP-848 client-side assigner RPCs",
+   "first": 1750091760,
+   "last": 1750091760,
+   "messages": [
+    "2r09r5wfx1lvc8hm8lv3s0jxrpv063to"
+   ]
+  },
+  {
+   "id": "lj6jsz9jctvjtrr6yh9vg02kchtv45q1",
+   "subject": "KIP-429 vs. KIP 848?",
+   "first": 1750127502,
+   "last": 1750149466,
+   "messages": [
+    "lj6jsz9jctvjtrr6yh9vg02kchtv45q1",
+    "98c9wc45kshzyq936v5hwqv2mkoq3k1o",
+    "3h82t9nnssrt0ddmvrtjkwgtcm9kdxnj"
+   ]
+  },
+  {
+   "id": "k8vpr5scsfbjhg7oyrb3lpzbb3f0zxtg",
+   "subject": "[jira] [Resolved] (KAFKA-18328) Support for Topic Ids in Offset Fetch/Commit APIs (KIP-848)",
+   "first": 1763642880,
+   "last": 1763642880,
+   "messages": [
+    "k8vpr5scsfbjhg7oyrb3lpzbb3f0zxtg"
+   ]
+  },
+  {
+   "id": "4skg15kfq7mtn6xo50s8bfc62cs9tj55",
+   "subject": "[jira] [Resolved] (KAFKA-19233) Members cannot rejoin with epoch=0 for KIP-848",
+   "first": 1768640040,
+   "last": 1768640040,
+   "messages": [
+    "4skg15kfq7mtn6xo50s8bfc62cs9tj55"
+   ]
+  },
+  {
+   "id": "8d8q8t9l5lspo9mn1g0yq675rkg0zxp8",
+   "subject": "[jira] [Resolved] (KAFKA-19235) STALE_MEMBER_EPOCH is mostly non-recoverable and forces lost commits when leaving a group (KIP-848)",
+   "first": 1768832820,
+   "last": 1768832820,
+   "messages": [
+    "8d8q8t9l5lspo9mn1g0yq675rkg0zxp8"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>PEP 649: Deferred evaluation of annotations, tentatively accepted - Core Development - Discussions on Python.org</title>
+    <meta name="description" content="The Python Steering Council is tentatively accepting @larry &#39;s PEP-649: Deferred Evaluation Of Annotations Using Descriptors. (related GH PSC agenda item issue) 
+Why tentatively? What does that even mean? 
+It means we th…">
+    <meta name="generator" content="Discourse 2026.10.0-latest - https://github.com/discourse/discourse version ea9e58f6536b4c5fa853a5c2615292bce3c32dcc">
+<link rel="icon" type="image/png" href="https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/1X/9997f0605d56c4bfecd63594f52f42cdafd6b06a_2_32x32.png">
+<link rel="apple-touch-icon" type="image/png" href="https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/1X/4c06143de7870c35963b818b15b395092a434991_2_180x180.png">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111111">
+
+<meta name="color-scheme" content="light dark">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+<link rel="canonical" href="https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331" />
+
+<meta name="discourse-track-view-session-id" content="5ehQTA5YoekPIWTR1mjh8OEVDU3S3qnC">
+  <link rel="search" type="application/opensearchdescription+xml" href="https://discuss.python.org/opensearch.xml" title="Discussions on Python.org Search">
+
+    
+    <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/color_definitions_light-default_-1_2_c2bf21e9c3e139f5e5f108a2ef34afd25fb9a1de.css?__ws=discuss.python.org" media="(prefers-color-scheme: light)" rel="stylesheet" class="light-scheme"/><link href="https://sea2.discourse-cdn.com/flex002/stylesheets/color_definitions_dark_1_2_766275abe76a8249c555e0c4bec3de4845ff1945.css?__ws=discuss.python.org" media="(prefers-color-scheme: dark)" rel="stylesheet" class="dark-scheme" data-scheme-id="1"/>
+
+<link href="https://sea2.discourse-cdn.com/flex002/stylesheets/common_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="common"  />
+
+
+
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/automation_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="automation"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/checklist_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="checklist"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-ai_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-ai"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-chat-integration_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-chat-integration"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-data-explorer_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-data-explorer"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-details_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-details"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-github_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-github"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-lazy-videos_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-lazy-videos"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-local-dates_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-local-dates"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-math_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-math"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-narrative-bot_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-narrative-bot"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-policy_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-policy"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-presence_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-presence"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-reactions_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-reactions"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-solved_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-solved"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-templates_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-templates"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-topic-voting_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-topic-voting"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-user-notes_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-user-notes"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/footnote_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="footnote"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/hosted-site_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="hosted-site"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/poll_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="poll"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/spoiler-alert_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="spoiler-alert"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-ai_mobile_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-ai_mobile"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-reactions_mobile_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-reactions_mobile"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-ai_desktop_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width >= 40rem)" rel="stylesheet" data-target="discourse-ai_desktop"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-reactions_desktop_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width >= 40rem)" rel="stylesheet" data-target="discourse-reactions_desktop"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/poll_desktop_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width >= 40rem)" rel="stylesheet" data-target="poll_desktop"  />
+
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/common_theme_4_d7fd17bd8347d1b27e388243c39d2cb381bec48d.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="common_theme" data-theme-id="4" data-theme-name="unformatted code detector"/>
+<link href="https://sea2.discourse-cdn.com/flex002/stylesheets/common_theme_2_08d1cc8888b55bd9677460a383271b2b8bee0cf0.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="common_theme" data-theme-id="2" data-theme-name="light"/>
+  
+  
+
+    
+    
+        <link rel="alternate nofollow" type="application/rss+xml" title="RSS feed of &#39;PEP 649: Deferred evaluation of annotations, tentatively accepted&#39;" href="https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331.rss" />
+    <meta property="og:site_name" content="Discussions on Python.org" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="https://us1.discourse-cdn.com/flex002/uploads/python1/original/1X/f93ff97c4f381b5e8add5a0c163b4ded29f20ed7.png" />
+<meta property="og:image" content="https://us1.discourse-cdn.com/flex002/uploads/python1/original/1X/f93ff97c4f381b5e8add5a0c163b4ded29f20ed7.png" />
+<meta property="og:url" content="https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331" />
+<meta name="twitter:url" content="https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331" />
+<meta property="og:title" content="PEP 649: Deferred evaluation of annotations, tentatively accepted" />
+<meta name="twitter:title" content="PEP 649: Deferred evaluation of annotations, tentatively accepted" />
+<meta property="og:description" content="The Python Steering Council is tentatively accepting @larry &#39;s PEP-649: Deferred Evaluation Of Annotations Using Descriptors. (related GH PSC agenda item issue)  Why tentatively? What does that even mean?  It means we think this PEP should be Accepted and recommend that the next Steering Council do so in three months time (long before 3.12 beta 1) unless people can convince us with reasons not to.  While we could’ve just accepted it today, the hole we’d like filled in is what the current experie..." />
+<meta name="twitter:description" content="The Python Steering Council is tentatively accepting @larry &#39;s PEP-649: Deferred Evaluation Of Annotations Using Descriptors. (related GH PSC agenda item issue)  Why tentatively? What does that even mean?  It means we think this PEP should be Accepted and recommend that the next Steering Council do so in three months time (long before 3.12 beta 1) unless people can convince us with reasons not to.  While we could’ve just accepted it today, the hole we’d like filled in is what the current experie..." />
+<meta property="og:article:section" content="Core Development" />
+<meta property="og:article:section:color" content="25AAE2" />
+<meta property="og:article:tag" content="typing" />
+<meta property="og:article:tag" content="annotations" />
+<meta name="twitter:label1" value="Reading time" />
+<meta name="twitter:data1" value="32 mins 🕑" />
+<meta name="twitter:label2" value="Likes" />
+<meta name="twitter:data2" value="195 ❤" />
+<meta property="article:published_time" content="2022-11-23T01:31:41+00:00" />
+<meta property="og:ignore_canonical" content="true" />
+
+        <link rel="next" href="/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331?page=2">
+
+    <link rel="alternate" type="text/markdown" href="https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331.md">
+    
+  </head>
+  <body class="crawler ">
+    
+    <header>
+  <a href="/">Discussions on Python.org</a>
+</header>
+
+    <div id="main-outlet" class="wrap" role="main">
+        <div id="topic-title">
+    <h1>
+      <a href="/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331">PEP 649: Deferred evaluation of annotations, tentatively accepted</a>
+    </h1>
+
+      <div class="topic-category" itemscope itemtype="http://schema.org/BreadcrumbList">
+          <span itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+            <a href="/c/core-dev/23" class="badge-wrapper bullet" itemprop="item">
+              <span class='badge-category-bg' style='background-color: #25AAE2'></span>
+              <span class='badge-category clear-badge'>
+                <span class='category-name' itemprop='name'>Core Development</span>
+              </span>
+            </a>
+            <meta itemprop="position" content="1" />
+          </span>
+      </div>
+
+      <div class="topic-category">
+        <div class='discourse-tags list-tags'>
+            <a href='https://discuss.python.org/tag/typing' class='discourse-tag' rel="tag">typing</a>, 
+            <a href='https://discuss.python.org/tag/annotations' class='discourse-tag' rel="tag">annotations</a>
+        </div>
+      </div>
+  </div>
+
+  
+
+    <div itemscope="itemscope" itemtype="http://schema.org/DiscussionForumPosting">
+      <meta itemprop='headline' content='PEP 649: Deferred evaluation of annotations, tentatively accepted'>
+      <link itemprop='url' href='https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331'>
+      <meta itemprop='datePublished' content='2022-11-23T01:31:41Z'>
+      <meta itemprop='keywords' content='typing, annotations'>
+          <meta itemprop='articleSection' content='Core Development'>
+        <div itemprop='publisher' itemscope itemtype="http://schema.org/Organization">
+          <meta itemprop='name' content='Python Software Foundation'>
+            <div itemprop='logo' itemscope itemtype="http://schema.org/ImageObject">
+              <meta itemprop='url' content='https://us1.discourse-cdn.com/flex002/uploads/python1/original/1X/c7591c98caf3b31d4d9c6f322f41ed9d80a50800.png'>
+            </div>
+        </div>
+
+      
+
+
+
+          <div id='post_1'  class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gpshead'><span itemprop="name">gpshead</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gpshead'>
+                (Gregory P. Smith)
+              </span>
+
+                <link itemprop="mainEntityOfPage" href="https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331">
+
+
+              <span class="crawler-post-infos">
+                  <time  datetime='2022-11-23T01:31:41Z' class='post-time'>
+                    November 23, 2022,  1:31am
+                  </time>
+                  <meta itemprop='dateModified' content='2022-11-23T23:53:14Z'>
+              <span itemprop="position">1</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>The Python Steering Council is tentatively accepting <a class="mention" href="/u/larry">@larry</a> 's <a href="https://peps.python.org/pep-0649/">PEP-649: Deferred Evaluation Of Annotations Using Descriptors</a>. <em>(related <a href="https://github.com/python/steering-council/issues/63">GH PSC agenda item issue</a>)</em></p>
+<p>Why <strong>tentatively</strong>? What does that even mean?</p>
+<p>It means we think this PEP should be Accepted and recommend that the next Steering Council do so in three months time (long before 3.12 beta 1) unless people can convince us with reasons not to.</p>
+<p>While we could’ve just accepted it today, the hole we’d like filled in is what the current experience from projects making use of type annotations at runtime is in regards to the deferred evaluation solution as laid out in the PEP. Are there concerns we’ve overlooked or don’t know about?</p>
+<p>-Greg, with a Python Steering Council <img src="https://emoji.discourse-cdn.com/apple/rescue_worker_helmet.png?v=12" title=":rescue_worker_helmet:" class="emoji" alt=":rescue_worker_helmet:" loading="lazy" width="20" height="20"> on</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="15" />
+                <span class='post-likes'>15 Likes</span>
+              </div>
+
+                <div class='crawler-linkback-list'>
+                    <div>
+                      <a href="https://discuss.python.org/t/survey-should-pep-649-implementation-use-another-future-import/23338">Survey: Should PEP-649 implementation use another future import?</a>
+                    </div>
+                    <div>
+                      <a href="https://discuss.python.org/t/november-2022-steering-council-update/21920">November 2022 Steering Council update</a>
+                    </div>
+                    <div>
+                      <a href="https://discuss.python.org/t/type-annotations-in-the-stdlib/21487/16">Type annotations in the stdlib</a>
+                    </div>
+                </div>
+
+            
+
+
+          </div>
+          <div id='post_2' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/steven.daprano'><span itemprop="name">steven.daprano</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/steven.daprano'>
+                (Steven D&#39;Aprano)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2022-11-22T04:50:52Z' class='post-time'>
+                    November 22, 2022,  4:50am
+                  </time>
+                  <meta itemprop='dateModified' content='2022-11-22T04:50:52Z'>
+              <span itemprop="position">2</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Tentative yay <img src="https://emoji.discourse-cdn.com/apple/slight_smile.png?v=12" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+<p>What does that mean for string annotations with <code>from __future__ import annotations</code>? PEP 649 suggests that it gets deprecated and eventually removed. But future declarations are supposed to remain forever, so presumably it will just become a no-op.</p>
+<p>(We still support the “nested scopes” future declaration even though it hasn’t been needed since, what was it, 2.2 or 2.3?)</p>
+<p>During the deprecation period, how do we resolve the conflict if somebody enables <em>both</em> PEP 649 annotation descriptors and PEP 563 stringified annotations?</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="5" />
+                <span class='post-likes'>5 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_3' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/methane'><span itemprop="name">methane</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/methane'>
+                (Inada Naoki)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2022-11-23T03:28:41Z' class='post-time'>
+                    November 23, 2022,  3:28am
+                  </time>
+                  <meta itemprop='dateModified' content='2022-11-23T03:28:41Z'>
+              <span itemprop="position">3</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote no-group" data-username="steven.daprano" data-post="2" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/steven.daprano/48/1083_2.png" class="avatar"> Steven D'Aprano:</div>
+<blockquote>
+<p>What does that mean for string annotations with <code>from __future__ import annotations</code>? PEP 649 suggests that it gets deprecated and eventually removed. But future declarations are supposed to remain forever, so presumably it will just become a no-op.</p>
+</blockquote>
+</aside>
+<p>I think we shouldn’t emit DeprecationWarning for PEP 563, at least 3 releases.</p>
+<p>Library authors can not use PEP 649 until they drop Python 3.11 support. PEP 563 is the only efficient and convenient way to use type annotations.</p>
+<aside class="quote no-group" data-username="steven.daprano" data-post="2" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/steven.daprano/48/1083_2.png" class="avatar"> Steven D'Aprano:</div>
+<blockquote>
+<p>During the deprecation period, how do we resolve the conflict if somebody enables <em>both</em> PEP 649 annotation descriptors and PEP 563 stringified annotations?</p>
+</blockquote>
+</aside>
+<p>I think it should be syntax error.<br>
+Using PEP 649 means that source code doesn’t support Python 3.11. Allowing PEP 563 with PEP 649 doesn’t increase backward compatibility. Authors should chose one.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="4" />
+                <span class='post-likes'>4 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_4' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gpshead'><span itemprop="name">gpshead</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gpshead'>
+                (Gregory P. Smith)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2022-11-23T07:57:02Z' class='post-time'>
+                    November 23, 2022,  7:57am
+                  </time>
+                  <meta itemprop='dateModified' content='2022-11-23T07:57:02Z'>
+              <span itemprop="position">4</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote group-committers" data-username="methane" data-post="3" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/methane/48/43_2.png" class="avatar"> Inada Naoki:</div>
+<blockquote>
+<p>I think we shouldn’t emit DeprecationWarning for PEP 563, at least 3 releases.</p>
+</blockquote>
+</aside>
+<p>Or more. Our assumption was that 563’s future import would stay around for a vague long while, so I probably wouldn’t even make a deprecation warning until we find reason to actually plan its demise. If ever.</p>
+<p>Will that be our first <code>__future__</code> import who’s future never came to pass?</p>
+<p>They’re parallel futures. Only one gets realized.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="4" />
+                <span class='post-likes'>4 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_5' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/barry'><span itemprop="name">barry</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/barry'>
+                (Barry Warsaw)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2022-11-23T17:55:33Z' class='post-time'>
+                    November 23, 2022,  5:55pm
+                  </time>
+                  <meta itemprop='dateModified' content='2022-11-23T17:55:33Z'>
+              <span itemprop="position">5</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote group-committers" data-username="gpshead" data-post="4" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/gpshead/48/54_2.png" class="avatar"> Gregory P. Smith:</div>
+<blockquote>
+<p>They’re parallel futures. Only one gets realized.</p>
+</blockquote>
+</aside>
+<p><code>from __schrodinger__ import annotations</code></p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="8" />
+                <span class='post-likes'>8 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_6' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/CAM-Gerlach'><span itemprop="name">CAM-Gerlach</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/CAM-Gerlach'>
+                (C.A.M. Gerlach)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-08T22:17:34Z' class='post-time'>
+                    January 8, 2023, 10:17pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-08T22:17:34Z'>
+              <span itemprop="position">6</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>On an editorial note, shouldn’t this be moved to <a class="hashtag" href="/c/peps/19">#<span>peps</span></a> with all the other PEP-related discussions and announcements (aside from <a class="hashtag" href="/c/packaging/14">#<span>packaging</span></a> , which has its own category and process?) per standard convention and the current PEP 1, etc. guidance? I went looking for this thread everywhere there but didn’t find it.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_7' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/steve.dower'><span itemprop="name">steve.dower</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/steve.dower'>
+                (Steve Dower)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-09T14:27:07Z' class='post-time'>
+                    January 9, 2023,  2:27pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-09T14:27:07Z'>
+              <span itemprop="position">7</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>It’s not a PEP, it’s a discussion about a PEP. I think it’s fine here (though the actual PEP post should link to this one).</p>
+<p>(FTR: I have different level of notifications set up for when new PEPs are announced based on the category. So it impacts my workflow to have non-PEP posts in that category.)</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="1" />
+                <span class='post-likes'>1 Like</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_8' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gpshead'><span itemprop="name">gpshead</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gpshead'>
+                (Gregory P. Smith)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-09T19:39:14Z' class='post-time'>
+                    January 9, 2023,  7:39pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-09T19:39:14Z'>
+              <span itemprop="position">8</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Discussions on this one happened over years in many places so I wasn’t sure where to post this as it wasn’t all in one canonical spot. There didn’t seem to be one best place.</p>
+<p>Please feel free to link to this discussion from anywhere else that had talked about PEP 649 to make sure everybody knows in case they haven’t seen this.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="1" />
+                <span class='post-likes'>1 Like</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_9' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/PythonCHB'><span itemprop="name">PythonCHB</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/PythonCHB'>
+                (Christopher H.Barker, PhD)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-28T08:06:26Z' class='post-time'>
+                    January 28, 2023,  8:06am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-28T08:06:26Z'>
+              <span itemprop="position">9</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>How will this interact with dataclasses and the <code>Field</code> type attribute?</p>
+<p>(I think dataclasses are the only thing in the standard library that used annotations at this point, yes?)</p>
+<p>I’m pretty sure that it simply gets set to the annotation, so I <em>think</em> it would get evaluated before being set, so the type would be the type, as it is now.</p>
+<p>On the other hand, it would get evaluated when the dataclass decorator was run, so it may not give you the advantages for circular references, so maybe we’d want to have it set to a deferred object?</p>
+<p>Note that with PEP 563 enabled, dataclasses store the string in the type attribute, which very much breaks code like mine, which is expecting the <code>Field.type</code> attribute to be an actual type <img src="https://emoji.discourse-cdn.com/apple/slight_smile.png?v=12" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+<p>So I’m happy about this plan – but wanted to make sure.</p>
+<p>Is there an easy way to try this out? Maybe wait for 3.12 beta? (I’d rather not have to go find Larry’s code and compile it …)</p>
+<p>-Chris</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="1" />
+                <span class='post-likes'>1 Like</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_10' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/brettcannon'><span itemprop="name">brettcannon</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/brettcannon'>
+                (Brett Cannon)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-28T23:36:13Z' class='post-time'>
+                    January 28, 2023, 11:36pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-28T23:36:13Z'>
+              <span itemprop="position">10</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> Christopher H.Barker, PhD:</div>
+<blockquote>
+<p>How will this interact with dataclasses and the <code>Field</code> type attribute?</p>
+</blockquote>
+</aside>
+<p>Are you talking about <a href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field"><code>dataclass.field()</code></a>  which isn’t involved with this PEP, or <a href="https://docs.python.org/3/library/dataclasses.html#dataclasses.fields"><code>dataclasses.fields()</code></a> which should just work? Since <a href="https://docs.python.org/3/library/dataclasses.html#dataclasses.Field"><code>dataclasses.Field</code></a> isn’t supposed to be created directly I’m not sure which case you’re specifically referring to.</p>
+<aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> Christopher H.Barker, PhD:</div>
+<blockquote>
+<p>Note that with PEP 563 enabled, dataclasses store the string in the type attribute, which very much breaks code like mine, which is expecting the <code>Field.type</code> attribute to be an actual type <img src="https://emoji.discourse-cdn.com/apple/slight_smile.png?v=12" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+</blockquote>
+</aside>
+<p>My assumption is <code>dataclasses</code> will use whatever <code>inspect</code> returns as the type annotation for an attriute.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_11' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/PythonCHB'><span itemprop="name">PythonCHB</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/PythonCHB'>
+                (Christopher H.Barker, PhD)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-29T03:36:32Z' class='post-time'>
+                    January 29, 2023,  3:36am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-29T03:36:32Z'>
+              <span itemprop="position">11</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>I’m talking about <code>dataclasses.Field</code>, which, yes, is not supposed to be instantiated directly, but is what is returned by the <code>fields()</code> function, and is what is stored in the <code>__dataclass_fields__</code> (private) attribute.</p>
+<p>They are presumably created by the <code>dataclass</code> decorator.</p>
+<p>and <code>Field</code> has a <code>type</code> attribute, which is currently populated by the value of the annotation by the decorator – I haven’t looked at the code in a while, so I’m not sure exactly how or when it is set, and even if I did, I would not be sure how this PEP might affect that, 'cause i don’t quite understand it well enough to know for sure.</p>
+<p>NOTE: <code>dataclasses.field()</code> returns a <code>Field</code> instance, but it does not accept a parameter to set the type attribute – it is being set by the decorator.</p>
+<p>I think it’s relevant to this PEP because <code>dataclasses</code> is in the standard library, and its behavior may be affected. So there may need to be changes made to <code>dataclasses</code>, and if so, they should be made at the same time as the PEP is implemented.</p>
+<ul>
+<li>Perhaps no changes are needed – great!</li>
+<li>Perhaps the only change needed is a note in the docs – fine.</li>
+<li>Perhaps there needs to be a modest change in the code, in which case, it would be best if that change were made in the same release.</li>
+</ul>
+<p>I’m trying to understand which of those it is.</p>
+<p>-CHB</p>
+<p>NOTE: If PEP 563 had been finalized as planned, I was going to put in a PR to call <code>typing.get_type_hints()</code>  in the dataclass decorator – I’m trying to understand if that’s necessary with this PEP.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_12' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gpshead'><span itemprop="name">gpshead</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gpshead'>
+                (Gregory P. Smith)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-30T21:45:17Z' class='post-time'>
+                    January 30, 2023,  9:45pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-30T21:45:17Z'>
+              <span itemprop="position">12</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>I started a committers survey regarding when we should have the default behavior change if accepted over in <a href="https://discuss.python.org/t/survey-should-pep-649-implementation-use-another-future-import/23338" class="inline-onebox">Survey: Should PEP-649 implementation use another future import?</a> as burying a poll in the middle of this comment thread sounded less visible.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_13' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/Jelle'><span itemprop="name">Jelle</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/Jelle'>
+                (Jelle Zijlstra)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-30T21:58:47Z' class='post-time'>
+                    January 30, 2023,  9:58pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-30T21:58:47Z'>
+              <span itemprop="position">13</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>I think the arguments for making the behavior change independently, as listed in the poll, are sound, but it’s also a backward compatibility break. Would it make sense to add a way to turn on the <code>__future__</code> globally, maybe with an <code>-X</code> command-line option?</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="2" />
+                <span class='post-likes'>2 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_14' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gpshead'><span itemprop="name">gpshead</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gpshead'>
+                (Gregory P. Smith)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-30T22:46:33Z' class='post-time'>
+                    January 30, 2023, 10:46pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-30T22:46:33Z'>
+              <span itemprop="position">14</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote group-committers" data-username="Jelle" data-post="13" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/jelle/48/1049_2.png" class="avatar"> Jelle Zijlstra:</div>
+<blockquote>
+<p>Would it make sense to add a way to turn on the <code>__future__</code> globally, maybe with an <code>-X</code> command-line option?</p>
+</blockquote>
+</aside>
+<p>A command line flag environment variable pair to turn on the new default is possible with poll option <span class="hashtag-raw">#2</span> or on its own as new option without a future import. But that might fall into a trap: are people who we want to test things that way going to do so? And does the presence of such an option mean all code needs to be ready for it no matter what as it can be turned on by users rather than the authors or maintainers of specific code?</p>
+<p>IIRC we have had major behavior changing flags like that before such as -U (?), I’m not sure how often they got used in practice.</p>
+<p>What’s the behavior of that flag/envvar vs files that contain a 563 future annotations import?  Overrule it?  Honor it?  Generate per file warnings?  Error?</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_15' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/ericvsmith'><span itemprop="name">ericvsmith</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/ericvsmith'>
+                (Eric V. Smith)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-31T00:37:03Z' class='post-time'>
+                    January 31, 2023, 12:37am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-31T00:37:03Z'>
+              <span itemprop="position">15</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> Christopher H.Barker, PhD:</div>
+<blockquote>
+<p>How will this interact with dataclasses and the <code>Field</code> type attribute?</p>
+</blockquote>
+</aside>
+<p><code>@dataclass</code> inspects the annotations, so it will cause all annotations to be immediately evaluated.</p>
+<aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> Christopher H.Barker, PhD:</div>
+<blockquote>
+<p>(I think dataclasses are the only thing in the standard library that used annotations at this point, yes?)</p>
+</blockquote>
+</aside>
+<p>There’s at least <code>typing.NamedTuple</code>.</p>
+<aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> Christopher H.Barker, PhD:</div>
+<blockquote>
+<p>I’m pretty sure that it simply gets set to the annotation, so I <em>think</em> it would get evaluated before being set, so the type would be the type, as it is now.</p>
+</blockquote>
+</aside>
+<p>In the absence of <code>from __future__ import annotations</code>, yes.</p>
+<aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> Christopher H.Barker, PhD:</div>
+<blockquote>
+<p>On the other hand, it would get evaluated when the dataclass decorator was run, so it may not give you the advantages for circular references, so maybe we’d want to have it set to a deferred object?</p>
+</blockquote>
+</aside>
+<p>I’d suggest a string. <a class="mention" href="/u/larry">@larry</a> and I tried to sell forward declarations of classes to avoid this, but it didn’t go over well.</p>
+<aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> Christopher H.Barker, PhD:</div>
+<blockquote>
+<p>Note that with PEP 563 enabled, dataclasses store the string in the type attribute, which very much breaks code like mine, which is expecting the <code>Field.type</code> attribute to be an actual type <img src="https://emoji.discourse-cdn.com/apple/slight_smile.png?v=12" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+</blockquote>
+</aside>
+<p><code>@dataclass</code> doesn’t alter the annotations, so you get whatever it gets.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="1" />
+                <span class='post-likes'>1 Like</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_16' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/PythonCHB'><span itemprop="name">PythonCHB</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/PythonCHB'>
+                (Christopher H.Barker, PhD)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-31T04:36:19Z' class='post-time'>
+                    January 31, 2023,  4:36am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-31T04:36:19Z'>
+              <span itemprop="position">16</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Thanks Eric.</p>
+<aside class="quote group-committers" data-username="ericvsmith" data-post="15" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://avatars.discourse-cdn.com/v4/letter/e/34f0e0/48.png" class="avatar"> Eric V. Smith:</div>
+<blockquote>
+<p><code>@dataclass</code> inspects the annotations, so it will cause all annotations to be immediately evaluated.</p>
+</blockquote>
+</aside>
+<p>OK, then things will “just work”.</p>
+<aside class="quote group-committers quote-modified" data-username="ericvsmith" data-post="15" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://avatars.discourse-cdn.com/v4/letter/e/34f0e0/48.png" class="avatar"> Eric V. Smith:</div>
+<blockquote>
+<aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> PythonCHB:</div>
+<blockquote>
+<p>On the other hand, it would get evaluated when the dataclass decorator was run, so it may not give you the advantages for circular references, so maybe we’d want to have it set to a deferred object?</p>
+</blockquote>
+</aside>
+<p>I’d suggest a string. <a class="mention" href="/u/larry">@larry</a> and I tried to sell forward declarations of classes to avoid this, but it didn’t go over well.</p>
+</blockquote>
+</aside>
+<p>Do you mean to set the annotation to a string when you write the dataclass, e.g.:</p>
+<pre><code class="lang-auto">@dataclass
+class Node:
+    parent: "NotYetDeclared" = None
+</code></pre>
+<p>As one has to do now without either of the PEPs enabled?</p>
+<p>That would work fine.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_17' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/carljm'><span itemprop="name">carljm</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/carljm'>
+                (Carl Meyer)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-31T05:11:44Z' class='post-time'>
+                    January 31, 2023,  5:11am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-31T05:11:44Z'>
+              <span itemprop="position">17</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote group-committers quote-modified" data-username="ericvsmith" data-post="15" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://avatars.discourse-cdn.com/v4/letter/e/34f0e0/48.png" class="avatar"> Eric V. Smith:</div>
+<blockquote>
+<aside class="quote no-group" data-username="PythonCHB" data-post="9" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/pythonchb/48/2551_2.png" class="avatar"> PythonCHB:</div>
+<blockquote>
+<p>On the other hand, it would get evaluated when the dataclass decorator was run, so it may not give you the advantages for circular references, so maybe we’d want to have it set to a deferred object?</p>
+</blockquote>
+</aside>
+<p>I’d suggest a string.</p>
+</blockquote>
+</aside>
+<p>I think we can do better than requiring manually stringified annotations for all forward/self/cyclic reference cases. We can evaluate the PEP 649 thunk using a custom globals dict that allows references to not-yet-defined names to be replaced by some kind of forward reference object.</p>
+<p>Doing this in a way that faithfully reproduces every theoretically possible syntactic construct in an annotation is hard, but we don’t need that level of perfection for it to be a massive improvement in user experience for the common case of someone who just wants their self-referencing dataclass to work at runtime without having to quote their annotations. (And of course for those who do care what ends up in the Field object, it’s not hard to make the forward-reference object carry sufficient information to allow later reifying the actual type, better than a string would.) So I would hope that we go the extra mile to do this in dataclasses (and I’m happy to write the code for it if that’s useful.)</p>
+<p>Carl</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="7" />
+                <span class='post-likes'>7 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_18' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/zrothberg'><span itemprop="name">zrothberg</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/zrothberg'>
+                (Zachary Rothberg)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-03-28T00:45:50Z' class='post-time'>
+                    March 28, 2023, 12:45am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-03-28T00:45:50Z'>
+              <span itemprop="position">18</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote group-committers" data-username="gpshead" data-post="1" data-topic="21331">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/gpshead/48/54_2.png" class="avatar"> Gregory P. Smith:</div>
+<blockquote>
+<p>Are there concerns we’ve overlooked or don’t know about?</p>
+</blockquote>
+</aside>
+<p>I don’t think the current pep as designed has really been vetted against metaprogramming or other class side effects. First problem that shows up quickly is that while previously if you wanted to change the namespace dict of a class during evaluation you would use a custom prepare method, now any modification of the class dict that is passed to __new__ and to __init__ may result in modification.</p>
+<pre data-code-wrap="py"><code class="lang-py">class Bug:...
+class Correct:...
+
+class CustomType(type):
+
+    def __new__(mcls, name, bases, namespace, /, **kwargs):
+        namespace["Correct"] = Bug
+        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
+        return cls
+
+
+class OtherClass(metaclass=CustomType):
+    val:Correct
+
+OtherClass.__annotations__
+#{'val': &lt;class 'Bug'&gt;}
+#should be {'val': &lt;class 'Correct'&gt;}
+</code></pre>
+<p>This means this change effects any class that modifies the namespace dict. While there has been a reduction of libraries that need custom metaclasses of a small sample of 4 libraries that I know use them: django, pydantic, sqlalchemy, and pythons enum lib. Everyone, but sqlalchemy, modifies the namespace object. In Django all but 1 of their metaclasses does so, the only one that did not was a testing related metaclass.</p>
+<p>This also would mean that the class namespace object that would normally be discarded after the class obj is returned in now kept alive. The <a href="https://docs.python.org/3/reference/datamodel.html#creating-the-class-object" rel="noopener nofollow ugc">current behavior to drop the object is documented.</a></p>
+<p>Changing this to form a closure with the actual class.__dict__ object instead of the namespace dict seems like it would create even more chance for namespace collision.</p>
+<p>There is also some strange side effects related to class function names bashing type annotations.</p>
+<p>Take the following code</p>
+<pre data-code-wrap="py"><code class="lang-py">class A:
+    clsvar:dict[int,str]
+ 
+    def dict(self):...
+</code></pre>
+<p>The annotation is now referring to the function dict instead of the built in dict. This is going to artificially restrict function names.</p>
+<p>It isn’t exactly rare for classes to shadow built in names, the UUID class for example shadows multiple builtins. That means we cannot reference these type in the annotations.</p>
+<pre data-code-wrap="py"><code class="lang-py">class A:
+    clsvar:dict[int,str]
+
+    def dict(self,a:dict) -&gt; dict: ...
+</code></pre>
+<p>That is something that actually works perfectly fine right now.</p>
+<p>I know this has been discussed multiple times already but I am really having trouble understanding what about the runtime cost of annotations is so high that it makes sense to create a feature that fundamentally behaves nothing like the rest of the language.</p>
+<p>Considering that stringified annotations are already at an acceptable performance level (whatever that means). What exactly about annotations is causing enough overhead to warrant lazily capturing the names involved in the annotation?</p>
+<p>Is this</p>
+<pre data-code-wrap="py"><code class="lang-py">def a(b:'str'):...
+</code></pre>
+<p>really that much cheaper then this?</p>
+<pre data-code-wrap="py"><code class="lang-py">def a(b:str):...
+</code></pre>
+<p>Or is the main issue that deeply nested annotations are expensive to compute? I am not really clear why the string version would be so much cheaper then the single object lookup version. This really feels like trading deterministic behavior for performance.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="4" />
+                <span class='post-likes'>4 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_19' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gpshead'><span itemprop="name">gpshead</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gpshead'>
+                (Gregory P. Smith)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-04-04T00:14:24Z' class='post-time'>
+                    April 4, 2023, 12:14am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-04-04T00:14:24Z'>
+              <span itemprop="position">19</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>The issue with string literals as annotations are that writing code in quotes is both ugly and not checked by Python for syntax. When you get implied strings via PEP-563, the visual hackiness and parse error typo issues are gone, but they still carry no context about how they should be evaluated. We’d rather people working in annotated code bases not need to reason about when they need a stringified annotation or not at all in their typical daily flow of writing type annotated code.</p>
+<p>Your method names mirroring builtin type names example is a good one and is basically taking one of the examples in the PEP a little further by using the builtin name <code>dict</code> and pointing out where such a name can get reused for valid reasons. <strong>Thanks</strong>! This is a place where PEP-649 deferred evaluation can “go wrong”.  <em><strong>But</strong></em> code like that is far less common than situations where people need to manually think about stringifying annotations due to forward references. The workaround for such code are to use <code>_dict = dict</code> or <code>from typing import Dict</code> other name aliases. We don’t anticipate this being a common need.</p>
+<p>Continuing down the strings as annotations path also doesn’t solve the problem that annotations being strings introduced in the first place: Runtime use of annotations. This prevented PEP-563 from ever becoming our default behavior. (<code>pydantic</code> et. al.)</p>
+<p>The main issue PEP-649 aims to improve?  Both PEP-563’s now-alternate-unrealized future and manually used string annotations had two motivating reasons: One is to allow forward references. The other is module import time performance and thus whole program startup time. PEP 649 aims to resolve those conflicting goals into a more natural - in most cases - implementation.</p>
+<blockquote>
+<p>This really feels like trading deterministic behavior for performance.</p>
+</blockquote>
+<p>We don’t have deterministic behavior today given string annotations and PEP-563. There is no guarantee which state of program context said strings will be evaluated within. PEP-649 deferred evaluation trades that non-deterministic behavior for an alternate one to get rid of the use of strings moving us to what appears to be a happier place.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="1" />
+                <span class='post-likes'>1 Like</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_20' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gpshead'><span itemprop="name">gpshead</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gpshead'>
+                (Gregory P. Smith)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-04-04T00:22:20Z' class='post-time'>
+                    April 4, 2023, 12:22am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-04-04T00:22:20Z'>
+              <span itemprop="position">20</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p><a class="mention" href="/u/larry">@larry</a> The Python Steering Council is ready to officially accept PEP-649. How’s the implementation looking?  Do you think an implementation could land in time for 3.12beta1?</p>
+<p>Based on the poll results in <a href="https://discuss.python.org/t/survey-should-pep-649-implementation-use-another-future-import/23338" class="inline-onebox">Survey: Should PEP-649 implementation use another future import?</a> we’d prefer to go without a new <code>from __future__ import co_annotations</code> as the PEP lays out and just change the default behavior.</p>
+<p>(Understanding that feedback during people’s beta period testing could change our minds on the <code>__future__</code> topic.)</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="4" />
+                <span class='post-likes'>4 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+
+    </div>
+
+      <div role='navigation' itemscope itemtype='http://schema.org/SiteNavigationElement' class="topic-body crawler-post">
+            <span itemprop='name'><b><a rel="next" itemprop="url" href="/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331?page=2">next page →</a></b></span>
+      </div>
+
+    
+
+
+
+
+    </div>
+    <footer class="container wrap">
+  <nav class='crawler-nav'>
+    <ul>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/' itemprop="url">Home </a>
+        </span>
+      </li>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/categories' itemprop="url">Categories </a>
+        </span>
+      </li>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/guidelines' itemprop="url">Guidelines </a>
+        </span>
+      </li>
+        <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+          <span itemprop='name'>
+            <a href='/tos' itemprop="url">Terms of Service </a>
+          </span>
+        </li>
+        <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+          <span itemprop='name'>
+            <a href='/privacy' itemprop="url">Privacy Policy </a>
+          </span>
+        </li>
+    </ul>
+  </nav>
+  <p class='powered-by-link'>Powered by <a href="https://www.discourse.org">Discourse</a>, best viewed with JavaScript enabled</p>
+</footer>
+
+    
+    
+  </body>
+  
+</html>

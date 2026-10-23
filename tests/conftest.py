@@ -30,3 +30,9 @@ def clean_graph(neo4j_test_driver):
     neo4j_test_driver.execute_query("MATCH (n) DETACH DELETE n")
     initialize_schema(neo4j_test_driver)
     return neo4j_test_driver
+
+
+@pytest.fixture(autouse=True)
+def no_access_token(monkeypatch):
+    """A developer's .env may set HACKFRONT_ACCESS_TOKEN (deployed-API auth); tests exercise the open API."""
+    monkeypatch.delenv("HACKFRONT_ACCESS_TOKEN", raising=False)

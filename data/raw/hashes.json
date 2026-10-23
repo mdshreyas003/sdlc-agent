@@ -1,0 +1,718 @@
+{
+ "KIP-98/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/66854913",
+  "sha256": "b5264637716b8d38a9f4a1ef9af04642ed8258285b1ebd7e8eef74fb59b462f2",
+  "bytes": 97599,
+  "retrieved": "2026-10-19T09:31:00.079213+00:00"
+ },
+ "KIP-98/hop0.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-1639",
+  "sha256": "500e134317f5aeb58c2e6adbce662307fc575819803d2f6032bef7edc0d415e4",
+  "bytes": 10805,
+  "retrieved": "2026-10-19T09:31:00.651578+00:00"
+ },
+ "KIP-98/hop1.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-4815",
+  "sha256": "351f598a7b220d456fed5233a8851113a4731b42a5f07cb9ac60ce8592f52413",
+  "bytes": 20741,
+  "retrieved": "2026-10-19T09:31:01.716058+00:00"
+ },
+ "KIP-129/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/68717010",
+  "sha256": "f07cb5b1e46e23e6a4cf68ea45b40c5c8accf1f5aeb3a97f6847352809a55630",
+  "bytes": 17261,
+  "retrieved": "2026-10-19T09:31:02.810412+00:00"
+ },
+ "KIP-129/hop0.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-4923",
+  "sha256": "e69d784ee5bcc9b2c46727965b7c29856190febea05876b63288bd6659738112",
+  "bytes": 38934,
+  "retrieved": "2026-10-19T09:31:03.377869+00:00"
+ },
+ "KIP-405/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/97554472",
+  "sha256": "db2a194d06e7c21d185330352edd661f42c6f016ad0e60e4a1635edab1ed36b7",
+  "bytes": 214517,
+  "retrieved": "2026-10-19T09:31:05.154646+00:00"
+ },
+ "KIP-405/hop0.bin": {
+  "url": "https://mail-archives.apache.org/mod_mbox/kafka-dev/202102.mbox/browser",
+  "sha256": "29278ae273f43a5ee19bc75e350c123e895c2966fa188fedfaa7da8a8c35b03f",
+  "bytes": 2014,
+  "retrieved": "2026-10-19T09:31:06.286907+00:00"
+ },
+ "KIP-405/hop1.bin": {
+  "url": "https://github.com/apache/kafka/pull/10218",
+  "sha256": "444c5600345ee21069fdf26f854b0306a89d915da8438840908093893ceda49e",
+  "bytes": 16868,
+  "retrieved": "2026-10-19T09:31:07.238108+00:00"
+ },
+ "KIP-405/hop2.bin": {
+  "url": "https://github.com/apache/kafka/pull/10173",
+  "sha256": "5a5e39d35fd3004ac04d23df4055cabc99921ac630a4d51f117390c17da07c89",
+  "bytes": 17358,
+  "retrieved": "2026-10-19T09:31:08.181438+00:00"
+ },
+ "KIP-405/hop3.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-7739",
+  "sha256": "03ee16da9e2b07e11ab4bfab1b69f720b89cfcd9b45815bce7d57ef0f0a59c0f",
+  "bytes": 124962,
+  "retrieved": "2026-10-19T09:31:09.514403+00:00"
+ },
+ "KIP-405/hop4.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-9393",
+  "sha256": "f11f98c1c2078da827e1eec07b5c89c298481a8704c6348b37e1a42d3327b83e",
+  "bytes": 14910,
+  "retrieved": "2026-10-19T09:31:10.545692+00:00"
+ },
+ "KIP-447/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/103093950",
+  "sha256": "c6bdb6450be0fd3d3c26198e2bcb6ff623e0832e370148e1fe1ceb32f7ef71b8",
+  "bytes": 34697,
+  "retrieved": "2026-10-19T09:31:11.657291+00:00"
+ },
+ "KIP-447/hop0.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-8587",
+  "sha256": "363301f74051a56278eb6744c872b446f138b937a21ec8f489e0cf08d59d1165",
+  "bytes": 1836,
+  "retrieved": "2026-10-19T09:31:12.096820+00:00"
+ },
+ "KIP-500/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/123898922",
+  "sha256": "861a399a8d724ebb8e31974dd0e900b4080ecaa9227d1ac60cb50edd62463e74",
+  "bytes": 24143,
+  "retrieved": "2026-10-19T09:31:13.218029+00:00"
+ },
+ "KIP-500/hop0.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-9119",
+  "sha256": "82abdfcff2a7eba734aec8dfd12525eb4d9778655be5e93e089a44ca5eb81514",
+  "bytes": 8850,
+  "retrieved": "2026-10-19T09:31:13.642126+00:00"
+ },
+ "KIP-595/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/148647470",
+  "sha256": "ae5b1803b23f4d17029ef1b7fc51e9512f2ab4d58a342378c3561a388c92919e",
+  "bytes": 98861,
+  "retrieved": "2026-10-19T09:31:14.967966+00:00"
+ },
+ "KIP-595/hop0.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-9876",
+  "sha256": "38d84ab80b148c7700b0a6ff215afffcba5fb2e69163a02b42c434ad871ea10d",
+  "bytes": 5212,
+  "retrieved": "2026-10-19T09:31:15.424588+00:00"
+ },
+ "KIP-630/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/158864763",
+  "sha256": "ba8f0c9723d0a4d629956903e1bc86ff74692e9993ba56201ac551aab690afe2",
+  "bytes": 51668,
+  "retrieved": "2026-10-19T09:31:16.670054+00:00"
+ },
+ "KIP-630/hop0.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-10310",
+  "sha256": "365a7437d12eb2ef86dd0d6ab419a6b8f5023ec22b6881cb091d8df8fb25c8b3",
+  "bytes": 2720,
+  "retrieved": "2026-10-19T09:31:17.106004+00:00"
+ },
+ "KIP-679/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/165221843",
+  "sha256": "f60fe35094154283f6ba072cfc439a3f04c3167008cf46a8d974a4f807933d1f",
+  "bytes": 16853,
+  "retrieved": "2026-10-19T09:31:18.221290+00:00"
+ },
+ "KIP-679/hop0.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-10619",
+  "sha256": "d335c52b80587d7ea3cd382b832e4244bfdafd0b4356b4f286ff5dc196bb2d96",
+  "bytes": 17734,
+  "retrieved": "2026-10-19T09:31:18.760815+00:00"
+ },
+ "KIP-679/hop1.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-13598",
+  "sha256": "93f917617196f3c85bdf6d8dbc5b51a7f28a63bffb8d929883c1d2af1fbfd36f",
+  "bytes": 39404,
+  "retrieved": "2026-10-19T09:31:19.813370+00:00"
+ },
+ "KIP-848/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/217387038",
+  "sha256": "d4b9f462b373f4b0ff7ca3af8b1109f4dbd1024b8c510e383e09c91a962bfcd1",
+  "bytes": 206455,
+  "retrieved": "2026-10-19T09:31:21.262232+00:00"
+ },
+ "KIP-848/hop1.bin": {
+  "url": "https://lists.apache.org/thread/oym1hyolwkpwyozozxydcpvdtg6p68fd",
+  "sha256": "75da43ae60febc3751223adc9e795f7f875cb3a34c5ce4f114edbee7131e6e63",
+  "bytes": 73912,
+  "retrieved": "2026-10-19T09:31:55.093599+00:00"
+ },
+ "KIP-848/hop2.bin": {
+  "url": "https://lists.apache.org/thread/ql5fm27jxswjox8f70cx47b8zlkqhy3z",
+  "sha256": "b171ce6a087cf452aa584e5467b65915b06a115dee3caceaaa8052424cffa344",
+  "bytes": 11114,
+  "retrieved": "2026-10-19T09:31:56.391279+00:00"
+ },
+ "KIP-848/hop3.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-14048",
+  "sha256": "7a9d092f760946fc4b4cf643f421c72179ca150c91d4752afdb7f709d2dbc055",
+  "bytes": 22663,
+  "retrieved": "2026-10-19T09:31:57.443732+00:00"
+ },
+ "KIP-848/hop4.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-18327",
+  "sha256": "63ffae01b919ceb82c1872a5d97a2fe5d7b86a39b787d961b8d74ef25c1fbd76",
+  "bytes": 2629,
+  "retrieved": "2026-10-19T09:31:58.369724+00:00"
+ },
+ "KIP-848/hop5.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-18328",
+  "sha256": "9107bd3d45c0e37695f46f39e584fe9f0f4b20b1b82d45f26772422f128aa28a",
+  "bytes": 8194,
+  "retrieved": "2026-10-19T09:32:00.371502+00:00"
+ },
+ "KIP-890/page.json": {
+  "url": "https://cwiki.apache.org/confluence/rest/api/content/235834631",
+  "sha256": "2570302324979c19643c6eb6abaa2fc852f80f8f05c3cb0ae25f0bd2eeef8dea",
+  "bytes": 51953,
+  "retrieved": "2026-10-19T09:32:01.792376+00:00"
+ },
+ "KIP-890/hop1.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-14402",
+  "sha256": "0a59eb2c80d4f43bfcbbd94c5a23f8d95e436aa977c24258724accdf14c778c1",
+  "bytes": 38317,
+  "retrieved": "2026-10-19T09:32:33.254666+00:00"
+ },
+ "KIP-890/hop2.bin": {
+  "url": "https://issues.apache.org/jira/browse/KAFKA-18654",
+  "sha256": "c48a67f9ab9f0de03d6489d5ebb7d4f3ddcd30d125152bd1d086e53a3124e7db",
+  "bytes": 4034,
+  "retrieved": "2026-10-19T09:32:34.171099+00:00"
+ },
+ "PEP-557/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0557.rst",
+  "sha256": "5f616e7d2fb9a5632fb2c9881c0622d63920a78a4c19540405f4f5119e4bad12",
+  "bytes": 36434,
+  "retrieved": "2026-10-19T09:32:34.730480+00:00"
+ },
+ "PEP-557/hop0.bin": {
+  "url": "https://mail.python.org/pipermail/python-dev/2017-December/151034.html",
+  "sha256": "90e0919c447ef18ad4fd23500205ca1d44849ba050a771ad032e5bd4087cfb0c",
+  "bytes": 3310,
+  "retrieved": "2026-10-19T09:32:35.115199+00:00"
+ },
+ "PEP-557/hop1.bin": {
+  "url": "https://mail.python.org/pipermail/python-ideas/2017-May/045618.html",
+  "sha256": "53fb8e71906d177b0818dd629c6103c8825030d347874ae76e076007ea8ba745",
+  "bytes": 6168,
+  "retrieved": "2026-10-19T09:32:36.018252+00:00"
+ },
+ "PEP-557/hop2.bin": {
+  "url": "https://github.com/ericvsmith/dataclasses/issues/28",
+  "sha256": "35c5a844c607f0ad04c93d10a10a58d14464a784e1e4e813125f4ac42207f3d4",
+  "bytes": 4620,
+  "retrieved": "2026-10-19T09:32:36.909818+00:00"
+ },
+ "PEP-557/hop3.bin": {
+  "url": "https://github.com/ericvsmith/dataclasses/issues/19",
+  "sha256": "0c7ac5e2f3404827851895cd08e71811acf3b32661cc333d4e1c869ac80517f5",
+  "bytes": 5177,
+  "retrieved": "2026-10-19T09:32:37.777263+00:00"
+ },
+ "PEP-557/hop4.bin": {
+  "url": "https://github.com/ericvsmith/dataclasses/issues/110",
+  "sha256": "fdc3280b138ae49b1a9c87cbd62850b20f7e9cb897eec7cdfaf1da1e6d3b6b74",
+  "bytes": 3342,
+  "retrieved": "2026-10-19T09:32:38.677426+00:00"
+ },
+ "PEP-557/hop5.bin": {
+  "url": "https://github.com/ericvsmith/dataclasses/issues/3",
+  "sha256": "1565e9ad9156ebca165cb19023c14cf41d394aedbf798de149a43c6a293d8b44",
+  "bytes": 4164,
+  "retrieved": "2026-10-19T09:32:39.576171+00:00"
+ },
+ "PEP-563/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0563.rst",
+  "sha256": "5512e8a43ace196dcabba98ec6041459ba6843169f951e911d04e088ed7ac559",
+  "bytes": 27736,
+  "retrieved": "2026-10-19T09:32:40.107223+00:00"
+ },
+ "PEP-563/hop0.bin": {
+  "url": "https://mail.python.org/pipermail/python-dev/2017-December/151042.html",
+  "sha256": "bb7c1774bb850f133e6012119a356a5ccd6090a1131c77707a7be8f067f0dcd8",
+  "bytes": 41218,
+  "retrieved": "2026-10-19T09:32:40.628994+00:00"
+ },
+ "PEP-563/hop1.bin": {
+  "url": "https://github.com/python/cpython/pull/4390",
+  "sha256": "9cc40c750b9c45fb99f2a5c5804e9fc48a4f31c3b3e180827ad8db5be8376187",
+  "bytes": 18465,
+  "retrieved": "2026-10-19T09:32:41.548558+00:00"
+ },
+ "PEP-563/hop2.bin": {
+  "url": "https://github.com/python/typing/issues/400",
+  "sha256": "fb8ff56b6ab114e012e2798945e0e12982bd3d3c617022e3d0b50c8e9152a9f9",
+  "bytes": 5442,
+  "retrieved": "2026-10-19T09:32:42.413634+00:00"
+ },
+ "PEP-563/hop3.bin": {
+  "url": "https://mail.python.org/pipermail/python-dev/2017-November/150062.html",
+  "sha256": "c7eb8c8b4d6788355cfb6bb8caaf129a256d18652ead51c5d688cfee6be969db",
+  "bytes": 25746,
+  "retrieved": "2026-10-19T09:32:43.431734+00:00"
+ },
+ "PEP-563/hop4.bin": {
+  "url": "https://mail.python.org/pipermail/python-dev/2017-November/150637.html",
+  "sha256": "949edfb2b5852c9d862a60674693a6df0a2a6252e659060774b9ca5403e274aa",
+  "bytes": 4233,
+  "retrieved": "2026-10-19T09:32:44.312561+00:00"
+ },
+ "PEP-563/hop5.bin": {
+  "url": "https://mail.python.org/pipermail/python-dev/2017-November/150141.html",
+  "sha256": "6b874db30d13d6047a6e7e5eda5da0c9b6a0b140d1cd13cee919fd00d055dad8",
+  "bytes": 5594,
+  "retrieved": "2026-10-19T09:32:45.193214+00:00"
+ },
+ "PEP-572/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0572.rst",
+  "sha256": "abf5401ec523a03d59a6f3173842784f426bfd49d8b0a87a512646557bcef8b1",
+  "bytes": 47028,
+  "retrieved": "2026-10-19T09:32:45.989997+00:00"
+ },
+ "PEP-572/hop0.bin": {
+  "url": "https://mail.python.org/pipermail/python-dev/2018-July/154601.html",
+  "sha256": "2f3717553787e771624824debe624cbe338c193eef2cfc1cf8a3bd69571cc4ec",
+  "bytes": 4876,
+  "retrieved": "2026-10-19T09:32:46.383471+00:00"
+ },
+ "PEP-572/hop1.bin": {
+  "url": "https://mail.python.org/pipermail/python-ideas/2018-March/049409.html",
+  "sha256": "e73ee6a95bffffa3b0300d0e806499c5e695c47907865d1af89573febef61207",
+  "bytes": 5796,
+  "retrieved": "2026-10-19T09:32:47.282919+00:00"
+ },
+ "PEP-572/hop2.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/thread/FXVSYCTQOTT7JCFACKPGPXKULBCGEPQY/",
+  "sha256": "0fbd97631c016fef98cd1e881c16d4ccf9149685fe9809651e50d0f2024c2cb8",
+  "bytes": 24635,
+  "retrieved": "2026-10-19T09:32:48.419488+00:00"
+ },
+ "PEP-584/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0584.rst",
+  "sha256": "227c416423b188aa703296595a0d161a31314da7cce08833072ec64ce76159e2",
+  "bytes": 30518,
+  "retrieved": "2026-10-19T09:32:48.949018+00:00"
+ },
+ "PEP-584/hop0.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/thread/6KT2KIOTYXMDCD2CCAOLOI7LUGTN6MBS",
+  "sha256": "25b378a913cc5439463d6d307ce823cb2819c22b4f394a74d84a460268e49653",
+  "bytes": 21952,
+  "retrieved": "2026-10-19T09:32:50.034296+00:00"
+ },
+ "PEP-584/hop1.bin": {
+  "url": "https://bugs.python.org/issue36144",
+  "sha256": "28070449664bd5c3cec82531a18e55c4e83b77a8ddab834368f2346cbc3143c1",
+  "bytes": 97477,
+  "retrieved": "2026-10-19T09:32:57.532347+00:00"
+ },
+ "PEP-584/hop2.bin": {
+  "url": "https://mail.python.org/archives/list/python-ideas@python.org/message/K4IC74IXE23K4KEL7OUFK3VBC62HGGVF/",
+  "sha256": "d9a91d2eebf0980b4b4231ecfa671a83f4be389bcff194c94111c9b4ce90daf0",
+  "bytes": 15644,
+  "retrieved": "2026-10-19T09:32:58.536704+00:00"
+ },
+ "PEP-584/hop3.bin": {
+  "url": "https://github.com/python/cpython/pull/12088",
+  "sha256": "4f8d986f5a8fbccf3960d27a98e29e97702258072baef03cf24758d1ebe156f2",
+  "bytes": 18839,
+  "retrieved": "2026-10-19T09:33:00.126433+00:00"
+ },
+ "PEP-584/hop4.bin": {
+  "url": "https://mail.python.org/archives/list/python-ideas@python.org/message/52DLME5DKNZYFEETCTRENRNKWJ2B4DD5/",
+  "sha256": "d96507fc7f543f420e5e67ec1bcfa13cec6cd941f4de26fc85e082dc5fdd5bcf",
+  "bytes": 17396,
+  "retrieved": "2026-10-19T09:33:01.136465+00:00"
+ },
+ "PEP-584/hop5.bin": {
+  "url": "https://mail.python.org/archives/list/python-ideas@python.org/thread/BHIJX6MHGMMD3S6D7GVTPZQL4N5V7T42/",
+  "sha256": "7cf7013af50a60149723bffb6d5c42dfa4a8a676237cf42c515b7208405da0d7",
+  "bytes": 31626,
+  "retrieved": "2026-10-19T09:33:02.375434+00:00"
+ },
+ "PEP-604/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0604.rst",
+  "sha256": "c6d87a6c7ea65964e9fecde3af1e4d367e9d49be8441fdebed3682886f359a0d",
+  "bytes": 7043,
+  "retrieved": "2026-10-19T09:33:02.914570+00:00"
+ },
+ "PEP-604/hop0.bin": {
+  "url": "https://mail.python.org/archives/list/python-ideas@python.org/thread/FCTXGDT2NNKRJQ6CDEPWUXHVG2AAQZZY/",
+  "sha256": "d24457f39dc8dca71c7278a84a3aa3c94ebc4354670cd43364b182f6f8f6e3a0",
+  "bytes": 25075,
+  "retrieved": "2026-10-19T09:33:03.607970+00:00"
+ },
+ "PEP-604/hop1.bin": {
+  "url": "https://mail.python.org/archives/list/typing-sig@python.org/thread/D5HCB4NT4S3WSK33WI26WZSFEXCEMNHN/",
+  "sha256": "36bfc737ad29ea7baa980f3a84444a222eb0e5ae96f8ffb0a9494453c581a514",
+  "bytes": 23783,
+  "retrieved": "2026-10-19T09:33:04.768136+00:00"
+ },
+ "PEP-604/hop2.bin": {
+  "url": "https://github.com/python/cpython/pull/21515",
+  "sha256": "16642c06a1788035f6de62a4cc629c8b345a6215ad2e85d0c0b7075fa7a3fe11",
+  "bytes": 16743,
+  "retrieved": "2026-10-19T09:33:05.700934+00:00"
+ },
+ "PEP-618/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0618.rst",
+  "sha256": "5b148db7f48c9adc1924bb33c245c416d80600a7768af9b199c090f2885634f2",
+  "bytes": 15469,
+  "retrieved": "2026-10-19T09:33:06.254926+00:00"
+ },
+ "PEP-618/hop0.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/message/NLWB7FVJGMBBMCF4P3ZKUIE53JPDOWJ3",
+  "sha256": "9b058aea7b699fac0b27ee670a87ad9f48dcad7380a9fda502ce5e494d7d6cd2",
+  "bytes": 13910,
+  "retrieved": "2026-10-19T09:33:07.154428+00:00"
+ },
+ "PEP-618/hop1.bin": {
+  "url": "https://bugs.python.org/issue40355",
+  "sha256": "6cd1a7ebd43c7f9de199b61478291093403107d8449842c281c6be262ddde574",
+  "bytes": 18322,
+  "retrieved": "2026-10-19T09:33:12.436052+00:00"
+ },
+ "PEP-618/hop2.bin": {
+  "url": "https://mail.python.org/archives/list/python-ideas@python.org/message/6GFUADSQ5JTF7W7OGWF7XF2NH2XUTUQM",
+  "sha256": "0ae3c75eaee942d414b0bd4e6cb744f57275e651d0e934e7b498794cbc907c95",
+  "bytes": 12237,
+  "retrieved": "2026-10-19T09:33:13.857789+00:00"
+ },
+ "PEP-634/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0634.rst",
+  "sha256": "352927baffdbb0fdaba34cf059e95fe2a464a604fdba167a41c6257c90e10e5e",
+  "bytes": 23168,
+  "retrieved": "2026-10-19T09:33:14.962099+00:00"
+ },
+ "PEP-634/hop0.bin": {
+  "url": "https://mail.python.org/archives/list/python-committers@python.org/message/SQC2FTLFV5A7DV7RCEAR2I2IKJKGK7W3",
+  "sha256": "280e21edf4a4f8039c9c105835c29977ebd249adcf47e89e8311216f85538e68",
+  "bytes": 14610,
+  "retrieved": "2026-10-19T09:33:15.867974+00:00"
+ },
+ "PEP-649/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0649.rst",
+  "sha256": "58948a3b8fb4b8a5cb55a12b2bf4719b7a3e89408e39daeeb48f4d3dc5be5e13",
+  "bytes": 63824,
+  "retrieved": "2026-10-19T09:33:16.423870+00:00"
+ },
+ "PEP-649/hop0.bin": {
+  "url": "https://discuss.python.org/t/pep-649-deferred-evaluation-of-annotations-tentatively-accepted/21331/",
+  "sha256": "00bad95a2421e94b839570b6baa473f13134267bbcf8096809a6dce228417ceb",
+  "bytes": 72478,
+  "retrieved": "2026-10-19T09:33:17.812680+00:00"
+ },
+ "PEP-649/hop1.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/thread/5QMMCRF4HTRRNJV56CGHVI5GRHVBDGQO/",
+  "sha256": "211de2bc9405ba73601efcb33d16b262edf34404e2e876cd3f79376cefca21bb",
+  "bytes": 50649,
+  "retrieved": "2026-10-19T09:33:19.077447+00:00"
+ },
+ "PEP-649/hop2.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/thread/QSASX6PZ3LIIFIANHQQFS752BJYFUFPY/",
+  "sha256": "800a2cfc9be5b41ace25cc581a043685d810ad1b96a8122e24a1e22abb6b8d0d",
+  "bytes": 23514,
+  "retrieved": "2026-10-19T09:33:20.205665+00:00"
+ },
+ "PEP-649/hop3.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/thread/WUZGTGE43T7XV3EUGT6AN2N52OD3U7AE/",
+  "sha256": "b743ffc0107b125bb982815843f847e28a14ea967835c8d6c0e9f414d3877265",
+  "bytes": 24523,
+  "retrieved": "2026-10-19T09:33:21.350613+00:00"
+ },
+ "PEP-649/hop4.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/thread/2MEOWHCVDLPABOBLYUGRXVOOOBYOLLU6/",
+  "sha256": "46a131f95e1e284bd36d80316fa0b24db3dc23fb8511b9720839d07ebd948ede",
+  "bytes": 25428,
+  "retrieved": "2026-10-19T09:33:22.493602+00:00"
+ },
+ "PEP-649/hop5.bin": {
+  "url": "https://mail.python.org/archives/list/python-dev@python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/",
+  "sha256": "a56f1dbfc7f727d6da25813769575fae31207ef8d53696185a2df949a56f5a09",
+  "bytes": 28349,
+  "retrieved": "2026-10-19T09:33:25.613577+00:00"
+ },
+ "PEP-695/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0695.rst",
+  "sha256": "115c754fb36b634bc97322135b7d7da565afe27038c579f16b2313d9c9447da5",
+  "bytes": 57593,
+  "retrieved": "2026-10-19T09:33:26.174806+00:00"
+ },
+ "PEP-695/hop0.bin": {
+  "url": "https://mail.python.org/archives/list/typing-sig@python.org/thread/BB2BGYJY2YG5IWESKGTAPUQL3N27ZKVW/",
+  "sha256": "0d7dfe7f820be5d91631c68889f160c93e3f10ae2f602f7bfc7f1b4236329fc1",
+  "bytes": 23982,
+  "retrieved": "2026-10-19T09:33:27.906669+00:00"
+ },
+ "PEP-695/hop1.bin": {
+  "url": "https://discuss.python.org/t/pep-695-type-parameter-syntax/21646",
+  "sha256": "76b684df738131e85c8b886dd8db25df9851046c994228b5c456ce9acf5c3d9f",
+  "bytes": 61854,
+  "retrieved": "2026-10-19T09:33:29.682688+00:00"
+ },
+ "PEP-695/hop2.bin": {
+  "url": "https://discuss.python.org/t/pep-695-type-parameter-syntax/21646/92",
+  "sha256": "0148990f338f916ef845fc9214ae7d6ccbd7ce73f2685c7020ef91e8f06faa74",
+  "bytes": 16293,
+  "retrieved": "2026-10-19T09:33:31.129359+00:00"
+ },
+ "PEP-703/pep.rst": {
+  "url": "https://raw.githubusercontent.com/python/peps/main/peps/pep-0703.rst",
+  "sha256": "8dfe19b2ab3b0ee783f922b533fed7b8018d6d90f3cec5534fd7baaa283a3470",
+  "bytes": 86335,
+  "retrieved": "2026-10-19T09:33:32.213041+00:00"
+ },
+ "PEP-703/hop0.bin": {
+  "url": "https://discuss.python.org/t/22606",
+  "sha256": "953580840f01b63d9764b338c50ed2e4bbeb5bf6350197899a9fb9d79890a4ce",
+  "bytes": 68566,
+  "retrieved": "2026-10-19T09:33:34.313931+00:00"
+ },
+ "PEP-703/hop1.bin": {
+  "url": "https://discuss.python.org/t/26503",
+  "sha256": "a93584fc223ce7c1a5f0a2c4462709b33067a7fdbabf1238401bcd8a18cd3dd1",
+  "bytes": 96571,
+  "retrieved": "2026-10-19T09:33:37.134245+00:00"
+ },
+ "PEP-703/hop2.bin": {
+  "url": "https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional-in-cpython-acceptance/37075",
+  "sha256": "c8f2e3b6c11e1c7199d4514c9b1b000d0da5f4680279fbd5a709ef3aae35089e",
+  "bytes": 69192,
+  "retrieved": "2026-10-19T09:33:38.951805+00:00"
+ },
+ "KIP-98/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-98&d=dfr=2016-11-30|dto=2026-10-19",
+  "sha256": "31e928b2189a781d3c10b10ca1b382ef5523d51eb3f2b1581350485d89bcf023",
+  "bytes": 2569929,
+  "messages": 278,
+  "search_hits": 927,
+  "retrieved": "2026-10-19T12:07:29.765661+00:00"
+ },
+ "KIP-129/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-129&d=dfr=2017-02-28|dto=2026-10-19",
+  "sha256": "23ad8b514685af77c6a622315f51d7e2d739da2de9f5ba1e76790d126878d9e1",
+  "bytes": 301759,
+  "messages": 29,
+  "search_hits": 64,
+  "retrieved": "2026-10-19T12:09:59.065480+00:00"
+ },
+ "KIP-405/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-405&d=dfr=2018-12-14|dto=2026-10-19",
+  "sha256": "6a2ff47aace534e8c33e1e26c6ff220516dce7cd88b4afb62c7651d1e1620304",
+  "bytes": 11329551,
+  "messages": 183,
+  "search_hits": 799,
+  "retrieved": "2026-10-19T12:16:05.931265+00:00"
+ },
+ "KIP-447/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-447&d=dfr=2019-03-09|dto=2026-10-19",
+  "sha256": "84a991ac1c482fd08be0e7344946c593839e5fcc7ec63c679480bac8609ef5b1",
+  "bytes": 2424629,
+  "messages": 69,
+  "search_hits": 140,
+  "retrieved": "2026-10-19T12:17:04.023286+00:00"
+ },
+ "KIP-500/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-500&d=dfr=2019-07-29|dto=2026-10-19",
+  "sha256": "3a9704060f5ef9adb7cf06de795adf9de5ecb79311170cfcbf349357ff34df3a",
+  "bytes": 804992,
+  "messages": 93,
+  "search_hits": 829,
+  "retrieved": "2026-10-19T12:18:16.104440+00:00"
+ },
+ "KIP-595/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-595&d=dfr=2020-04-15|dto=2026-10-19",
+  "sha256": "fbc5a860929b20c14bff25e5074af545f1e39f83a44e45ba58b34c3e9911f59b",
+  "bytes": 1267150,
+  "messages": 49,
+  "search_hits": 212,
+  "retrieved": "2026-10-19T12:18:57.993766+00:00"
+ },
+ "KIP-630/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-630&d=dfr=2020-06-24|dto=2026-10-19",
+  "sha256": "9cf5a251f81a07dc0cf2e7d3314cc43dd74d358cb61c77ce7fb9e36fd8361a74",
+  "bytes": 232467,
+  "messages": 43,
+  "search_hits": 151,
+  "retrieved": "2026-10-19T12:19:29.214499+00:00"
+ },
+ "KIP-679/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-679&d=dfr=2020-10-19|dto=2026-10-19",
+  "sha256": "1008a3348a34d1e4e5f82e1700c18d79826960eb496e45a916565a8e231d19fa",
+  "bytes": 22617,
+  "messages": 12,
+  "search_hits": 43,
+  "retrieved": "2026-10-19T12:19:38.991250+00:00"
+ },
+ "KIP-848/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-848&d=dfr=2022-06-14|dto=2026-10-19",
+  "sha256": "cbec52d02942829d48a830c7278af93ee2abff9dd4126ed9527391c2e2a3ca31",
+  "bytes": 12025419,
+  "messages": 201,
+  "search_hits": 1139,
+  "retrieved": "2026-10-19T12:22:37.151428+00:00"
+ },
+ "KIP-890/dev_thread.jsonl": {
+  "url": "https://lists.apache.org/api/stats.lua?list=dev&domain=kafka.apache.org&q=KIP-890&d=dfr=2022-11-18|dto=2026-10-19",
+  "sha256": "bdc3d9900be665601a1dfaa624665c6572315f4d61bee6a1496aac16cfc812f6",
+  "bytes": 8750204,
+  "messages": 113,
+  "search_hits": 450,
+  "retrieved": "2026-10-19T12:24:28.587321+00:00"
+ },
+ "KIP-405/pr7929.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/7929",
+  "sha256": "3f94a99883a0ed849b346d030221207e398a9054278afa37d98ed6ad83fcfc22",
+  "bytes": 17430,
+  "retrieved": "2026-10-23T03:11:50.840873+00:00"
+ },
+ "KIP-405/commit-24290de.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/24290de82821d16f7d163d086f5cfa88cec2b976",
+  "sha256": "9a6a2beeacf675ce0b68a03c773e017bd315d92e195c51d6a2ff073bc0fd1056",
+  "bytes": 50986,
+  "retrieved": "2026-10-23T03:11:51.248823+00:00"
+ },
+ "KIP-500/pr9523.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/9523",
+  "sha256": "e4437c1828ea28d6f61128ccbf9967112f4a20f1bc667162a4dc9d61b1ee9fb8",
+  "bytes": 16510,
+  "retrieved": "2026-10-23T03:12:51.916388+00:00"
+ },
+ "KIP-500/commit-9f26906.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/9f26906fcc2fd095b7d27c504e342b9a8d619b4b",
+  "sha256": "5b1a542c0b52faa6d145bfa4750940bf5455007f5c5fe72fabc37f0dfd2769de",
+  "bytes": 75727,
+  "retrieved": "2026-10-23T03:12:52.945732+00:00"
+ },
+ "KIP-679/pr11691.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/11691",
+  "sha256": "28ebed5f10f11571ace5592f15390aa246d590ed0dbff9c2138ee3674703c812",
+  "bytes": 17446,
+  "retrieved": "2026-10-23T03:09:30.036843+00:00"
+ },
+ "KIP-679/commit-e6db0ca.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/e6db0ca48c42c03655e3781b46ac09dae75cf33e",
+  "sha256": "b1769a9919bda8de08f124d2f9b637ddeb5f5304b9a666f070e58b4b64b331c7",
+  "bytes": 75681,
+  "retrieved": "2026-10-23T03:09:30.540571+00:00"
+ },
+ "KIP-679/pr11788.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/11788",
+  "sha256": "897ae9e5fb963f2bf0358204664ed54d3e00a76c2d4691b12e646f8cb7a10f96",
+  "bytes": 17668,
+  "retrieved": "2026-10-23T03:09:38.419426+00:00"
+ },
+ "KIP-679/commit-7c280c1.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/7c280c1d5f6267acbbebd10d3e58ea4b8fe7a4ef",
+  "sha256": "5381447126d40399aff950918bc3771296cf5e6bd583ebaae99be760ef2975fa",
+  "bytes": 33683,
+  "retrieved": "2026-10-23T03:09:38.913381+00:00"
+ },
+ "KIP-848/pr16945.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/16945",
+  "sha256": "b247b70bf3199c11145ffab2fde0c0fc129955c813e92a02cbdea82f928a405d",
+  "bytes": 17241,
+  "retrieved": "2026-10-23T03:13:47.358405+00:00"
+ },
+ "KIP-848/commit-aaf887d.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/aaf887d3d942d463239369a37e1c97dfa711a775",
+  "sha256": "d90c4bc7e9adebf700eb78293b6f862c88b16f8a4abda5fdc9c2802701653d84",
+  "bytes": 27375,
+  "retrieved": "2026-10-23T03:13:47.776582+00:00"
+ },
+ "KIP-890/pr18720.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/18720",
+  "sha256": "ce616665e0324adfddd3b2f271637bf132d155eb79a7ebe64d8d62ecb580ce8b",
+  "bytes": 17722,
+  "retrieved": "2026-10-23T03:10:02.724773+00:00"
+ },
+ "KIP-890/commit-ab8ef87.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/ab8ef87c7f920894566c25234e9ed2d8f1f9cce2",
+  "sha256": "03d945af8dbefa2bc3500d627cc3ae279f2f0eb68c48fcc20742f4cc75231291",
+  "bytes": 54446,
+  "retrieved": "2026-10-23T03:10:03.780517+00:00"
+ },
+ "KIP-890/pr13231.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/13231",
+  "sha256": "c1bc9e03f7c88d1e079ff7503b521d9ecb50813d68a5d063b50125becebd99f2",
+  "bytes": 16831,
+  "retrieved": "2026-10-23T03:10:11.724554+00:00"
+ },
+ "KIP-890/commit-29a1a16.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/29a1a16668d76a1cc04ec9e39ea13026f2dce1de",
+  "sha256": "ce54a2a4b3235032acfadba36f18c0909f53384854b15e2667b9ae592ccfb4ff",
+  "bytes": 127061,
+  "retrieved": "2026-10-23T03:10:12.281445+00:00"
+ },
+ "KIP-129/commit-ebc7f7c.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/ebc7f7caaeb47c9588d79a2f3ed496daa0bd39e5",
+  "sha256": "1c99179db535d0fddc7e5e5b8f1cd1c0a3e2e29f50dc1af4c745c79d12f4082f",
+  "bytes": 241924,
+  "retrieved": "2026-10-23T03:11:12.333200+00:00"
+ },
+ "KIP-129/commit-6753af2.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/6753af270c8a966411f5574afa57f6e5ffe43dbe",
+  "sha256": "1aa11fb35b89d27959f4097ce5c491769c47aa60eebd3018bdab766e112739d9",
+  "bytes": 109643,
+  "retrieved": "2026-10-23T03:11:27.623128+00:00"
+ },
+ "KIP-129/commit-39c1e62.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/39c1e6259c8ff547c3f7c5165b43c88f9f3ea158",
+  "sha256": "f63a70ad1a2a88e8c09a550c78102597864ac5f5e44396de5398ecfbbc90d4a5",
+  "bytes": 48211,
+  "retrieved": "2026-10-23T03:11:42.903524+00:00"
+ },
+ "KIP-405/pr10218.json": {
+  "url": "https://api.github.com/repos/apache/kafka/pulls/10218",
+  "sha256": "b1a55979a9688fc802f362b2af0b7a51a4c187895cc8442b5ec486c0cc8b5ccb",
+  "bytes": 16868,
+  "retrieved": "2026-10-23T03:12:13.867236+00:00"
+ },
+ "KIP-405/commit-3278090.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/327809024fab07c44cd6d87985db5b9d14fd43bb",
+  "sha256": "1b7417a28eb09552fef15332b3d33167735bdf342b1a0095bd60dcb1e6dd11d6",
+  "bytes": 114817,
+  "retrieved": "2026-10-23T03:12:14.372624+00:00"
+ },
+ "KIP-595/commit-217334b.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/217334b0f412e801bb3a3f5b10c71c1e33a2227a",
+  "sha256": "69382ac046e11be54a39d0d8b11308cbd3bfb38c8e6ac4ffe40fe1d2a6223b76",
+  "bytes": 73940,
+  "retrieved": "2026-10-23T03:13:08.319977+00:00"
+ },
+ "KIP-630/commit-c6a0f76.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/c6a0f760737bf609409eb928c00cef9e4ba1015d",
+  "sha256": "17d61f90c339b89f581839588064c6a2debc0a861788a924466c2c2fd3f58f0d",
+  "bytes": 8659,
+  "retrieved": "2026-10-23T03:13:23.854126+00:00"
+ },
+ "KIP-630/commit-dc72f6e.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/dc72f6ec02c7a7fbda083cd8a5a9f0081c7e58fd",
+  "sha256": "33d19a986c46718a6ae291bdd854e06d30f60f5e6ff8dacda633112207392488",
+  "bytes": 73245,
+  "retrieved": "2026-10-23T03:13:39.427557+00:00"
+ },
+ "KIP-848/commit-03f16f3.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/03f16f368be0b8c6d043b136c0d1db120c7fdb4b",
+  "sha256": "1e89efc995e94a3ce0cb2b95796874808424024d1d4012294fc79188d3e60c82",
+  "bytes": 19300,
+  "retrieved": "2026-10-23T03:14:03.183256+00:00"
+ },
+ "KIP-98/commit-d9369de.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/d9369de8f2c6435843fb7577d313bb24e3b09cba",
+  "sha256": "18b30a2bc1c2b25c824ead077149164dd6eaa363bc2b2953796855f0456741c7",
+  "bytes": 22221,
+  "retrieved": "2026-10-23T03:14:33.269662+00:00"
+ },
+ "KIP-98/commit-cfebfdf.json": {
+  "url": "https://api.github.com/repos/apache/kafka/commits/cfebfdfa5e537946e4c6e1cc986f20131899be31",
+  "sha256": "d29a7876ae9abc12a65bada6a1430a83230ade699379e3e553c29245acd38e2e",
+  "bytes": 5285,
+  "retrieved": "2026-10-23T03:14:48.521084+00:00"
+ }
+}

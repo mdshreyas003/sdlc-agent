@@ -40,9 +40,20 @@ def main(argv: list[str] | None = None) -> int:
     cli = argparse.ArgumentParser(prog="hackfront", description=__doc__)
     sub = cli.add_subparsers(dest="cmd", required=True)
     sub.add_parser("demo", help="create the 'demo' workspace if missing and sync it (needs only Neo4j)")
+    sub.add_parser("eval-load", help="create the 'eval' workspace (Kafka benchmark corpus from data/raw) and sync it")
     sync = sub.add_parser("sync", help="ingest a workspace's sources (credentials from the workspace store or env)")
     sync.add_argument("--workspace", required=True)
     sync.add_argument("--deep", action="store_true", help="100 pages per stream instead of 20")
+    ev = sub.add_parser("eval", help="run the benchmark systems over the gold questions and score them")
+    ev.add_argument("--workspace", default="eval")
+    ev.add_argument("--split", choices=["dev", "test"], default="dev")
+    ev.add_argument("--systems", default="b0,b1,s-,s", help="comma list of b0,b1,s-,s")
+    ev.add_argument("--provider", choices=["azure", "sarvam"])
+    ev.add_argument("--judge-provider", choices=["azure", "sarvam"])
+    ev.add_argument("--limit", type=int)
+    ev.add_argument("--include-unverified", action="store_true", help="dev smoke runs only")
+    ev.add_argument("--resume", help="results directory of a stopped run")
+    ev.add_argument("--force", action="store_true", help="score the test split again")
     sub.add_parser("workspaces", help="list workspaces")
     sub.add_parser("status", help="workspaces and global graph counts")
     ask = sub.add_parser("ask", help="ask the agent from the terminal")
@@ -65,6 +76,17 @@ def main(argv: list[str] | None = None) -> int:
                 config.create_workspace("Acme Demo", demo=True, slug="demo")
             config.save_workspace("demo", DEMO_WORKSPACE)
             return _sync("demo", "standard")
+        if args.cmd == "eval":
+            from .eval.run import main_eval
+
+            return main_eval(args)
+        if args.cmd == "eval-load":
+            from .eval.corpus import workspace
+
+            if not any(w["slug"] == "eval" for w in config.list_workspaces()):
+                config.create_workspace("Kafka Eval", demo=True, slug="eval")
+            config.save_workspace("eval", workspace())
+            return _sync("eval", "deep")
         if args.cmd == "sync":
             return _sync(args.workspace, "deep" if args.deep else "standard")
         if args.cmd == "migrate-state":

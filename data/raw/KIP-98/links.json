@@ -1,0 +1,32 @@
+{
+ "all": [
+  "http://search-hadoop.com/m/Kafka/uyzND1jwZrr7HRHf?subj=+DISCUSS+KIP+98+Exactly+Once+Delivery+and+Transactional+Messaging",
+  "https://cwiki.apache.org/confluence/display/KAFKA/Idempotent+Producer",
+  "https://cwiki.apache.org/confluence/display/KAFKA/Transactional+Messaging+in+Kafka",
+  "https://docs.google.com/document/d/1Sc8qlnc3K1OlOmDhs8YHZrndyvnFzZs2IAmklJ4wWJE/edit?tab=t.0#heading=h.i4ub5zye01nh",
+  "https://kafka.apache.org/documentation/streams",
+  "https://issues.apache.org/jira/browse/KAFKA-1639",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#heading=h.z99xar1h2enr",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#heading=h.r6klddrx9ibz",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#heading=h.cqecubxziwie",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#heading=h.2dnhvqqi7mr7",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.vg8ouwgaahtr",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#heading=h.mkk6ckzh7jxl",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.nogouvgyxtup",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#heading=h.pau6n6buvoee",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.8biz78fs2t9",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.jro89lml46du",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.aywz22lp6tma",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.5xa2hzric4h0",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.aqrq1dgbix3a",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.x3qeh1kmz4ka",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#bookmark=id.55yzhvkppi6m",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-32+-+Add+timestamps+to+Kafka+message",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/edit#heading=h.mylukj7bg1rf",
+  "https://docs.google.com/document/d/11Jqy_GjUGtdXJK94XGsEIK7CP1SnQGdp2eF0wSw9ra8/"
+ ],
+ "candidates": [
+  "https://issues.apache.org/jira/browse/KAFKA-1639",
+  "https://issues.apache.org/jira/browse/KAFKA-4815"
+ ]
+}

@@ -20,6 +20,7 @@ SARVAM_URL = "https://api.sarvam.ai/v1/"
 MAX_TOKENS = 16000  # Sarvam spends part of this on reasoning_content, which we ignore
 _clients: dict = {}  # provider -> client; rebuilt when credentials change; tests inject fakes here
 _creds: dict = {}  # provider -> (credentials, client) it was built with
+TOKENS = [0]  # running total of completion usage; the benchmark reads deltas per question
 _workspace: ContextVar[str | None] = ContextVar("llm_workspace", default=None)
 
 
@@ -129,6 +130,8 @@ def structured(provider: str, template: str, schema, _model: str | None = None, 
     for _ in range(2):
         resp = client(provider).chat.completions.create(model=model, messages=messages, max_tokens=MAX_TOKENS)
         text = clean(resp.choices[0].message.content)
+        used = getattr(getattr(resp, "usage", None), "total_tokens", 0)
+        TOKENS[0] += used if isinstance(used, int) else 0
         try:
             return schema.model_validate_json(text[text.find("{"): text.rfind("}") + 1])
         except ValidationError as error:

@@ -253,6 +253,10 @@ def _clients(slug: str, ws: dict, job: _Job):
     if ws["demo"]:
         from .demo import demo_clients
 
+        if slug == "eval":  # benchmark workspace: real public corpus replayed through the same clients
+            from ..eval.corpus import load
+
+            return demo_clients(load())
         return demo_clients()
     gh, jira, slack = ws["github"], ws["jira"], ws["slack"]
     get = lambda key: config.get_secret(slug, key)  # noqa: E731

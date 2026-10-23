@@ -1,0 +1,9 @@
+{
+ "all": [
+  "https://lists.apache.org/thread.html/r9468d1f276385695a2d6d48f6dfbdc504c445fc5745aaa606d138fed%40%3Cdev.kafka.apache.org%3E",
+  "https://lists.apache.org/thread.html/r50a28ba321fabd7587a87bdf8c943070f25ad833a640f55cfd7e995c%40%3Cdev.kafka.apache.org%3E"
+ ],
+ "candidates": [
+  "https://issues.apache.org/jira/browse/KAFKA-10310"
+ ]
+}

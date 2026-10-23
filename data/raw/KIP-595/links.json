@@ -1,0 +1,21 @@
+{
+ "all": [
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-500%3A+Replace+ZooKeeper+with+a+Self-Managed+Metadata+Quorum",
+  "https://lists.apache.org/thread.html/r3ab3c6d5cbd7b181b40d08bd3765eff338f6a52fc186cab6b88e503f%40%3Cdev.kafka.apache.org%3E",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-101+-+Alter+Replication+Protocol+to+use+Leader+Epoch+rather+than+High+Watermark+for+Truncation",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-320%3A+Allow+fetchers+to+detect+and+handle+log+truncation",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-630%3A+Kafka+Raft+Snapshot",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-631%3A+The+Quorum-based+Kafka+Controller",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-642%3A+Dynamic+quorum+reassignment",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-580%3A+Exponential+Backoff+for+Kafka+Clients",
+  "https://cwiki.apache.org/confluence/display/KAFKA/KIP-497%3A+Add+inter-broker+API+to+alter+ISR",
+  "http://wcl.cs.rpi.edu/pilots/library/papers/consensus/RAFTOngaroPhD.pdf",
+  "https://github.com/etcd-io/dbtester",
+  "https://github.com/confluentinc/kafka/blob/kafka-raft/raft/src/test/java/org/apache/kafka/raft/RaftEventSimulationTest.java",
+  "https://github.com/logcabin/logcabin/blob/master/Server/RaftConsensus.cc#L1595",
+  "http://www.cs.cornell.edu/courses/cs7412/2011sp/paxos.pdf"
+ ],
+ "candidates": [
+  "https://issues.apache.org/jira/browse/KAFKA-9876"
+ ]
+}

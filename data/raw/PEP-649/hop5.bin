@@ -1,0 +1,669 @@
+
+
+
+
+
+
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="ROBOTS" content="INDEX, FOLLOW" />
+        <title>Mailman 3 
+Type annotations, PEP 649 and PEP 563 - Python-Dev - python.org
+</title>
+        <meta name="author" content="" />
+        <meta name="dc.language" content="en" />
+        <link rel="shortcut icon" href="/static/hyperkitty/img/favicon.ico" />
+        <link rel="stylesheet" href="/static/hyperkitty/libs/jquery/smoothness/jquery-ui-1.13.1.min.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/static/hyperkitty/libs/fonts/font-awesome/css/font-awesome.min.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/static/CACHE/css/output.6c1559a13d2c.css" type="text/css" media="all"><link rel="stylesheet" href="/static/CACHE/css/output.333a5a6f2a40.css" type="text/css"><link rel="stylesheet" href="/static/CACHE/css/output.cda4f100d432.css" type="text/css" media="all">
+         
+        
+        
+
+    </head>
+
+    <body>
+
+    
+
+
+    <nav class="navbar sticky-top navbar-expand-md mb-2" id="navbar-main">
+        <div class="container-xxl">
+            <div class="navbar-header"> <!--part of navbar that's always present-->
+                <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="fa fa-bars"></span>
+                </button>
+                <a class="navbar-brand" href="/archives/">Mailman 3 python.org</a>
+
+            </div> <!-- /navbar-header -->
+            <div class="d-flex">
+                <div class="auth dropdown d-md-none">
+                        
+                </div>
+                
+                <a  href="/accounts/login/?next=/archives/list/python-dev%40python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/" class="nav-link d-md-none">
+                    <span class="fa fa-sign-in"></span>
+                    Sign In
+                </a>
+                
+                <a  href="/accounts/signup/?next=/archives/list/python-dev%40python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/" class="nav-link d-md-none">
+                    <span class="fa fa-user-plus"></span>
+                    Sign Up
+                </a>
+                
+                
+            </div>
+            <div class="navbar-collapse collapse justify-content-end"> <!--part of navbar that's collapsed on small screens-->
+                <!-- show dropdown for smaller viewports b/c login name/email may be too long -->
+                <!-- only show this extra button/dropdown if we're in small screen sizes -->
+            
+                
+                <a href="/mailman3/lists/python-dev.python.org/" class="nav-link">
+                    <span class="fa fa-cog"></span>
+                    Manage this list
+                </a>
+                
+            
+            
+            <a  href="/accounts/login/?next=/archives/list/python-dev%40python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/" class="nav-link d-none d-md-block">
+                <span class="fa fa-sign-in"></span>
+                Sign In
+            </a>
+            
+            <a  href="/accounts/signup/?next=/archives/list/python-dev%40python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/" class="nav-link d-none d-md-block">
+                <span class="fa fa-user-plus"></span>
+                Sign Up
+            </a>
+            
+            
+                <form name="search" method="get" action="/archives/search" class="navbar-form navbar-right my-2 my-lg-2 ms-2" role="search">
+                    <input type="hidden" name="mlist" value="python-dev@python.org" />
+                    <div class="input-group">
+                    <input name="q" type="text" class="form-control rounded-4 search"
+                            
+                                placeholder="Search this list"
+                                aria-label="Search this list"
+                            
+                            
+                            />
+                    <button class="btn search-button" aria-label="Search"><span class="fa fa-search"></span></button>
+                    </div>
+                </form>
+                <!-- larger viewports -->
+                <ul class="nav navbar-nav auth d-none d-md-flex">
+                    
+                </ul>
+            </div> <!--/navbar-collapse -->
+        </div><!-- /container for navbar -->
+    </nav>
+
+    
+
+     <div class="modal fade" tabindex="-1" role="dialog" id="keyboard-shortcuts">
+       <div class="modal-dialog" role="document">
+         <div class="modal-content">
+           <div class="modal-header">
+             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+             <h4 class="modal-title">Keyboard Shortcuts</h4>
+           </div>
+           <div class="modal-body">
+             <h3>Thread View</h3>
+             <ul>
+               <li><code>j</code>: Next unread message </li>
+               <li><code>k</code>: Previous unread message </li>
+               <li><code>j a</code>: Jump to all threads
+               <li><code>j l</code>: Jump to MailingList overview
+             </ul>
+           </div>
+         </div><!-- /.modal-content -->
+       </div><!-- /.modal-dialog -->
+     </div><!-- /.modal -->
+
+     <div class="container-xxl" role="main">
+        
+
+<div class="row view-thread d-flex">
+
+        <!-- thread header: navigation (older/newer), thread title -->
+        <div class="thread-header">
+          <div class="d-flex">
+            
+            <div>
+                
+                <a id="next-thread" class="btn btn-secondary btn-sm "
+                        title="September Steering Council update"
+                        href="/archives/list/python-dev@python.org/thread/3CSYIEDW3Y6U24Z4C4CSTVRUKNYUWMS4/">
+                    <span class="fa fa-chevron-left"></span>
+                    <span class="d-none d-md-inline">newer</span>
+                </a>
+                <br />
+                <a href="/archives/list/python-dev@python.org/thread/3CSYIEDW3Y6U24Z4C4CSTVRUKNYUWMS4/"
+                title="September Steering Council update" class="thread-titles d-none d-md-block">
+                    September Steering Council update
+                </a>
+               
+            </div>
+            <div class="flex-grow-1">
+                <h3>Type annotations, PEP 649 and PEP 563</h3>
+            </div>
+            <div class="right">
+                <a id="prev-thread" class="btn btn-secondary btn-sm "
+                    
+                    title="Tips on C and the CPython Codebase"
+                    href="/archives/list/python-dev@python.org/thread/MKCYLU2F5AZMBUYG4WU4T7DCZN3VP57B/"
+                    >
+                    <span class="fa fa-chevron-right"></span>
+                    <span class="d-none d-md-inline">older</span>
+                </a><br />
+                
+                <a href="/archives/list/python-dev@python.org/thread/MKCYLU2F5AZMBUYG4WU4T7DCZN3VP57B/"
+                    title="Tips on C and the CPython Codebase" class="thread-titles d-none d-md-block">
+                    Tips on C and the CPython Codebase
+                </a>
+                
+            </div>
+          </div>
+         
+         </div>
+        </div> <!-- /thread-header -->
+
+        <div class="row">
+            <div class="col-sm-12 col-md-9">
+                <!-- main section, the email thread -->
+                <div id="thread-content">
+
+                    <!-- Start first email -->
+                    
+
+
+
+
+
+<div class="email email-first">
+
+    <div id="SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY" class="email-header">
+        <div class="gravatar-wrapper d-flex">
+            <div class="gravatar circle">
+                <img class="gravatar" src="https://secure.gravatar.com/avatar/1063da4d34e5552046834eb884bac8df.jpg?s=120&amp;d=mm&amp;r=g" width="120" height="120" alt="" />
+            </div>
+            <div class="email-author d-flex">
+                <h2 class="name">
+                    
+                    <a href="/archives/users/a9c1d9a23d7d419a9957b4e797139edb/"
+                       title="See the profile for Thomas Wouters"
+                       >Thomas Wouters</a>
+                    
+                </h2>
+            </div>
+        </div>
+        <div class="email-date right">
+            
+            
+            <span class="date">
+                Oct. 20, 2021
+            </span>
+            
+            <div class="time">
+                <span title="Sender's time: Oct. 20, 2021, 3:18 p.m.">1:18 p.m.</span>
+            </div>
+
+        </div>
+        
+    </div> <!-- /email-header: gravatar, author-info, date, peramlink, changed_subject -->
+    <div class="email-body ">
+      <p>(For visibility, posted both to python-dev and Discourse.)
+
+Over the last couple of months, ever since delaying PEP 563’s default
+change in 3.10
+&lt;<a target="_blank" href="https://mail.python.org/archives/list/python-dev@python.org/message/CLVXXPQ2T2LQ5MP2Y53VVQFCXYWQJHKZ/">https://mail.python.org/archives/list/python-dev@python.org/message/CLVXXPQ2...</a>>,
+the Steering Council has been discussing and deliberating over PEP 563
+(Postponed Evaluation of Annotations)
+&lt;<a target="_blank" href="https://www.python.org/dev/peps/pep-0563/">https://www.python.org/dev/peps/pep-0563/</a>>, PEP 649 (Deferred Evaluation
+Of Annotations Using Descriptors)
+&lt;<a target="_blank" href="https://www.python.org/dev/peps/pep-0649/">https://www.python.org/dev/peps/pep-0649/</a>>, and type annotations in
+general. We haven’t made a decision yet, but we want to give everyone an
+update on where we’re at, what we’re thinking and why, see if there’s
+consensus on any of this, and perhaps restart the discussion around the
+options.
+
+First off, as Barry already mentioned in a different thread
+&lt;<a target="_blank" href="https://mail.python.org/archives/list/python-dev@python.org/message/4TY3MVJQOLKSTMCJRTGAZEOSIIMAWQ45/">https://mail.python.org/archives/list/python-dev@python.org/message/4TY3MVJQ...</a>>,
+the SC does not want to see type annotations as separate from the Python
+language. We don’t think it would be good to have the syntax or the
+semantics diverge, primarily because we don’t think users would see them as
+separate. Any divergence would be hard to explain in documentation, hard to
+reason about when reading code, and hard to delineate, to describe what is
+allowed where. There’s a lot of nuance in this position (it doesn’t
+necessarily mean that all valid syntax for typing uses has to have sensible
+semantics for non-typing uses), but we’ll be working on something to
+clarify that more, later.
+
+We also believe that the runtime uses of type annotations, which PEP 563
+didn’t really anticipate, are valid uses that Python should support. If
+function annotations and type annotations had evolved differently, such as
+being strings from the start, PEP 563 might have been sufficient. It’s
+clear runtime uses of type annotations serve a real, sensible purpose, and
+Python benefits from supporting them.
+
+By and large, the SC views PEP 649 as a better way forward. If PEP 563 had
+never come along, it would be a fairly easy decision to accept PEP 649. We
+are still inclined to accept PEP 649. That would leave the consideration
+about what to do with PEP 563 and existing from __future__ import
+annotations directives. As far as we can tell, there are two reasons for
+code to want to use PEP 563: being able to conveniently refer to names that
+aren’t available until later in the code (i.e. forward references), and
+reducing the overhead of type annotations. If PEP 649 satisfies all of the
+objectives of PEP 563, is there a reason to keep supporting PEP 563’s
+stringified annotations?  Are there any practical, real uses of stringified
+annotations that would not be served by PEP 649's deferred annotations?
+
+If we no longer need to support PEP 563, can we simply make from __future__
+import annotations enable PEP 649? We still may want a new future import
+for PEP 649 as a transitory measure, but we could make PEP 563's future
+import mean the same thing, without actually stringifying annotations. (The
+reason to do this would be to reduce the combinatorial growth of the
+support matrix, and to simplify the implementation of the parser.) This
+would affect code that expects annotations to always be strings, but such
+code would have to be poking directly at function objects (the
+__annotations__ attribute), instead of using the advertised ways of getting
+at annotations (like typing.get_type_hints()). This question in particular
+is one in which the SC isn't yet of one mind.
+
+Keeping the future import and stringified annotations around is certainly
+an option, but we’re worried about the cost of the implementation, the
+support cost, and the confusion for users (specifically, it is a future
+import that will never become the future). If we do keep them, how long
+would we keep them around? Should we warn about their use? If we warn about
+the future import, is the noise and confusion this generates going to be
+worth it? If we don't warn about them, how will we ever be able to turn
+them off?
+
+One thing we’re thinking of specifically for the future import, and for
+other deprecations in Python, is to revisit the deprecation and warning
+policy. We think it’s pretty clear that the policy we have right now
+doesn’t exactly work. We used to have noisy DeprecationWarnings, which were
+confusing to end users when they were not in direct control of the code. We
+now have silent-by-default DeprecationWarnings, where the expectation is
+that test frameworks surface these warnings. This avoids the problem of end
+users being confused, but leaves the problem of the code’s dependencies
+triggering the warning, and thus still warns users (developers) not
+necessarily in a position to fix the problem, which in turn leads to them
+silencing the warning and moving on. We need a better way to reach the
+users in a position to update the code.
+
+One idea is to rely on linters and IDEs to provide this signal, possibly
+with a clear upgrade path for the code (e.g. a 2to3-like fixer for a
+specific deprecation). Support for deprecations happened to be brought up on
+the typing-sig mailing list not too long ago
+&lt;<a target="_blank" href="https://mail.python.org/archives/list/typing-sig@python.org/thread/E24WTMQUTGKPFKEXVCGGEFFMG7LDF3WT/#5DXUZMF6Q5YYBW2N6ZPTU77GRFH3B4L3">https://mail.python.org/archives/list/typing-sig@python.org/thread/E24WTMQUT...</a>>,
+as an addition to the pytype type checker and hopefully others (full
+disclosure, Yilei is a team-mate of Thomas’s at Google).
+
+This sounds like a reasonably user-friendly approach, but it would require
+buy-in from linter/IDE developers, or an officially supported “Python
+linter” project that we control. There’s also the question of support
+timelines: most tooling supports a wider range of Python versions than just
+the two years that we use in our deprecation policy. Perhaps we need to
+revisit the policy, and consider deprecation timelines based on how many
+Python versions library developers usually want to support.
+
+The SC continues to discuss the following open questions, and we welcome
+your input on them:
+
+   1.
+
+   Is it indeed safe to assume PEP 649 satisfies all reasonable uses of PEP
+   563? Are there cases of type annotations for static checking or runtime
+   use that PEP 563 enables, which would break with PEP 649?
+   2.
+
+   Is it safe to assume very little code would be poking directly at
+__annotations__
+   attributes of function objects; effectively, to declare them
+   implementation details and let them not be strings even in code that
+   currently has the annotations future import?
+   3.
+
+   Is the performance of PEP 649 and PEP 563 similar enough that we can
+   outright discount it as a concern? Does anyone actually care about the
+   overhead of type annotations anymore? Are there other options to alleviate
+   this potential issue (like a process-wide switch to turn off annotations)?
+   4.
+
+   If we do not need to keep PEP 563 support, which would be a lot easier
+   on code maintenance and our support matrix, do we need to warn about the
+   semantics change? Can we silently accept (and ignore) the future import
+   once PEP 649 is in effect?
+   5.
+
+   If we do need a warning, how loud, and how long should it be around? At
+   the end of the deprecation period, should the future import be an error, or
+   simply be ignored?
+   6.
+
+   Are there other options we haven’t thought of for dealing with
+   deprecations like this one?
+
+
+Like I said, the SC isn’t done deliberating on any of this. The only
+decisions we’ve made so far is that we don’t see the typing language as
+separate from Python (and thus won’t be blanket delegating typing PEPs to a
+separate authority), and we don’t see type annotations as purely for static
+analysis use.
+
+For the whole SC,
+
+Thomas.
+
+-- 
+Thomas Wouters &lt;thomas@python.org>
+
+Hi! I'm an email virus! Think twice before sending your email to help me
+spread!</p>
+
+    </div>
+
+    
+    <div class="attachments">
+        <p class="attachments">Attachments:</p>
+        <ul class="attachments-list list-unstyled">
+        
+            <li><a href="/archives/list/python-dev@python.org/message/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/attachment/2/attachment.htm">attachment.htm</a>
+                (text/html &mdash; 20.0 KB)
+            </li>
+        
+        </ul>
+    </div>
+    
+
+    <div class="email-info">
+      <div class="likeform-wrapper right">
+        <div class="messagelink pull-right">
+          <button class="toggle-font btn btn-sm"
+                title="Display in fixed font"
+                data-bs-toggle="tooltip" data-placement="bottom">
+                <i class="fa fa-font"></i>
+          </button>
+          <a href="/archives/list/python-dev@python.org/message/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/"
+             title="Permalink for this message"
+             data-bs-toggle="tooltip" data-placement="bottom"><i class="fa fa-link"></i></a>
+        </div>
+        
+
+    <form method="post" class="likeform"
+          action="/archives/list/python-dev@python.org/message/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/vote">
+    <input type="hidden" name="csrfmiddlewaretoken" value="49U9NZcaDLPmhYdlON4wcCBvlrykSned1L8zBuEbVKQAh0UBbD0SDlLEa88YrX3N">
+    
+		
+			<a class="youlike vote  disabled" title="You must be logged-in to vote."
+			href="#like" data-vote="1" aria-label="Like thread">
+					<i class="fa fa-thumbs-o-up"></i> 0
+			</a>
+			<a class="youdislike vote disabled" title="You must be logged-in to vote."
+			href="#dislike" data-vote="-1" aria-label="Dislike thread">
+				<i class="fa fa-thumbs-o-down"></i> 0
+			</a>
+		
+    
+
+    </form>
+
+        </div>
+
+        <!-- Reply link -->
+        
+        
+        <a class="reply reply-mailto" title="Reply" href="#">
+            <i class="fa fa-reply"></i>
+            Reply
+        </a>
+        
+        
+
+        <!-- Attachments -->
+        
+        <!-- Reply form -->
+        
+        <div class="reply-form-unauthenticated">
+            <a class="btn btn-sm btn-primary" href="/accounts/login/?next=/archives/list/python-dev%40python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/#">
+                Sign in to reply online
+            </a>
+            <a class="btn btn-sm btn-secondary reply-mailto"
+                       href="mailto:python-dev@python.org?Subject=Re%3A%20%5BPython-Dev%5D%20Type%20annotations%2C%20PEP%20649%20and%20PEP%20563&amp;In-Reply-To=&lt;CAPdQG2qUASCoF%3DJwZ6Eadkw%3DfApxTHk6%2B72kda46U-PxpGp3Zw%40mail.gmail.com&gt;"
+                       >Use email software</a></li>
+        </div>
+        
+
+        
+
+    </div>
+
+</div>
+
+                    <!-- End first email -->
+
+                    <p class="sort-mode">
+                        
+                        <a href="/archives/list/python-dev@python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/?sort=date"
+                            >Show replies by date</a>
+                        
+                    </p>
+
+                    <div class="anchor-link">
+                        <a id="replies"></a>
+                    </div>
+                    <div class="replies">
+                        
+                            <img alt="Loading..." class="ajaxloader" src="/static/hyperkitty/img/ajax-loader.gif" />
+                            <noscript>
+                              <a href="/archives/list/python-dev@python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/?noscript">Visit here for a non-javascript version of this page.</a>
+                            </noscript>
+                        
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <div class="anchor-link">
+                    <a id="stats"></a>
+                </div>
+                
+
+
+
+
+<!-- right column -->
+<section id="thread-overview-info">
+    <!-- Start stats re: dates -->
+    <div id="thread-date-info" class="row">
+      <div class="col">
+        <span class="days-num">1814</span>
+        <div class="days-text">
+          Age (days ago)
+        </div>
+      </div>
+      <div class="col">
+        <span class="days-num">1825</span>
+        <div class="days-text">
+          Last active (days ago)
+        </div>
+        </div>
+    </div> <!-- /Stats re: dates -->
+
+    <p>
+        <a href="/archives/list/python-dev@python.org/" class="btn btn-outline-primary btn-sm">
+            List overview
+        </a>
+    </p>
+
+    
+
+    
+    <a href="/archives/list/python-dev@python.org/export/python-dev@python.org-SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY.mbox.gz?thread=SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY" title="This thread in gzipped mbox format"
+          class="btn btn-outline-primary">
+        <i class="fa fa-download"></i> Download</a>
+    
+
+    <p class="thread-overview-details">
+    <div>
+        <i class="fa fa-fw fa-comment"></i>
+        12 comments
+    </div>
+    <div>
+        <i class="fa fa-fw fa-user"></i>
+        8 participants
+    </div>
+    
+    </p>
+
+    <form id="fav_form" name="favorite" method="post" class="favorite"
+          action="/archives/list/python-dev@python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/favorite">
+        <input type="hidden" name="csrfmiddlewaretoken" value="49U9NZcaDLPmhYdlON4wcCBvlrykSned1L8zBuEbVKQAh0UBbD0SDlLEa88YrX3N">
+        <input type="hidden" name="action" value="add" />
+        <p>
+            <a href="#AddFav" class="notsaved disabled" title="You must be logged-in to have favorites.">
+                <i class="fa fa-fw fa-star"></i>Add to favorites</a>
+            <a href="#RmFav" class="saved">
+                <i class="fa fa-fw fa-star"></i>Remove from favorites</a>
+        </p>
+    </form>
+
+    
+
+    <div id="tags">
+        
+
+        <h3 id="tag-title">tags </h3>
+        
+
+    </div>
+    
+    
+    <div id="participants">
+        <h3 id="participants_title">participants (8)</h3>
+        <ul class="list-unstyled">
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/78ecccbc759942c6ab1c65c6f22c7cf9.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>asafspades＠gmail.com</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/fafbbcbd739da3368e6dbd1eb999f360.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Bluenix</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/176220408ba450411279916772c36066.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Christopher Barker</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/351a10f392414345ed67a05e986dc4dd.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Inada Naoki</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/53c166c5e1f0eef9ff4eb4d0b6ec9371.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Larry Hastings</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/d5d40a40d75ba32b1bdff02b57201cd1.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Sebastian Rittau</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/1063da4d34e5552046834eb884bac8df.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Thomas Wouters</span>
+                </div>
+            </li>
+            
+            <li class="d-flex">
+                <div class="participant-gravatar circle"><img class="gravatar" src="https://secure.gravatar.com/avatar/dbae42afc5ab53e05f3c61d36b9ee7d4.jpg?s=48&amp;d=mm&amp;r=g" width="48" height="48" alt="" /></div>
+                <div class="participant-name d-flex align-items-center">
+                    <span>Łukasz Langa</span>
+                </div>
+            </li>
+            
+        </ul>
+    </div>
+    
+</section>
+
+
+
+            </div>
+
+        </div>
+
+</div>
+
+<!-- end of content -->
+
+    </div> <!-- /container for content -->
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">
+            <img class="logo" alt="HyperKitty" src="/static/hyperkitty/img/logo.png" />
+            Powered by <a href="http://hyperkitty.readthedocs.org">HyperKitty</a> version 1.3.12.
+        </p>
+      </div>
+    </footer>
+
+    <script src="/static/hyperkitty/libs/jquery/jquery-3.6.0.min.js"></script>
+    <script src="/static/hyperkitty/libs/jquery/jquery-ui-1.13.1.min.js"></script>
+    <script src="/static/CACHE/js/output.fb4db16e32a4.js"></script>
+    <script>
+      // Add the .js-enabled class to the body so we can style the elements
+      // depending on whether Javascript is enabled.
+      $(document).ready(function(){
+          $("body").addClass("js-enabled");
+          $(".gravatar").addClass("rounded-circle");
+      });
+    </script>
+    
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        //enable tooltips for thread buttons
+        $("btn#next-thread").tooltip();
+        $("btn#prev-thread").tooltip();
+
+        setup_category();
+        setup_tags();
+        setup_favorites();
+        // Hide quotes by default in the thread view
+        fold_quotes("div.container-xxl");
+        // Load the replies
+        update_thread_replies("/archives/list/python-dev@python.org/thread/SZLWVYV2HPLU6AH7DOUD7DWFUGBJGQAY/replies?sort=thread&last_view=");
+        setup_unreadnavbar("#unreadnavbar");
+        setup_thread_keyboard_shortcuts();
+    });
+</script>
+
+
+
+    
+
+
+    </body>
+</html>

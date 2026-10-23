@@ -1,0 +1,820 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Python-Dev] PEP 563: Postponed Evaluation of Annotations (Draft 3)
+   </TITLE>
+   <LINK REL="Index" HREF="index.html" >
+   <LINK REL="made" HREF="mailto:python-dev%40python.org?Subject=Re%3A%20%5BPython-Dev%5D%20PEP%20563%3A%20Postponed%20Evaluation%20of%20Annotations%0A%20%28Draft%203%29&In-Reply-To=%3CCAP7%2BvJKZzYCaa3B29RahqmTXfgvHGS-LUVSyja_-9pzSTauOyw%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="151021.html">
+   <LINK REL="Next"  HREF="151049.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Python-Dev] PEP 563: Postponed Evaluation of Annotations (Draft 3)</H1>
+    <B>Guido van Rossum</B> 
+    <A HREF="mailto:python-dev%40python.org?Subject=Re%3A%20%5BPython-Dev%5D%20PEP%20563%3A%20Postponed%20Evaluation%20of%20Annotations%0A%20%28Draft%203%29&In-Reply-To=%3CCAP7%2BvJKZzYCaa3B29RahqmTXfgvHGS-LUVSyja_-9pzSTauOyw%40mail.gmail.com%3E"
+       TITLE="[Python-Dev] PEP 563: Postponed Evaluation of Annotations (Draft 3)">guido at python.org
+       </A><BR>
+    <I>Mon Dec  4 11:42:38 EST 2017</I>
+    <P><UL>
+        <LI>Previous message (by thread): <A HREF="151021.html">[Python-Dev] PEPs: ``.. code:: python`` or ``::`` (syntax highlighting)
+</A></li>
+        <LI>Next message (by thread): <A HREF="151049.html">[Python-Dev] PEP 563: Postponed Evaluation of Annotations (Draft 3)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#151042">[ date ]</a>
+              <a href="thread.html#151042">[ thread ]</a>
+              <a href="subject.html#151042">[ subject ]</a>
+              <a href="author.html#151042">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>&#321;ukasz,
+
+I am hereby accepting your PEP. This will be a great improvement in the
+experience of users annotating large complex codebases. Congrats on the
+design and implementation and on your shepherding the PEP through the
+discussion phase. Also a special thanks to Serhiy for thoroughly reviewing
+and contributing to the ast-expr-stringification code.
+
+--Guido
+
+PS. I have some editorial quibbles (mostly suggestions to make the
+exposition clearer in a few places) but they don't affect acceptance of the
+PEP and I will contact you at a later time with these.
+
+
+On Tue, Nov 21, 2017 at 4:26 PM, Lukasz Langa &lt;<A HREF="https://mail.python.org/mailman/listinfo/python-dev">lukasz at langa.pl</A>&gt; wrote:
+
+&gt;<i> Based on the feedback I gather in early November,
+</I>&gt;<i> I'm publishing the third draft for consideration on python-dev.
+</I>&gt;<i> I hope you like it!
+</I>&gt;<i>
+</I>&gt;<i> A nicely formatted rendering is available here:
+</I>&gt;<i> <A HREF="https://www.python.org/dev/peps/pep-0563/">https://www.python.org/dev/peps/pep-0563/</A>
+</I>&gt;<i>
+</I>&gt;<i> The full list of changes between this version and the previous draft
+</I>&gt;<i> can be found here:
+</I>&gt;<i> <A HREF="https://github.com/ambv/static-annotations/compare/">https://github.com/ambv/static-annotations/compare/</A>
+</I>&gt;<i> python-dev1...python-dev2
+</I>&gt;<i>
+</I>&gt;<i> - &#321;
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> PEP: 563
+</I>&gt;<i> Title: Postponed Evaluation of Annotations
+</I>&gt;<i> Version: $Revision$
+</I>&gt;<i> Last-Modified: $Date$
+</I>&gt;<i> Author: &#321;ukasz Langa &lt;<A HREF="https://mail.python.org/mailman/listinfo/python-dev">lukasz at langa.pl</A>&gt;
+</I>&gt;<i> Discussions-To: Python-Dev &lt;<A HREF="https://mail.python.org/mailman/listinfo/python-dev">python-dev at python.org</A>&gt;
+</I>&gt;<i> Status: Draft
+</I>&gt;<i> Type: Standards Track
+</I>&gt;<i> Content-Type: text/x-rst
+</I>&gt;<i> Created: 8-Sep-2017
+</I>&gt;<i> Python-Version: 3.7
+</I>&gt;<i> Post-History: 1-Nov-2017, 21-Nov-2017
+</I>&gt;<i> Resolution:
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Abstract
+</I>&gt;<i> ========
+</I>&gt;<i>
+</I>&gt;<i> PEP 3107 introduced syntax for function annotations, but the semantics
+</I>&gt;<i> were deliberately left undefined.  PEP 484 introduced a standard meaning
+</I>&gt;<i> to annotations: type hints.  PEP 526 defined variable annotations,
+</I>&gt;<i> explicitly tying them with the type hinting use case.
+</I>&gt;<i>
+</I>&gt;<i> This PEP proposes changing function annotations and variable annotations
+</I>&gt;<i> so that they are no longer evaluated at function definition time.
+</I>&gt;<i> Instead, they are preserved in ``__annotations__`` in string form.
+</I>&gt;<i>
+</I>&gt;<i> This change is going to be introduced gradually, starting with a new
+</I>&gt;<i> ``__future__`` import in Python 3.7.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Rationale and Goals
+</I>&gt;<i> ===================
+</I>&gt;<i>
+</I>&gt;<i> PEP 3107 added support for arbitrary annotations on parts of a function
+</I>&gt;<i> definition.  Just like default values, annotations are evaluated at
+</I>&gt;<i> function definition time.  This creates a number of issues for the type
+</I>&gt;<i> hinting use case:
+</I>&gt;<i>
+</I>&gt;<i> * forward references: when a type hint contains names that have not been
+</I>&gt;<i>   defined yet, that definition needs to be expressed as a string
+</I>&gt;<i>   literal;
+</I>&gt;<i>
+</I>&gt;<i> * type hints are executed at module import time, which is not
+</I>&gt;<i>   computationally free.
+</I>&gt;<i>
+</I>&gt;<i> Postponing the evaluation of annotations solves both problems.
+</I>&gt;<i>
+</I>&gt;<i> Non-goals
+</I>&gt;<i> ---------
+</I>&gt;<i>
+</I>&gt;<i> Just like in PEP 484 and PEP 526, it should be emphasized that **Python
+</I>&gt;<i> will remain a dynamically typed language, and the authors have no desire
+</I>&gt;<i> to ever make type hints mandatory, even by convention.**
+</I>&gt;<i>
+</I>&gt;<i> This PEP is meant to solve the problem of forward references in type
+</I>&gt;<i> annotations.  There are still cases outside of annotations where
+</I>&gt;<i> forward references will require usage of string literals.  Those are
+</I>&gt;<i> listed in a later section of this document.
+</I>&gt;<i>
+</I>&gt;<i> Annotations without forced evaluation enable opportunities to improve
+</I>&gt;<i> the syntax of type hints.  This idea will require its own separate PEP
+</I>&gt;<i> and is not discussed further in this document.
+</I>&gt;<i>
+</I>&gt;<i> Non-typing usage of annotations
+</I>&gt;<i> -------------------------------
+</I>&gt;<i>
+</I>&gt;<i> While annotations are still available for arbitrary use besides type
+</I>&gt;<i> checking, it is worth mentioning that the design of this PEP, as well
+</I>&gt;<i> as its precursors (PEP 484 and PEP 526), is predominantly motivated by
+</I>&gt;<i> the type hinting use case.
+</I>&gt;<i>
+</I>&gt;<i> In Python 3.8 PEP 484 will graduate from provisional status.  Other
+</I>&gt;<i> enhancements to the Python programming language like PEP 544, PEP 557,
+</I>&gt;<i> or PEP 560, are already being built on this basis as they depend on
+</I>&gt;<i> type annotations and the ``typing`` module as defined by PEP 484.
+</I>&gt;<i> In fact, the reason PEP 484 is staying provisional in Python 3.7 is to
+</I>&gt;<i> enable rapid evolution for another release cycle that some of the
+</I>&gt;<i> aforementioned enhancements require.
+</I>&gt;<i>
+</I>&gt;<i> With this in mind, uses for annotations incompatible with the
+</I>&gt;<i> aforementioned PEPs should be considered deprecated.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Implementation
+</I>&gt;<i> ==============
+</I>&gt;<i>
+</I>&gt;<i> In Python 4.0, function and variable annotations will no longer be
+</I>&gt;<i> evaluated at definition time.  Instead, a string form will be preserved
+</I>&gt;<i> in the respective ``__annotations__`` dictionary.  Static type checkers
+</I>&gt;<i> will see no difference in behavior, whereas tools using annotations at
+</I>&gt;<i> runtime will have to perform postponed evaluation.
+</I>&gt;<i>
+</I>&gt;<i> The string form is obtained from the AST during the compilation step,
+</I>&gt;<i> which means that the string form might not preserve the exact formatting
+</I>&gt;<i> of the source.  Note: if an annotation was a string literal already, it
+</I>&gt;<i> will still be wrapped in a string.
+</I>&gt;<i>
+</I>&gt;<i> Annotations need to be syntactically valid Python expressions, also when
+</I>&gt;<i> passed as literal strings (i.e. ``compile(literal, '', 'eval')``).
+</I>&gt;<i> Annotations can only use names present in the module scope as postponed
+</I>&gt;<i> evaluation using local names is not reliable (with the sole exception of
+</I>&gt;<i> class-level names resolved by ``typing.get_type_hints()``).
+</I>&gt;<i>
+</I>&gt;<i> Note that as per PEP 526, local variable annotations are not evaluated
+</I>&gt;<i> at all since they are not accessible outside of the function's closure.
+</I>&gt;<i>
+</I>&gt;<i> Enabling the future behavior in Python 3.7
+</I>&gt;<i> ------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> The functionality described above can be enabled starting from Python
+</I>&gt;<i> 3.7 using the following special import::
+</I>&gt;<i>
+</I>&gt;<i>     from __future__ import annotations
+</I>&gt;<i>
+</I>&gt;<i> A reference implementation of this functionality is available
+</I>&gt;<i> `on GitHub &lt;<A HREF="https://github.com/ambv/cpython/tree/string_annotations">https://github.com/ambv/cpython/tree/string_annotations</A>&gt;`_.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Resolving Type Hints at Runtime
+</I>&gt;<i> ===============================
+</I>&gt;<i>
+</I>&gt;<i> To resolve an annotation at runtime from its string form to the result
+</I>&gt;<i> of the enclosed expression, user code needs to evaluate the string.
+</I>&gt;<i>
+</I>&gt;<i> For code that uses type hints, the
+</I>&gt;<i> ``typing.get_type_hints(obj, globalns=None, localns=None)`` function
+</I>&gt;<i> correctly evaluates expressions back from its string form.  Note that
+</I>&gt;<i> all valid code currently using ``__annotations__`` should already be
+</I>&gt;<i> doing that since a type annotation can be expressed as a string literal.
+</I>&gt;<i>
+</I>&gt;<i> For code which uses annotations for other purposes, a regular
+</I>&gt;<i> ``eval(ann, globals, locals)`` call is enough to resolve the
+</I>&gt;<i> annotation.
+</I>&gt;<i>
+</I>&gt;<i> In both cases it's important to consider how globals and locals affect
+</I>&gt;<i> the postponed evaluation.  An annotation is no longer evaluated at the
+</I>&gt;<i> time of definition and, more importantly, *in the same scope* where it
+</I>&gt;<i> was defined.  Consequently, using local state in annotations is no
+</I>&gt;<i> longer possible in general.  As for globals, the module where the
+</I>&gt;<i> annotation was defined is the correct context for postponed evaluation.
+</I>&gt;<i>
+</I>&gt;<i> The ``get_type_hints()`` function automatically resolves the correct
+</I>&gt;<i> value of ``globalns`` for functions and classes.  It also automatically
+</I>&gt;<i> provides the correct ``localns`` for classes.
+</I>&gt;<i>
+</I>&gt;<i> When running ``eval()``,
+</I>&gt;<i> the value of globals can be gathered in the following way:
+</I>&gt;<i>
+</I>&gt;<i> * function objects hold a reference to their respective globals in an
+</I>&gt;<i>   attribute called ``__globals__``;
+</I>&gt;<i>
+</I>&gt;<i> * classes hold the name of the module they were defined in, this can be
+</I>&gt;<i>   used to retrieve the respective globals::
+</I>&gt;<i>
+</I>&gt;<i>     cls_globals = vars(sys.modules[SomeClass.__module__])
+</I>&gt;<i>
+</I>&gt;<i>   Note that this needs to be repeated for base classes to evaluate all
+</I>&gt;<i>   ``__annotations__``.
+</I>&gt;<i>
+</I>&gt;<i> * modules should use their own ``__dict__``.
+</I>&gt;<i>
+</I>&gt;<i> The value of ``localns`` cannot be reliably retrieved for functions
+</I>&gt;<i> because in all likelihood the stack frame at the time of the call no
+</I>&gt;<i> longer exists.
+</I>&gt;<i>
+</I>&gt;<i> For classes, ``localns`` can be composed by chaining vars of the given
+</I>&gt;<i> class and its base classes (in the method resolution order).  Since slots
+</I>&gt;<i> can only be filled after the class was defined, we don't need to consult
+</I>&gt;<i> them for this purpose.
+</I>&gt;<i>
+</I>&gt;<i> Runtime annotation resolution and class decorators
+</I>&gt;<i> --------------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> Metaclasses and class decorators that need to resolve annotations for
+</I>&gt;<i> the current class will fail for annotations that use the name of the
+</I>&gt;<i> current class.  Example::
+</I>&gt;<i>
+</I>&gt;<i>     def class_decorator(cls):
+</I>&gt;<i>         annotations = get_type_hints(cls)  # raises NameError on 'C'
+</I>&gt;<i>         print(f'Annotations for {cls}: {annotations}')
+</I>&gt;<i>         return cls
+</I>&gt;<i>
+</I>&gt;<i>     @class_decorator
+</I>&gt;<i>     class C:
+</I>&gt;<i>         singleton: 'C' = None
+</I>&gt;<i>
+</I>&gt;<i> This was already true before this PEP.  The class decorator acts on
+</I>&gt;<i> the class before it's assigned a name in the current definition scope.
+</I>&gt;<i>
+</I>&gt;<i> Runtime annotation resolution and ``TYPE_CHECKING``
+</I>&gt;<i> ---------------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> Sometimes there's code that must be seen by a type checker but should
+</I>&gt;<i> not be executed.  For such situations the ``typing`` module defines a
+</I>&gt;<i> constant, ``TYPE_CHECKING``, that is considered ``True`` during type
+</I>&gt;<i> checking but ``False`` at runtime.  Example::
+</I>&gt;<i>
+</I>&gt;<i>   import typing
+</I>&gt;<i>
+</I>&gt;<i>   if typing.TYPE_CHECKING:
+</I>&gt;<i>       import expensive_mod
+</I>&gt;<i>
+</I>&gt;<i>   def a_func(arg: expensive_mod.SomeClass) -&gt; None:
+</I>&gt;<i>       a_var: expensive_mod.SomeClass = arg
+</I>&gt;<i>       ...
+</I>&gt;<i>
+</I>&gt;<i> This approach is also useful when handling import cycles.
+</I>&gt;<i>
+</I>&gt;<i> Trying to resolve annotations of ``a_func`` at runtime using
+</I>&gt;<i> ``typing.get_type_hints()`` will fail since the name ``expensive_mod``
+</I>&gt;<i> is not defined (``TYPE_CHECKING`` variable being ``False`` at runtime).
+</I>&gt;<i> This was already true before this PEP.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Backwards Compatibility
+</I>&gt;<i> =======================
+</I>&gt;<i>
+</I>&gt;<i> This is a backwards incompatible change.  Applications depending on
+</I>&gt;<i> arbitrary objects to be directly present in annotations will break
+</I>&gt;<i> if they are not using ``typing.get_type_hints()`` or ``eval()``.
+</I>&gt;<i>
+</I>&gt;<i> Annotations that depend on locals at the time of the function
+</I>&gt;<i> definition will not be resolvable later.  Example::
+</I>&gt;<i>
+</I>&gt;<i>     def generate():
+</I>&gt;<i>         A = Optional[int]
+</I>&gt;<i>         class C:
+</I>&gt;<i>             field: A = 1
+</I>&gt;<i>             def method(self, arg: A) -&gt; None: ...
+</I>&gt;<i>         return C
+</I>&gt;<i>     X = generate()
+</I>&gt;<i>
+</I>&gt;<i> Trying to resolve annotations of ``X`` later by using
+</I>&gt;<i> ``get_type_hints(X)`` will fail because ``A`` and its enclosing scope no
+</I>&gt;<i> longer exists.  Python will make no attempt to disallow such annotations
+</I>&gt;<i> since they can often still be successfully statically analyzed, which is
+</I>&gt;<i> the predominant use case for annotations.
+</I>&gt;<i>
+</I>&gt;<i> Annotations using nested classes and their respective state are still
+</I>&gt;<i> valid.  They can use local names or the fully qualified name.  Example::
+</I>&gt;<i>
+</I>&gt;<i>     class C:
+</I>&gt;<i>         field = 'c_field'
+</I>&gt;<i>         def method(self) -&gt; C.field:  # this is OK
+</I>&gt;<i>             ...
+</I>&gt;<i>
+</I>&gt;<i>         def method(self) -&gt; field:  # this is OK
+</I>&gt;<i>             ...
+</I>&gt;<i>
+</I>&gt;<i>         def method(self) -&gt; C.D:  # this is OK
+</I>&gt;<i>             ...
+</I>&gt;<i>
+</I>&gt;<i>         def method(self) -&gt; D:  # this is OK
+</I>&gt;<i>             ...
+</I>&gt;<i>
+</I>&gt;<i>         class D:
+</I>&gt;<i>             field2 = 'd_field'
+</I>&gt;<i>             def method(self) -&gt; C.D.field2:  # this is OK
+</I>&gt;<i>                 ...
+</I>&gt;<i>
+</I>&gt;<i>             def method(self) -&gt; D.field2:  # this is OK
+</I>&gt;<i>                 ...
+</I>&gt;<i>
+</I>&gt;<i>             def method(self) -&gt; field2:  # this is OK
+</I>&gt;<i>                 ...
+</I>&gt;<i>
+</I>&gt;<i>             def method(self) -&gt; field:  # this FAILS, class D doesn't
+</I>&gt;<i>                 ...                     # see C's attributes,  This was
+</I>&gt;<i>                                         # already true before this PEP.
+</I>&gt;<i>
+</I>&gt;<i> In the presence of an annotation that isn't a syntactically valid
+</I>&gt;<i> expression, SyntaxError is raised at compile time.  However, since names
+</I>&gt;<i> aren't resolved at that time, no attempt is made to validate whether
+</I>&gt;<i> used names are correct or not.
+</I>&gt;<i>
+</I>&gt;<i> Deprecation policy
+</I>&gt;<i> ------------------
+</I>&gt;<i>
+</I>&gt;<i> Starting with Python 3.7, a ``__future__`` import is required to use the
+</I>&gt;<i> described functionality.  No warnings are raised.
+</I>&gt;<i>
+</I>&gt;<i> In Python 3.8 a ``PendingDeprecationWarning`` is raised by the
+</I>&gt;<i> compiler in the presence of type annotations in modules without the
+</I>&gt;<i> ``__future__`` import.
+</I>&gt;<i>
+</I>&gt;<i> Starting with Python 3.9 the warning becomes a ``DeprecationWarning``.
+</I>&gt;<i>
+</I>&gt;<i> In Python 4.0 this will become the default behavior.  Use of annotations
+</I>&gt;<i> incompatible with this PEP is no longer supported.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Forward References
+</I>&gt;<i> ==================
+</I>&gt;<i>
+</I>&gt;<i> Deliberately using a name before it was defined in the module is called
+</I>&gt;<i> a forward reference.  For the purpose of this section, we'll call
+</I>&gt;<i> any name imported or defined within a ``if TYPE_CHECKING:`` block
+</I>&gt;<i> a forward reference, too.
+</I>&gt;<i>
+</I>&gt;<i> This PEP addresses the issue of forward references in *type annotations*.
+</I>&gt;<i> The use of string literals will no longer be required in this case.
+</I>&gt;<i> However, there are APIs in the ``typing`` module that use other syntactic
+</I>&gt;<i> constructs of the language, and those will still require working around
+</I>&gt;<i> forward references with string literals.  The list includes:
+</I>&gt;<i>
+</I>&gt;<i> * type definitions::
+</I>&gt;<i>
+</I>&gt;<i>     T = TypeVar('T', bound='&lt;type&gt;')
+</I>&gt;<i>     UserId = NewType('UserId', '&lt;type&gt;')
+</I>&gt;<i>     Employee = NamedTuple('Employee', [('name', '&lt;type&gt;', ('id',
+</I>&gt;<i> '&lt;type&gt;')])
+</I>&gt;<i>
+</I>&gt;<i> * aliases::
+</I>&gt;<i>
+</I>&gt;<i>     Alias = Optional['&lt;type&gt;']
+</I>&gt;<i>     AnotherAlias = Union['&lt;type&gt;', '&lt;type&gt;']
+</I>&gt;<i>     YetAnotherAlias = '&lt;type&gt;'
+</I>&gt;<i>
+</I>&gt;<i> * casting::
+</I>&gt;<i>
+</I>&gt;<i>     cast('&lt;type&gt;', value)
+</I>&gt;<i>
+</I>&gt;<i> * base classes::
+</I>&gt;<i>
+</I>&gt;<i>     class C(Tuple['&lt;type&gt;', '&lt;type&gt;']): ...
+</I>&gt;<i>
+</I>&gt;<i> Depending on the specific case, some of the cases listed above might be
+</I>&gt;<i> worked around by placing the usage in a ``if TYPE_CHECKING:`` block.
+</I>&gt;<i> This will not work for any code that needs to be available at runtime,
+</I>&gt;<i> notably for base classes and casting.  For named tuples, using the new
+</I>&gt;<i> class definition syntax introduced in Python 3.6 solves the issue.
+</I>&gt;<i>
+</I>&gt;<i> In general, fixing the issue for *all* forward references requires
+</I>&gt;<i> changing how module instantiation is performed in Python, from the
+</I>&gt;<i> current single-pass top-down model.  This would be a major change in the
+</I>&gt;<i> language and is out of scope for this PEP.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Rejected Ideas
+</I>&gt;<i> ==============
+</I>&gt;<i>
+</I>&gt;<i> Keeping the ability to use function local state when defining annotations
+</I>&gt;<i> -------------------------------------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> With postponed evaluation, this would require keeping a reference to
+</I>&gt;<i> the frame in which an annotation got created.  This could be achieved
+</I>&gt;<i> for example by storing all annotations as lambdas instead of strings.
+</I>&gt;<i>
+</I>&gt;<i> This would be prohibitively expensive for highly annotated code as the
+</I>&gt;<i> frames would keep all their objects alive. That includes predominantly
+</I>&gt;<i> objects that won't ever be accessed again.
+</I>&gt;<i>
+</I>&gt;<i> To be able to address class-level scope, the lambda approach would
+</I>&gt;<i> require a new kind of cell in the interpreter.  This would proliferate
+</I>&gt;<i> the number of types that can appear in ``__annotations__``, as well as
+</I>&gt;<i> wouldn't be as introspectable as strings.
+</I>&gt;<i>
+</I>&gt;<i> Note that in the case of nested classes, the functionality to get the
+</I>&gt;<i> effective &quot;globals&quot; and &quot;locals&quot; at definition time is provided by
+</I>&gt;<i> ``typing.get_type_hints()``.
+</I>&gt;<i>
+</I>&gt;<i> If a function generates a class or a function with annotations that
+</I>&gt;<i> have to use local variables, it can populate the given generated
+</I>&gt;<i> object's ``__annotations__`` dictionary directly, without relying on
+</I>&gt;<i> the compiler.
+</I>&gt;<i>
+</I>&gt;<i> Disallowing local state usage for classes, too
+</I>&gt;<i> ----------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> This PEP originally proposed limiting names within annotations to only
+</I>&gt;<i> allow names from the model-level scope, including for classes.  The
+</I>&gt;<i> author argued this makes name resolution unambiguous, including in cases
+</I>&gt;<i> of conflicts between local names and module-level names.
+</I>&gt;<i>
+</I>&gt;<i> This idea was ultimately rejected in case of classes.  Instead,
+</I>&gt;<i> ``typing.get_type_hints()`` got modified to populate the local namespace
+</I>&gt;<i> correctly if class-level annotations are needed.
+</I>&gt;<i>
+</I>&gt;<i> The reasons for rejecting the idea were that it goes against the
+</I>&gt;<i> intuition of how scoping works in Python, and would break enough
+</I>&gt;<i> existing type annotations to make the transition cumbersome.  Finally,
+</I>&gt;<i> local scope access is required for class decorators to be able to
+</I>&gt;<i> evaluate type annotations. This is because class decorators are applied
+</I>&gt;<i> before the class receives its name in the outer scope.
+</I>&gt;<i>
+</I>&gt;<i> Introducing a new dictionary for the string literal form instead
+</I>&gt;<i> ----------------------------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> Yury Selivanov shared the following idea:
+</I>&gt;<i>
+</I>&gt;<i> 1. Add a new special attribute to functions: ``__annotations_text__``.
+</I>&gt;<i>
+</I>&gt;<i> 2. Make ``__annotations__`` a lazy dynamic mapping, evaluating
+</I>&gt;<i>    expressions from the corresponding key in ``__annotations_text__``
+</I>&gt;<i>    just-in-time.
+</I>&gt;<i>
+</I>&gt;<i> This idea is supposed to solve the backwards compatibility issue,
+</I>&gt;<i> removing the need for a new ``__future__`` import.  Sadly, this is not
+</I>&gt;<i> enough.  Postponed evaluation changes which state the annotation has
+</I>&gt;<i> access to.  While postponed evaluation fixes the forward reference
+</I>&gt;<i> problem, it also makes it impossible to access function-level locals
+</I>&gt;<i> anymore.  This alone is a source of backwards incompatibility which
+</I>&gt;<i> justifies a deprecation period.
+</I>&gt;<i>
+</I>&gt;<i> A ``__future__`` import is an obvious and explicit indicator of opting
+</I>&gt;<i> in for the new functionality.  It also makes it trivial for external
+</I>&gt;<i> tools to recognize the difference between a Python files using the old
+</I>&gt;<i> or the new approach.  In the former case, that tool would recognize that
+</I>&gt;<i> local state access is allowed, whereas in the latter case it would
+</I>&gt;<i> recognize that forward references are allowed.
+</I>&gt;<i>
+</I>&gt;<i> Finally, just-in-time evaluation in ``__annotations__`` is an
+</I>&gt;<i> unnecessary step if ``get_type_hints()`` is used later.
+</I>&gt;<i>
+</I>&gt;<i> Dropping annotations with -O
+</I>&gt;<i> ----------------------------
+</I>&gt;<i>
+</I>&gt;<i> There are two reasons this is not satisfying for the purpose of this
+</I>&gt;<i> PEP.
+</I>&gt;<i>
+</I>&gt;<i> First, this only addresses runtime cost, not forward references, those
+</I>&gt;<i> still cannot be safely used in source code.  A library maintainer would
+</I>&gt;<i> never be able to use forward references since that would force the
+</I>&gt;<i> library users to use this new hypothetical -O switch.
+</I>&gt;<i>
+</I>&gt;<i> Second, this throws the baby out with the bath water. Now *no* runtime
+</I>&gt;<i> annotation use can be performed.  PEP 557 is one example of a recent
+</I>&gt;<i> development where evaluating type annotations at runtime is useful.
+</I>&gt;<i>
+</I>&gt;<i> All that being said, a granular -O option to drop annotations is
+</I>&gt;<i> a possibility in the future, as it's conceptually compatible with
+</I>&gt;<i> existing -O behavior (dropping docstrings and assert statements).  This
+</I>&gt;<i> PEP does not invalidate the idea.
+</I>&gt;<i>
+</I>&gt;<i> Pass string literals in annotations verbatim to ``__annotations__``
+</I>&gt;<i> -------------------------------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> This PEP originally suggested directly storing the contents of a string
+</I>&gt;<i> literal under its respective key in ``__annotations__``.  This was
+</I>&gt;<i> meant to simplify support for runtime type checkers.
+</I>&gt;<i>
+</I>&gt;<i> Mark Shannon pointed out this idea was flawed since it wasn't handling
+</I>&gt;<i> situations where strings are only part of a type annotation.
+</I>&gt;<i>
+</I>&gt;<i> The inconsistency of it was always apparent but given that it doesn't
+</I>&gt;<i> fully prevent cases of double-wrapping strings anyway, it is not worth
+</I>&gt;<i> it.
+</I>&gt;<i>
+</I>&gt;<i> Make the name of the future import more verbose
+</I>&gt;<i> -----------------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> Instead of requiring the following import::
+</I>&gt;<i>
+</I>&gt;<i>     from __future__ import annotations
+</I>&gt;<i>
+</I>&gt;<i> the PEP could call the feature more explicitly, for example
+</I>&gt;<i> ``string_annotations``, ``stringify_annotations``,
+</I>&gt;<i> ``annotation_strings``, ``annotations_as_strings``, ``lazy_anotations``,
+</I>&gt;<i> ``static_annotations``, etc.
+</I>&gt;<i>
+</I>&gt;<i> The problem with those names is that they are very verbose.  Each of
+</I>&gt;<i> them besides ``lazy_annotations`` would constitute the longest future
+</I>&gt;<i> feature name in Python.  They are long to type and harder to remember
+</I>&gt;<i> than the single-word form.
+</I>&gt;<i>
+</I>&gt;<i> There is precedence of a future import name that sounds overly generic
+</I>&gt;<i> but in practice was obvious to users as to what it does::
+</I>&gt;<i>
+</I>&gt;<i>     from __future__ import division
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Prior discussion
+</I>&gt;<i> ================
+</I>&gt;<i>
+</I>&gt;<i> In PEP 484
+</I>&gt;<i> ----------
+</I>&gt;<i>
+</I>&gt;<i> The forward reference problem was discussed when PEP 484 was originally
+</I>&gt;<i> drafted, leading to the following statement in the document:
+</I>&gt;<i>
+</I>&gt;<i>     A compromise is possible where a ``__future__`` import could enable
+</I>&gt;<i>     turning *all* annotations in a given module into string literals, as
+</I>&gt;<i>     follows::
+</I>&gt;<i>
+</I>&gt;<i>       from __future__ import annotations
+</I>&gt;<i>
+</I>&gt;<i>       class ImSet:
+</I>&gt;<i>           def add(self, a: ImSet) -&gt; List[ImSet]: ...
+</I>&gt;<i>
+</I>&gt;<i>       assert ImSet.add.__annotations__ == {
+</I>&gt;<i>           'a': 'ImSet', 'return': 'List[ImSet]'
+</I>&gt;<i>       }
+</I>&gt;<i>
+</I>&gt;<i>     Such a ``__future__`` import statement may be proposed in a separate
+</I>&gt;<i>     PEP.
+</I>&gt;<i>
+</I>&gt;<i> python/typing#400
+</I>&gt;<i> -----------------
+</I>&gt;<i>
+</I>&gt;<i> The problem was discussed at length on the typing module's GitHub
+</I>&gt;<i> project, under `Issue 400 &lt;<A HREF="https://github.com/python/typing/issues/400">https://github.com/python/typing/issues/400</A>&gt;`_.
+</I>&gt;<i> The problem statement there includes critique of generic types requiring
+</I>&gt;<i> imports from ``typing``.  This tends to be confusing to
+</I>&gt;<i> beginners:
+</I>&gt;<i>
+</I>&gt;<i>     Why this::
+</I>&gt;<i>
+</I>&gt;<i>         from typing import List, Set
+</I>&gt;<i>         def dir(o: object = ...) -&gt; List[str]: ...
+</I>&gt;<i>         def add_friends(friends: Set[Friend]) -&gt; None: ...
+</I>&gt;<i>
+</I>&gt;<i>     But not this::
+</I>&gt;<i>
+</I>&gt;<i>         def dir(o: object = ...) -&gt; list[str]: ...
+</I>&gt;<i>         def add_friends(friends: set[Friend]) -&gt; None ...
+</I>&gt;<i>
+</I>&gt;<i>     Why this::
+</I>&gt;<i>
+</I>&gt;<i>         up_to_ten = list(range(10))
+</I>&gt;<i>         friends = set()
+</I>&gt;<i>
+</I>&gt;<i>     But not this::
+</I>&gt;<i>
+</I>&gt;<i>         from typing import List, Set
+</I>&gt;<i>         up_to_ten = List[int](range(10))
+</I>&gt;<i>         friends = Set[Friend]()
+</I>&gt;<i>
+</I>&gt;<i> While typing usability is an interesting problem, it is out of scope
+</I>&gt;<i> of this PEP.  Specifically, any extensions of the typing syntax
+</I>&gt;<i> standardized in PEP 484 will require their own respective PEPs and
+</I>&gt;<i> approval.
+</I>&gt;<i>
+</I>&gt;<i> Issue 400 ultimately suggests postponing evaluation of annotations and
+</I>&gt;<i> keeping them as strings in ``__annotations__``, just like this PEP
+</I>&gt;<i> specifies.  This idea was received well.  Ivan Levkivskyi supported
+</I>&gt;<i> using the ``__future__`` import and suggested unparsing the AST in
+</I>&gt;<i> ``compile.c``.  Jukka Lehtosalo pointed out that there are some cases
+</I>&gt;<i> of forward references where types are used outside of annotations and
+</I>&gt;<i> postponed evaluation will not help those.  For those cases using the
+</I>&gt;<i> string literal notation would still be required.  Those cases are
+</I>&gt;<i> discussed briefly in the &quot;Forward References&quot; section of this PEP.
+</I>&gt;<i>
+</I>&gt;<i> The biggest controversy on the issue was Guido van Rossum's concern
+</I>&gt;<i> that untokenizing annotation expressions back to their string form has
+</I>&gt;<i> no precedent in the Python programming language and feels like a hacky
+</I>&gt;<i> workaround.  He said:
+</I>&gt;<i>
+</I>&gt;<i>     One thing that comes to mind is that it's a very random change to
+</I>&gt;<i>     the language.  It might be useful to have a more compact way to
+</I>&gt;<i>     indicate deferred execution of expressions (using less syntax than
+</I>&gt;<i>     ``lambda:``).  But why would the use case of type annotations be so
+</I>&gt;<i>     all-important to change the language to do it there first (rather
+</I>&gt;<i>     than proposing a more general solution), given that there's already
+</I>&gt;<i>     a solution for this particular use case that requires very minimal
+</I>&gt;<i>     syntax?
+</I>&gt;<i>
+</I>&gt;<i> Eventually, Ethan Smith and schollii voiced that feedback gathered
+</I>&gt;<i> during PyCon US suggests that the state of forward references needs
+</I>&gt;<i> fixing.  Guido van Rossum suggested coming back to the ``__future__``
+</I>&gt;<i> idea, pointing out that to prevent abuse, it's important for the
+</I>&gt;<i> annotations to be kept both syntactically valid and evaluating correctly
+</I>&gt;<i> at runtime.
+</I>&gt;<i>
+</I>&gt;<i> First draft discussion on python-ideas
+</I>&gt;<i> --------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> Discussion happened largely in two threads, `the original announcement
+</I>&gt;<i> &lt;<A HREF="https://mail.python.org/pipermail/python-ideas/2017-">https://mail.python.org/pipermail/python-ideas/2017-</A>
+</I>&gt;<i> September/thread.html#47031&gt;`_
+</I>&gt;<i> and a follow-up called `PEP 563 and expensive backwards compatibility
+</I>&gt;<i> &lt;<A HREF="https://mail.python.org/pipermail/python-ideas/2017-">https://mail.python.org/pipermail/python-ideas/2017-</A>
+</I>&gt;<i> September/thread.html#47108&gt;`_.
+</I>&gt;<i>
+</I>&gt;<i> The PEP received rather warm feedback (4 strongly in favor,
+</I>&gt;<i> 2 in favor with concerns, 2 against). The biggest voice of concern on
+</I>&gt;<i> the former thread being Steven D'Aprano's review stating that the
+</I>&gt;<i> problem definition of the PEP doesn't justify breaking backwards
+</I>&gt;<i> compatibility.  In this response Steven seemed mostly concerned about
+</I>&gt;<i> Python no longer supporting evaluation of annotations that depended on
+</I>&gt;<i> local function/class state.
+</I>&gt;<i>
+</I>&gt;<i> A few people voiced concerns that there are libraries using annotations
+</I>&gt;<i> for non-typing purposes.  However, none of the named libraries would be
+</I>&gt;<i> invalidated by this PEP.  They do require adapting to the new
+</I>&gt;<i> requirement to call ``eval()`` on the annotation with the correct
+</I>&gt;<i> ``globals`` and ``locals`` set.
+</I>&gt;<i>
+</I>&gt;<i> This detail about ``globals`` and ``locals`` having to be correct was
+</I>&gt;<i> picked up by a number of commenters.  Nick Coghlan benchmarked turning
+</I>&gt;<i> annotations into lambdas instead of strings, sadly this proved to be
+</I>&gt;<i> much slower at runtime than the current situation.
+</I>&gt;<i>
+</I>&gt;<i> The latter thread was started by Jim J. Jewett who stressed that
+</I>&gt;<i> the ability to properly evaluate annotations is an important requirement
+</I>&gt;<i> and backwards compatibility in that regard is valuable.  After some
+</I>&gt;<i> discussion he admitted that side effects in annotations are a code smell
+</I>&gt;<i> and modal support to either perform or not perform evaluation is
+</I>&gt;<i> a messy solution.  His biggest concern remained loss of functionality
+</I>&gt;<i> stemming from the evaluation restrictions on global and local scope.
+</I>&gt;<i>
+</I>&gt;<i> Nick Coghlan pointed out that some of those evaluation restrictions from
+</I>&gt;<i> the PEP could be lifted by a clever implementation of an evaluation
+</I>&gt;<i> helper, which could solve self-referencing classes even in the form of a
+</I>&gt;<i> class decorator.  He suggested the PEP should provide this helper
+</I>&gt;<i> function in the standard library.
+</I>&gt;<i>
+</I>&gt;<i> Second draft discussion on python-dev
+</I>&gt;<i> -------------------------------------
+</I>&gt;<i>
+</I>&gt;<i> Discussion happened mainly in the `announcement thread &lt;
+</I>&gt;<i> <A HREF="https://mail.python.org/pipermail/python-dev/2017-November/150062.html">https://mail.python.org/pipermail/python-dev/2017-November/150062.html</A>&gt;`_,
+</I>&gt;<i> followed by a brief discussion under `Mark Shannon's post
+</I>&gt;<i> &lt;<A HREF="https://mail.python.org/pipermail/python-dev/2017-November/150637.html">https://mail.python.org/pipermail/python-dev/2017-November/150637.html</A>
+</I>&gt;<i> &gt;`_.
+</I>&gt;<i>
+</I>&gt;<i> Steven D'Aprano was concerned whether it's acceptable for typos to be
+</I>&gt;<i> allowed in annotations after the change proposed by the PEP.  Brett
+</I>&gt;<i> Cannon responded that type checkers and other static analyzers (like
+</I>&gt;<i> linters or programming text editors) will catch this type of error.
+</I>&gt;<i> Jukka Lehtosalo added that this situation is analogous to how names in
+</I>&gt;<i> function bodies are not resolved until the function is called.
+</I>&gt;<i>
+</I>&gt;<i> A major topic of discussion was Nick Coghlan's suggestion to store
+</I>&gt;<i> annotations in &quot;thunk form&quot;, in other words as a specialized lambda
+</I>&gt;<i> which would be able to access class-level scope (and allow for scope
+</I>&gt;<i> customization at call time).  He presented a possible design for it
+</I>&gt;<i> (`indirect attribute cells
+</I>&gt;<i> &lt;<A HREF="https://mail.python.org/pipermail/python-dev/2017-November/150141.html">https://mail.python.org/pipermail/python-dev/2017-November/150141.html</A>
+</I>&gt;<i> &gt;`_).
+</I>&gt;<i> This was later seen as equivalent to &quot;special forms&quot; in Lisp.  Guido van
+</I>&gt;<i> Rossum expressed worry that this sort of feature cannot be safely
+</I>&gt;<i> implemented in twelve weeks (i.e. in time before the Python 3.7 beta
+</I>&gt;<i> freeze).
+</I>&gt;<i>
+</I>&gt;<i> After a while it became clear that the point of division between
+</I>&gt;<i> supporters of the string form vs. supporters of the thunk form is
+</I>&gt;<i> actually about whether annotations should be perceived as a general
+</I>&gt;<i> syntactic element vs. something tied to the type checking use case.
+</I>&gt;<i>
+</I>&gt;<i> Finally, Guido van Rossum declared he's rejecting the thunk idea
+</I>&gt;<i> based on the fact that it would require a new building block in the
+</I>&gt;<i> interpreter.  This block would be exposed in annotations, multiplying
+</I>&gt;<i> possible types of values stored in ``__annotations__`` (arbitrary
+</I>&gt;<i> objects, strings, and now thunks).  Moreover, thunks aren't as
+</I>&gt;<i> introspectable as strings.  Most importantly, Guido van Rossum
+</I>&gt;<i> explicitly stated interest in gradually restricting the use of
+</I>&gt;<i> annotations to static typing (with an optional runtime component).
+</I>&gt;<i>
+</I>&gt;<i> Nick Coghlan got convinced to PEP 563, too, promptly beginning
+</I>&gt;<i> the mandatory bike shedding session on the name of the ``__future__``
+</I>&gt;<i> import.  Many debaters agreed that ``annotations`` seems like
+</I>&gt;<i> an overly broad name for the feature name.  Guido van Rossum briefly
+</I>&gt;<i> decided to call it ``string_annotations`` but then changed his mind,
+</I>&gt;<i> arguing that ``division`` is a precedent of a broad name with a clear
+</I>&gt;<i> meaning.
+</I>&gt;<i>
+</I>&gt;<i> The final improvement to the PEP suggested in the discussion by Mark
+</I>&gt;<i> Shannon was the rejection of the temptation to pass string literals
+</I>&gt;<i> through to ``__annotations__`` verbatim.
+</I>&gt;<i>
+</I>&gt;<i> A side-thread of discussion started around the runtime penalty of
+</I>&gt;<i> static typing, with topic like the import time of the ``typing``
+</I>&gt;<i> module (which is comparable to ``re`` without dependencies, and
+</I>&gt;<i> three times as heavy as ``re`` when counting dependencies).
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Acknowledgements
+</I>&gt;<i> ================
+</I>&gt;<i>
+</I>&gt;<i> This document could not be completed without valuable input,
+</I>&gt;<i> encouragement and advice from Guido van Rossum, Jukka Lehtosalo, and
+</I>&gt;<i> Ivan Levkivskyi.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> Copyright
+</I>&gt;<i> =========
+</I>&gt;<i>
+</I>&gt;<i> This document has been placed in the public domain.
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> ..
+</I>&gt;<i>    Local Variables:
+</I>&gt;<i>    mode: indented-text
+</I>&gt;<i>    indent-tabs-mode: nil
+</I>&gt;<i>    sentence-end-double-space: t
+</I>&gt;<i>    fill-column: 70
+</I>&gt;<i>    coding: utf-8
+</I>&gt;<i>    End:
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Python-Dev mailing list
+</I>&gt;<i> <A HREF="https://mail.python.org/mailman/listinfo/python-dev">Python-Dev at python.org</A>
+</I>&gt;<i> <A HREF="https://mail.python.org/mailman/listinfo/python-dev">https://mail.python.org/mailman/listinfo/python-dev</A>
+</I>&gt;<i> Unsubscribe: <A HREF="https://mail.python.org/mailman/options/python-dev/">https://mail.python.org/mailman/options/python-dev/</A>
+</I>&gt;<i> guido%40python.org
+</I>&gt;<i>
+</I>&gt;<i>
+</I>
+
+-- 
+--Guido van Rossum (python.org/~guido)
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="http://mail.python.org/pipermail/python-dev/attachments/20171204/115f6761/attachment-0001.html">http://mail.python.org/pipermail/python-dev/attachments/20171204/115f6761/attachment-0001.html</A>&gt;
+</PRE>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message (by thread): <A HREF="151021.html">[Python-Dev] PEPs: ``.. code:: python`` or ``::`` (syntax highlighting)
+</A></li>
+	<LI>Next message (by thread): <A HREF="151049.html">[Python-Dev] PEP 563: Postponed Evaluation of Annotations (Draft 3)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#151042">[ date ]</a>
+              <a href="thread.html#151042">[ thread ]</a>
+              <a href="subject.html#151042">[ subject ]</a>
+              <a href="author.html#151042">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://mail.python.org/mailman/listinfo/python-dev">More information about the Python-Dev
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,114 @@
+{
+  "thread": {
+    "from": "David Jacot <da...@apache.org>",
+    "gravatar": "9a3fd273cad4572f977d65cfb60cf2a3",
+    "subject": "Update on KIP-848 in Apache Kafka 4.0",
+    "message-id": "<CAA05fTkQkJDmmx8T9gihaqRkv3SLmCFXmK+wcEF5+=H0HPcv2A@mail.gmail.com>",
+    "mid": "ql5fm27jxswjox8f70cx47b8zlkqhy3z",
+    "dbid": "11b32d4c4f223d9c05996339eac935570131b02493169dbd9d24f0fbd9021544",
+    "epoch": 1734530903,
+    "list": "<dev.kafka.apache.org>",
+    "list_raw": "<dev.kafka.apache.org>",
+    "private": false,
+    "in-reply-to": "",
+    "body": "Hi all,\n\nAs you may know, we've been working hard to graduate KIP-848 from\npreview in Apache Kafka 3.8 to production-ready in Apache Kafka 4.0 \u2014\nexciting news!\n\nKIP-848, the next-generation rebalance protocol, encompasses several\nsignificant updates in the consumer and group coordinator areas,\nincluding:\n- A completely new rebalance protocol for the consumer.\n- A redesigned group coordinator.\n- A deep refactoring of the consumer to introduce a background thread\nfor handling all I/O operations, instead of performing them on the\napplication thread. Note that this refactor is only applied when the\nnew rebalance protocol is enabled \u2014 an important detail.\n\nStarting with Apache Kafka 4.0:\n- The new group coordinator will be the only option.\n- The new rebalance protocol will be enabled by default on the server side.\n- The consumer will continue to use the old rebalance protocol by\ndefault for backward compatibility with brokers older than 4.0.\n\nOur initial plan was to make the new rebalance protocol the default in\nthe Consumer in Apache Kafka 4.0. However, after much discussion, we\ndecided not to proceed with this approach \u2014 despite the feature being\nready. The key concern is that the consumer shipped with Apache Kafka\n4.0 would not work by default with brokers older than 4.0, which we\nbelieve would result in a poor user experience. Realistically, most\ndeployments won\u2019t upgrade to 4.0 immediately, and we anticipate a\ngradual adoption curve. Moreover, we feel that introducing such a\nchange without prior notice (e.g. a deprecation warning) in earlier\nreleases isn't ideal.\n\nWe also considered implementing an automatic fallback mechanism in the\nconsumer. However, the significant differences between the two\nprotocols made this unfeasible. For example:\n- Static membership does not function identically in both protocols.\n- Consumer-triggered rebalances are not supported in the new protocol.\n- Default assignors are different.\n- Metrics and logs are different.\n- Some configs are no longer supported.\n- There are small behavioral differences due to the new internal\narchitecture of the Consumer.\n\nGiven these differences, we believe users must explicitly choose when\nto migrate from the old protocol to the new protocol as already\nplanned in the KIP. To aid this process, we are providing a clear\nonline upgrade path.\n\nInstead, our revised plan is as follows:\n- We will officially deprecate the old rebalance protocol in a 4.x\nrelease (likely 4.1) and introduce the appropriate deprecation\nmessage.\n- We plan to make the new rebalance protocol the default in Apache\nKafka 5.0, giving the community sufficient time to adopt 4.x brokers\nbefore the switch.\n- We will drop the possibility of using the old rebalance protocol\nfrom the Consumer in Apache Kafka 6.0.\n\nI will formalize this revised plan in a KIP to discuss it further with\nthe community.\n\nRegards,\nDavid, on behalf of the KIP-848 team\n\nP.S.: I started this new thread to ensure this update isn\u2019t unnoticed\nin the long KIP-848 discussion thread.\n",
+    "attachments": [],
+    "id": "ql5fm27jxswjox8f70cx47b8zlkqhy3z",
+    "children": [
+      {
+        "tid": "y91zokyccz5npnhvnv69tmg3wklmbbbh",
+        "mid": "y91zokyccz5npnhvnv69tmg3wklmbbbh",
+        "message-id": "<pony-7c9859a4-e0e0-4fef-b318-0e3a720ed502-dev@kafka.apache.org>",
+        "subject": "Re: Update on KIP-848 in Apache Kafka 4.0",
+        "from": "Chia-Ping Tsai <ch...@apache.org>",
+        "id": "y91zokyccz5npnhvnv69tmg3wklmbbbh",
+        "epoch": 1734577815,
+        "children": [],
+        "irt": "<CAA05fTkQkJDmmx8T9gihaqRkv3SLmCFXmK+wcEF5+=H0HPcv2A@mail.gmail.com>",
+        "list_raw": "<dev.kafka.apache.org>"
+      },
+      {
+        "tid": "jbgp3qvvmzkc10svzv12yqssh2r28g57",
+        "mid": "jbgp3qvvmzkc10svzv12yqssh2r28g57",
+        "message-id": "<pony-91bffdbc-fa7c-423b-8e12-b4f931a0ae26-dev@kafka.apache.org>",
+        "subject": "Re: Update on KIP-848 in Apache Kafka 4.0",
+        "from": "Chia-Ping Tsai <ch...@apache.org>",
+        "id": "jbgp3qvvmzkc10svzv12yqssh2r28g57",
+        "epoch": 1734577817,
+        "children": [
+          {
+            "tid": "zcbop29wx16fl8xmqwgojrj7f9rjt82d",
+            "mid": "zcbop29wx16fl8xmqwgojrj7f9rjt82d",
+            "message-id": "<CAA05fTk-r0OMw7Pxejz3eHC1wxac9gH0beh7GmHvHBQYjOhQ8A@mail.gmail.com>",
+            "subject": "Re: Update on KIP-848 in Apache Kafka 4.0",
+            "from": "David Jacot <da...@gmail.com>",
+            "id": "zcbop29wx16fl8xmqwgojrj7f9rjt82d",
+            "epoch": 1734593312,
+            "children": [],
+            "irt": "<pony-91bffdbc-fa7c-423b-8e12-b4f931a0ae26-dev@kafka.apache.org>",
+            "list_raw": "<dev.kafka.apache.org>"
+          }
+        ],
+        "irt": "<CAA05fTkQkJDmmx8T9gihaqRkv3SLmCFXmK+wcEF5+=H0HPcv2A@mail.gmail.com>",
+        "list_raw": "<dev.kafka.apache.org>"
+      }
+    ]
+  },
+  "emails": [
+    {
+      "from": "David Jacot <da...@apache.org>",
+      "gravatar": "9a3fd273cad4572f977d65cfb60cf2a3",
+      "subject": "Update on KIP-848 in Apache Kafka 4.0",
+      "message-id": "<CAA05fTkQkJDmmx8T9gihaqRkv3SLmCFXmK+wcEF5+=H0HPcv2A@mail.gmail.com>",
+      "mid": "ql5fm27jxswjox8f70cx47b8zlkqhy3z",
+      "dbid": "11b32d4c4f223d9c05996339eac935570131b02493169dbd9d24f0fbd9021544",
+      "epoch": 1734530903,
+      "list": "<dev.kafka.apache.org>",
+      "list_raw": "<dev.kafka.apache.org>",
+      "private": false,
+      "in-reply-to": "",
+      "body": "Hi all,\n\nAs you may know, we've been working hard to graduate KIP-848 from\npreview in Apache Kafka 3.8 to production-ready in Apache Kafka 4.0 \u2014\nexciting news!\n\nKIP-848, the next-generation rebalance protocol, encompasses several\nsignificant updates in the consumer and group coordinator areas,\nincluding:\n- A completely new rebalance protocol for the consumer.\n- A redesigned group coordinator.\n- A deep refactoring of the consumer to introduce a background thread\nfor handling all I/O operations, instead of performing them on the\napplication thread. Note that this refactor is only applied when the\nnew rebalance protocol is enabled \u2014 an important detail.\n\nStarting with Apache Kafka 4.0:\n- The new group coordinator will be the only option.\n- The new rebalance protocol will be enabled by default on the server side.\n- The consumer will continue to use the old rebalance protocol by\ndefault for backward compatibility with brokers older than 4.0.\n\nOur initial plan was to make the new rebalance protocol the default in\nthe Consumer in Apache Kafka 4.0. However, after much discussion, we\ndecided not to proceed with this approach \u2014 despite the feature being\nready. The key concern is that the consumer shipped with Apache Kafka\n4.0 would not work by default with brokers older than 4.0, which we\nbelieve would result in a poor user experience. Realistically, most\ndeployments won\u2019t upgrade to 4.0 immediately, and we anticipate a\ngradual adoption curve. Moreover, we feel that introducing such a\nchange without prior notice (e.g. a deprecation warning) in earlier\nreleases isn't ideal.\n\nWe also considered implementing an automatic fallback mechanism in the\nconsumer. However, the significant differences between the two\nprotocols made this unfeasible. For example:\n- Static membership does not function identically in both protocols.\n- Consumer-triggered rebalances are not supported in the new protocol.\n- Default assignors are different.\n- Metrics and logs are different.\n- Some configs are no longer supported.\n- There are small behavioral differences due to the new internal\narchitecture of the Consumer.\n\nGiven these differences, we believe users must explicitly choose when\nto migrate from the old protocol to the new protocol as already\nplanned in the KIP. To aid this process, we are providing a clear\nonline upgrade path.\n\nInstead, our revised plan is as follows:\n- We will officially deprecate the old rebalance protocol in a 4.x\nrelease (likely 4.1) and introduce the appropriate deprecation\nmessage.\n- We plan to make the new rebalance protocol the default in Apache\nKafka 5.0, giving the community sufficient time to adopt 4.x brokers\nbefore the switch.\n- We will drop the possibility of using the old rebalance protocol\nfrom the Consumer in Apache Kafka 6.0.\n\nI will formalize this revised plan in a KIP to discuss it further with\nthe community.\n\nRegards,\nDavid, on behalf of the KIP-848 team\n\nP.S.: I started this new thread to ensure this update isn\u2019t unnoticed\nin the long KIP-848 discussion thread.\n",
+      "attachments": [],
+      "id": "ql5fm27jxswjox8f70cx47b8zlkqhy3z",
+      "children": [
+        {
+          "tid": "y91zokyccz5npnhvnv69tmg3wklmbbbh",
+          "mid": "y91zokyccz5npnhvnv69tmg3wklmbbbh",
+          "message-id": "<pony-7c9859a4-e0e0-4fef-b318-0e3a720ed502-dev@kafka.apache.org>",
+          "subject": "Re: Update on KIP-848 in Apache Kafka 4.0",
+          "from": "Chia-Ping Tsai <ch...@apache.org>",
+          "id": "y91zokyccz5npnhvnv69tmg3wklmbbbh",
+          "epoch": 1734577815,
+          "children": [],
+          "irt": "<CAA05fTkQkJDmmx8T9gihaqRkv3SLmCFXmK+wcEF5+=H0HPcv2A@mail.gmail.com>",
+          "list_raw": "<dev.kafka.apache.org>"
+        },
+        {
+          "tid": "jbgp3qvvmzkc10svzv12yqssh2r28g57",
+          "mid": "jbgp3qvvmzkc10svzv12yqssh2r28g57",
+          "message-id": "<pony-91bffdbc-fa7c-423b-8e12-b4f931a0ae26-dev@kafka.apache.org>",
+          "subject": "Re: Update on KIP-848 in Apache Kafka 4.0",
+          "from": "Chia-Ping Tsai <ch...@apache.org>",
+          "id": "jbgp3qvvmzkc10svzv12yqssh2r28g57",
+          "epoch": 1734577817,
+          "children": [
+            {
+              "tid": "zcbop29wx16fl8xmqwgojrj7f9rjt82d",
+              "mid": "zcbop29wx16fl8xmqwgojrj7f9rjt82d",
+              "message-id": "<CAA05fTk-r0OMw7Pxejz3eHC1wxac9gH0beh7GmHvHBQYjOhQ8A@mail.gmail.com>",
+              "subject": "Re: Update on KIP-848 in Apache Kafka 4.0",
+              "from": "David Jacot <da...@gmail.com>",
+              "id": "zcbop29wx16fl8xmqwgojrj7f9rjt82d",
+              "epoch": 1734593312,
+              "children": [],
+              "irt": "<pony-91bffdbc-fa7c-423b-8e12-b4f931a0ae26-dev@kafka.apache.org>",
+              "list_raw": "<dev.kafka.apache.org>"
+            }
+          ],
+          "irt": "<CAA05fTkQkJDmmx8T9gihaqRkv3SLmCFXmK+wcEF5+=H0HPcv2A@mail.gmail.com>",
+          "list_raw": "<dev.kafka.apache.org>"
+        }
+      ]
+    }
+  ]
+}

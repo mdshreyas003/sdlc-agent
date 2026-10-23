@@ -1,0 +1,49 @@
+{
+ "threads": [
+  {
+   "id": "65z3pr4c2kxzzo18bv05phhzhrsc182x",
+   "subject": "[DISCUSS] KIP-129: Kafka Streams Exactly-Once Semantics",
+   "first": 1488318883,
+   "last": 1490381792,
+   "messages": [
+    "65z3pr4c2kxzzo18bv05phhzhrsc182x",
+    "mkdgg07kvxvkn80ld9fh25x5xc79y3zl",
+    "fngjn7y16cf6r98k9y3lmfq51xx4mkqy",
+    "8y4q5jl3ylwok91cd0rmzv04zqlk4rcf",
+    "p1cw8kjos52fz7ozdqz1bsq2lpl8s5xl",
+    "67m5rj99hk73who5nvzw8x9x434obcfr",
+    "ldf2s1gxxgwzysq9qb47sdwbn71bbf0p",
+    "cdyq2s9n3qzg6gr85wp403m0383tm4x2",
+    "0j7cvps6wvkfz48lfyqc3jgx8wfg9l54",
+    "2dc37kbnk1osc29qqg3zp4v44ovft87d",
+    "s06pgwwfpdmm3jt06gf2lwyrgm4rhq4w",
+    "b7fcgwb2hk4omgt9r1b8p8q3t8y9j3sp",
+    "zw86rpnw0m1cc7sd21r64bj31btlo9lx",
+    "kv5qy7nstl832wyzcggxllqnqrf4k204",
+    "l1sptkxdn419pd5ytdf7xrwxm7ms9tnf",
+    "564cxqy1y4fbob6b5v3rw8smzbv6zmk8",
+    "ysdos2t6pw7y0mbdzy41no1mgb24bpsf",
+    "f957hwblomz0doqvyzsljgnsmh0zb2xn",
+    "5hosco0sppn1q9xdp8nmbpp90zdcocdg"
+   ]
+  },
+  {
+   "id": "xoqy6o08vdh3zx75gfxvx12zyln58l17",
+   "subject": "[VOTE] KIP-129: Kafka Streams Exactly-Once Semantics",
+   "first": 1490034438,
+   "last": 1490904039,
+   "messages": [
+    "xoqy6o08vdh3zx75gfxvx12zyln58l17",
+    "58h4k77y7f55ksl8r0qqwmkml1g5scw3",
+    "czj4rws793l26pzk1xg2dtwjk9lt0n79",
+    "5ghg07c1ssy7l2t7m8978hgvtglohrvz",
+    "8csvy0hg0h3526x33ybl109hh2mj4zj8",
+    "984hyc3193tpywnqsyc59kvlxh7vgh9v",
+    "oncyy606dobr3v5sygx7006xnzf59soc",
+    "gxqg1svvks679k6k9bxf3s50n5mvcxxf",
+    "v7f2hjt43koj9mpzxwb688dmvfvgpctl",
+    "2kp6dbljfb48812znd2rlj8rv6zg27yc"
+   ]
+  }
+ ]
+}

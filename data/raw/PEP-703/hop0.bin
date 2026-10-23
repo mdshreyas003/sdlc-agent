@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>PEP 703: Making the Global Interpreter Lock Optional - PEPs - Discussions on Python.org</title>
+    <meta name="description" content="Hi :wave: 
+As the sponsor of @colesbury’s PEP, I’d like to invite you all to discuss the proposal to solve the biggest scalability limitation of CPython by making it possible to build a version of the interpreter which d…">
+    <meta name="generator" content="Discourse 2026.10.0-latest - https://github.com/discourse/discourse version ea9e58f6536b4c5fa853a5c2615292bce3c32dcc">
+<link rel="icon" type="image/png" href="https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/1X/9997f0605d56c4bfecd63594f52f42cdafd6b06a_2_32x32.png">
+<link rel="apple-touch-icon" type="image/png" href="https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/1X/4c06143de7870c35963b818b15b395092a434991_2_180x180.png">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111111">
+
+<meta name="color-scheme" content="light dark">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+<link rel="canonical" href="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional/22606" />
+
+<meta name="discourse-track-view-session-id" content="IQ0va6xScXavnI1GAibA7o5dgE0kEGoF">
+  <link rel="search" type="application/opensearchdescription+xml" href="https://discuss.python.org/opensearch.xml" title="Discussions on Python.org Search">
+
+    
+    <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/color_definitions_light-default_-1_2_c2bf21e9c3e139f5e5f108a2ef34afd25fb9a1de.css?__ws=discuss.python.org" media="(prefers-color-scheme: light)" rel="stylesheet" class="light-scheme"/><link href="https://sea2.discourse-cdn.com/flex002/stylesheets/color_definitions_dark_1_2_766275abe76a8249c555e0c4bec3de4845ff1945.css?__ws=discuss.python.org" media="(prefers-color-scheme: dark)" rel="stylesheet" class="dark-scheme" data-scheme-id="1"/>
+
+<link href="https://sea2.discourse-cdn.com/flex002/stylesheets/common_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="common"  />
+
+
+
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/automation_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="automation"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/checklist_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="checklist"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-ai_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-ai"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-chat-integration_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-chat-integration"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-data-explorer_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-data-explorer"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-details_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-details"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-github_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-github"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-lazy-videos_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-lazy-videos"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-local-dates_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-local-dates"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-math_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-math"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-narrative-bot_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-narrative-bot"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-policy_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-policy"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-presence_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-presence"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-reactions_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-reactions"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-solved_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-solved"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-templates_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-templates"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-topic-voting_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-topic-voting"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-user-notes_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="discourse-user-notes"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/footnote_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="footnote"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/hosted-site_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="hosted-site"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/poll_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="poll"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/spoiler-alert_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="spoiler-alert"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-ai_mobile_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-ai_mobile"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-reactions_mobile_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-reactions_mobile"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-ai_desktop_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width >= 40rem)" rel="stylesheet" data-target="discourse-ai_desktop"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/discourse-reactions_desktop_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width >= 40rem)" rel="stylesheet" data-target="discourse-reactions_desktop"  />
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/poll_desktop_51cea3536272593c6ddb4f83821f0bb493cecb87.css?__ws=discuss.python.org" media="(width >= 40rem)" rel="stylesheet" data-target="poll_desktop"  />
+
+  <link href="https://sea2.discourse-cdn.com/flex002/stylesheets/common_theme_4_d7fd17bd8347d1b27e388243c39d2cb381bec48d.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="common_theme" data-theme-id="4" data-theme-name="unformatted code detector"/>
+<link href="https://sea2.discourse-cdn.com/flex002/stylesheets/common_theme_2_08d1cc8888b55bd9677460a383271b2b8bee0cf0.css?__ws=discuss.python.org" media="all" rel="stylesheet" data-target="common_theme" data-theme-id="2" data-theme-name="light"/>
+  
+  
+
+    
+    
+        <link rel="alternate nofollow" type="application/rss+xml" title="RSS feed of &#39;PEP 703: Making the Global Interpreter Lock Optional&#39;" href="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional/22606.rss" />
+    <meta property="og:site_name" content="Discussions on Python.org" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="https://us1.discourse-cdn.com/flex002/uploads/python1/original/1X/f93ff97c4f381b5e8add5a0c163b4ded29f20ed7.png" />
+<meta property="og:image" content="https://us1.discourse-cdn.com/flex002/uploads/python1/original/1X/f93ff97c4f381b5e8add5a0c163b4ded29f20ed7.png" />
+<meta property="og:url" content="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional/22606" />
+<meta name="twitter:url" content="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional/22606" />
+<meta property="og:title" content="PEP 703: Making the Global Interpreter Lock Optional" />
+<meta name="twitter:title" content="PEP 703: Making the Global Interpreter Lock Optional" />
+<meta property="og:description" content="Hi 👋  As the sponsor of @colesbury’s PEP, I’d like to invite you all to discuss the proposal to solve the biggest scalability limitation of CPython by making it possible to build a version of the interpreter which doesn’t use the Global Interpreter Lock.  The document is somewhat of a demanding read as it’s one of the top 10 longest PEPs. That was to be expected though as the problem goes back decades and requires nuance, trade-offs, and careful consideration of alternatives. Thanks in adva..." />
+<meta name="twitter:description" content="Hi 👋  As the sponsor of @colesbury’s PEP, I’d like to invite you all to discuss the proposal to solve the biggest scalability limitation of CPython by making it possible to build a version of the interpreter which doesn’t use the Global Interpreter Lock.  The document is somewhat of a demanding read as it’s one of the top 10 longest PEPs. That was to be expected though as the problem goes back decades and requires nuance, trade-offs, and careful consideration of alternatives. Thanks in adva..." />
+<meta property="og:article:section" content="PEPs" />
+<meta property="og:article:section:color" content="0088CC" />
+<meta name="twitter:label1" value="Reading time" />
+<meta name="twitter:data1" value="36 mins 🕑" />
+<meta name="twitter:label2" value="Likes" />
+<meta name="twitter:data2" value="632 ❤" />
+<meta property="article:published_time" content="2023-01-10T16:08:09+00:00" />
+<meta property="og:ignore_canonical" content="true" />
+
+        <link rel="next" href="/t/pep-703-making-the-global-interpreter-lock-optional/22606?page=2">
+
+    <link rel="alternate" type="text/markdown" href="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional/22606.md">
+    
+  </head>
+  <body class="crawler ">
+    
+    <header>
+  <a href="/">Discussions on Python.org</a>
+</header>
+
+    <div id="main-outlet" class="wrap" role="main">
+        <div id="topic-title">
+    <h1>
+      <a href="/t/pep-703-making-the-global-interpreter-lock-optional/22606">PEP 703: Making the Global Interpreter Lock Optional</a>
+    </h1>
+
+      <div class="topic-category" itemscope itemtype="http://schema.org/BreadcrumbList">
+          <span itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+            <a href="/c/peps/19" class="badge-wrapper bullet" itemprop="item">
+              <span class='badge-category-bg' style='background-color: #0088CC'></span>
+              <span class='badge-category clear-badge'>
+                <span class='category-name' itemprop='name'>PEPs</span>
+              </span>
+            </a>
+            <meta itemprop="position" content="1" />
+          </span>
+      </div>
+
+  </div>
+
+  
+
+    <div itemscope="itemscope" itemtype="http://schema.org/DiscussionForumPosting">
+      <meta itemprop='headline' content='PEP 703: Making the Global Interpreter Lock Optional'>
+      <link itemprop='url' href='https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional/22606'>
+      <meta itemprop='datePublished' content='2023-01-10T16:08:09Z'>
+      <meta itemprop='keywords' content=''>
+          <meta itemprop='articleSection' content='PEPs'>
+        <div itemprop='publisher' itemscope itemtype="http://schema.org/Organization">
+          <meta itemprop='name' content='Python Software Foundation'>
+            <div itemprop='logo' itemscope itemtype="http://schema.org/ImageObject">
+              <meta itemprop='url' content='https://us1.discourse-cdn.com/flex002/uploads/python1/original/1X/c7591c98caf3b31d4d9c6f322f41ed9d80a50800.png'>
+            </div>
+        </div>
+
+      
+
+
+
+          <div id='post_1'  class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/ambv'><span itemprop="name">ambv</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/ambv'>
+                (Łukasz Langa)
+              </span>
+
+                <link itemprop="mainEntityOfPage" href="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional/22606">
+
+
+              <span class="crawler-post-infos">
+                  <time  datetime='2023-01-10T16:08:09Z' class='post-time'>
+                    January 10, 2023,  4:08pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T16:08:09Z'>
+              <span itemprop="position">1</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Hi <img src="https://emoji.discourse-cdn.com/apple/wave.png?v=15" title=":wave:" class="emoji" alt=":wave:" loading="lazy" width="20" height="20"></p>
+<p>As the sponsor of <a class="mention" href="/u/colesbury">@colesbury</a>’s PEP, I’d like to invite you all to discuss the proposal to solve the biggest scalability limitation of CPython by making it possible to build a version of the interpreter which doesn’t use the Global Interpreter Lock.</p>
+<p>The document is somewhat of a demanding read as it’s one of the top 10 longest PEPs. That was to be expected though as the problem goes back decades and requires nuance, trade-offs, and careful consideration of alternatives. Thanks in advance for your time reading the PEP and iterating on it with us.</p>
+<p>Our hope with this PEP is to get a definitive answer to the GIL question once and for all. We look forward to your feedback!</p>
+<p>– Sam Gross and Łukasz Langa</p>
+<h1><a name="p-80646-see-the-latest-version-of-the-pep-1" class="anchor" href="#p-80646-see-the-latest-version-of-the-pep-1" aria-label="Heading link"></a>See the latest version of the PEP</h1>
+<aside class="onebox allowlistedgeneric" data-onebox-src="https://peps.python.org/pep-0703/">
+  <header class="source">
+      <img src="https://us1.discourse-cdn.com/flex002/uploads/python1/original/2X/8/88d4484552c4beac33d9a0848f523aaa66aad78c.png" class="site-icon" alt="" data-dominant-color="979F6B" width="16" height="16">
+
+      <a href="https://peps.python.org/pep-0703/" target="_blank" rel="noopener">Python Enhancement Proposals (PEPs)</a>
+  </header>
+
+  <article class="onebox-body">
+    <img width="200" height="200" src="https://us1.discourse-cdn.com/flex002/uploads/python1/original/3X/8/3/8354042ac932196b5fde1d1048a76b567decdcdc.png" class="thumbnail onebox-avatar" alt="" data-dominant-color="9EAC81">
+
+<h3><a href="https://peps.python.org/pep-0703/" target="_blank" rel="noopener">PEP 703 – Making the Global Interpreter Lock Optional in CPython |...</a></h3>
+
+  <p>CPython’s global interpreter lock (“GIL”) prevents multiple threads from executing Python code at the same time.  The GIL is an obstacle to using multi-core CPUs from Python efficiently.  This PEP proposes adding a build configuration (--disable-gil)...</p>
+
+
+  </article>
+
+  <div class="onebox-metadata">
+    
+    
+  </div>
+
+  <div style="clear: both"></div>
+</aside>
+
+<p>(<a href="http://python.org">python.org</a> uses aggressive front-end caching so you might need to refresh the page your browser to see latest changes)</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="120" />
+                <span class='post-likes'>120 Likes</span>
+              </div>
+
+                <div class='crawler-linkback-list'>
+                    <div>
+                      <a href="https://discuss.python.org/t/a-fast-free-threading-python/27903/111">A fast, free threading Python</a>
+                    </div>
+                    <div>
+                      <a href="https://discuss.python.org/t/is-free-threading-our-only-option/91775/100">Is Free-Threading Our Only Option?</a>
+                    </div>
+                    <div>
+                      <a href="https://discuss.python.org/t/a-fast-free-threading-python/27903/101">A fast, free threading Python</a>
+                    </div>
+                </div>
+
+            
+
+
+          </div>
+          <div id='post_2' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/ajoino'><span itemprop="name">ajoino</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/ajoino'>
+                (Jacob Nilsson)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-10T16:39:47Z' class='post-time'>
+                    January 10, 2023,  4:39pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T16:39:47Z'>
+              <span itemprop="position">2</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Exciting stuff!</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="5" />
+                <span class='post-likes'>5 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_3' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/cirospaciari'><span itemprop="name">cirospaciari</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/cirospaciari'>
+                (Ciro Spaciari)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-10T17:28:30Z' class='post-time'>
+                    January 10, 2023,  5:28pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T17:28:30Z'>
+              <span itemprop="position">3</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>awesome news!</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_4' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/ambv'><span itemprop="name">ambv</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/ambv'>
+                (Łukasz Langa)
+              </span>
+
+
+                <link itemprop="image" href="https://us1.discourse-cdn.com/flex002/uploads/python1/original/2X/2/2c441545dc69401836f2d6061e5ed827b2cb9fad.jpeg">
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-10T17:31:53Z' class='post-time'>
+                    January 10, 2023,  5:31pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T17:31:53Z'>
+              <span itemprop="position">4</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>I’m happy to see enthusiasm for the PEP. However, <strong>please note</strong> that on Discourse we avoid posts to show support / agree with the previous poster. Instead, we use the reactions:</p>
+<p><div class="lightbox-wrapper"><a class="lightbox" href="https://us1.discourse-cdn.com/flex002/uploads/python1/original/2X/2/2c441545dc69401836f2d6061e5ed827b2cb9fad.jpeg" data-download-href="/uploads/short-url/6jASjAjkxyGWKxoaWiUz2KEUtpH.jpeg?dl=1" title="Screen Shot 2023-01-10 at 18.30.10"><img src="https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/2X/2/2c441545dc69401836f2d6061e5ed827b2cb9fad_2_502x499.jpeg" alt="Screen Shot 2023-01-10 at 18.30.10" data-base62-sha1="6jASjAjkxyGWKxoaWiUz2KEUtpH" width="502" height="499" srcset="https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/2X/2/2c441545dc69401836f2d6061e5ed827b2cb9fad_2_502x499.jpeg, https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/2X/2/2c441545dc69401836f2d6061e5ed827b2cb9fad_2_753x748.jpeg 1.5x, https://us1.discourse-cdn.com/flex002/uploads/python1/optimized/2X/2/2c441545dc69401836f2d6061e5ed827b2cb9fad_2_1004x998.jpeg 2x" data-dominant-color="2C2C2D"><div class="meta">
+<svg class="fa d-icon d-icon-far-image svg-icon" aria-hidden="true"><use href="#far-image"></use></svg><span class="filename">Screen Shot 2023-01-10 at 18.30.10</span><span class="informations">1824×1816 152 KB</span><svg class="fa d-icon d-icon-discourse-expand svg-icon" aria-hidden="true"><use href="#discourse-expand"></use></svg>
+</div></a></div></p>
+<p>Please use those instead. Thanks!</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="21" />
+                <span class='post-likes'>21 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_5' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/barry-scott'><span itemprop="name">barry-scott</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/barry-scott'>
+                (Barry Scott)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-10T19:29:02Z' class='post-time'>
+                    January 10, 2023,  7:29pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T19:29:02Z'>
+              <span itemprop="position">5</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Thanks you for a clear PEP for such a technically complex change!</p>
+<p>I am the PyCXX maintainer.</p>
+<p>I think I may need to know if PYCXX needs to use <code>—without-gil</code> safe APIs.</p>
+<p>Is there a C define that I can test? Found it: Py_NOGIL</p>
+<p>Or maybe PyCXX always uses the safe APIs starting with the first release of python with this implemented.</p>
+<p>If a C extension uses an unsafe API will I get a compiler error?</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_6' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/h-vetinari'><span itemprop="name">h-vetinari</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/h-vetinari'>
+                (H. Vetinari)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-10T21:51:04Z' class='post-time'>
+                    January 10, 2023,  9:51pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T22:00:32Z'>
+              <span itemprop="position">6</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Congratulations on this PEP! <img src="https://emoji.discourse-cdn.com/apple/partying_face.png?v=12" title=":partying_face:" class="emoji" alt=":partying_face:" loading="lazy" width="20" height="20"></p>
+<aside class="quote no-group">
+<blockquote>
+<p>This proposed immortalization scheme is very similar to PEP 683, but with slightly different bit representation in the reference count fields for immortal objects in order to work with biased reference counting and deferred reference counting.</p>
+</blockquote>
+</aside>
+<p>I’m surprised to see this diverge from existing efforts in the same direction. Is it impossible to make nogil work with PEP 683 semantics, should PEP 683 be modified, or what are the trade-offs (performance?) if PEP 683 were used as is?</p>
+<p>Another point that struck me is that, despite investing a lot of digital ink into testimonials, the motivation is almost exclusively ML/AI and scientific computing. I imagine it’s hard to capture the vast volume of discussions on this topic, but my impression is that it does a disservice to the PEP to not cover the impact on other usecases as well, especially considering how the addition of another build mode / ABI will create enormous pressure for <em>all</em> extension library authors to support it.</p>
+<p>In fact, I suspect that pressure would be so high that there wouldn’t be much of a difference to just declaring it as the new default, which then leaves all of the downsides of building everything twice, with few of the benefits of having a build option in the first place<sup class="footnote-ref"><a href="#footnote-80717-1" id="footnote-ref-80717-1">[1]</a></sup>.</p>
+<hr class="footnotes-sep">
+
+<ol class="footnotes-list">
+<li id="footnote-80717-1" class="footnote-item"><p>Perhaps it might be better to just use this as a “Python 4.0” event, which would at least give library authors something to point to à la “a lot of things changed and we’ll need some time to adapt our library to it”. <a href="#footnote-ref-80717-1" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="9" />
+                <span class='post-likes'>9 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_7' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/barry-scott'><span itemprop="name">barry-scott</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/barry-scott'>
+                (Barry Scott)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-10T22:36:34Z' class='post-time'>
+                    January 10, 2023, 10:36pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T22:36:34Z'>
+              <span itemprop="position">7</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>I use case i have at work is a service that uses multi process because of the gil issue.<br>
+It handles high volumes of http requests and needed to compute for the requests.</p>
+<p>This PEP would allow us to use a multi threaded server where we can exploit all the cores on our xeon’s and have the service scale with CPU cores.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="2" />
+                <span class='post-likes'>2 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_8' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/jeanas'><span itemprop="name">jeanas</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/jeanas'>
+                (Jean Abou Samra)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-10T23:38:57Z' class='post-time'>
+                    January 10, 2023, 11:38pm
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-10T23:38:57Z'>
+              <span itemprop="position">8</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote group-committers" data-username="ambv" data-post="4" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/ambv/48/25884_2.png" class="avatar"> Łukasz Langa:</div>
+<blockquote>
+<p>However, <strong>please note</strong> that on Discourse we avoid posts to show support / agree with the previous poster. Instead, we use the reactions:</p>
+</blockquote>
+</aside>
+<p>The problem is that there’s no way to express a stronger excitement than just “like” <img src="https://emoji.discourse-cdn.com/apple/slight_smile.png?v=12" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+<p>Minor note: perhaps the PEP should say what happens to the <code>generation</code> argument of<br>
+<a href="https://docs.python.org/3/library/gc.html#gc.collect" rel="noopener nofollow ugc">gc.collect</a>.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_9' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/methane'><span itemprop="name">methane</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/methane'>
+                (Inada Naoki)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T00:07:10Z' class='post-time'>
+                    January 11, 2023, 12:07am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T00:07:10Z'>
+              <span itemprop="position">9</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Excellent work.</p>
+<p>This is nitpick but I don’t like <code>--with(out)-gil</code> option. <code>--with</code> option usually used for external dependency. Since we don’t need <code>--with-gil=/path/to/libgil</code>, I prefer <code>--enable-gil / --disable-gil</code> option.</p>
+<p>See  <a href="https://autotools.info/autoconf/arguments.html" class="inline-onebox">3.&nbsp;Adding Options</a> for reference.</p>
+<blockquote>
+<p><strong><code>--enable-*</code></strong>/<strong><code>--disable-*</code></strong> arguments</p>
+<p>The arguments starting with <strong>–enable-</strong> prefix are usually used to enable features of the program. They usually add or remove dependencies only if they are needed for that particular feature being enabled or disabled.</p>
+<p><strong><code>--with-*</code></strong>/<strong><code>--without-*</code></strong> arguments</p>
+<p>The arguments starting with <strong>–with-</strong> prefix are usually used to add or remove dependencies on external projects. These might add or remove features from the project.</p>
+</blockquote>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="18" />
+                <span class='post-likes'>18 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_10' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/gregington'><span itemprop="name">gregington</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/gregington'>
+                (Greg Tan)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T02:47:47Z' class='post-time'>
+                    January 11, 2023,  2:47am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T02:47:47Z'>
+              <span itemprop="position">10</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>The <strong>Python Critical Sections</strong>  part of the document describes how threads can only hold a single lock at a time to avoid deadlocks, where existing locks are released when a new lock is acquired.</p>
+<p>If multiple locks are taken to ensure mutual consistency across multiple resources, is it possible that a second thread can acquire a released lock and make changes that are inconsistent with the work performed by the first thread? At first glance, this has the potential to violate program correctness in a multithreaded environment.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_11' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/colesbury'><span itemprop="name">colesbury</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/colesbury'>
+                (Sam Gross)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T05:08:41Z' class='post-time'>
+                    January 11, 2023,  5:08am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T05:08:41Z'>
+              <span itemprop="position">11</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote no-group" data-username="barry-scott" data-post="5" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://avatars.discourse-cdn.com/v4/letter/b/e9c0ed/48.png" class="avatar"> Barry Scott:</div>
+<blockquote>
+<p>Or maybe PyCXX always uses the safe APIs starting with the first release of python with this implemented.</p>
+<p>If a C extension uses an unsafe API will I get a compiler error?</p>
+</blockquote>
+</aside>
+<p>Hi Barry - I think you are referring to <code>PyDict_GetItem</code> vs. <code>PyDict_FetchItem</code> (and the list object equivalents). Let me know if you are referring to something else. For general context: the proposed new APIs (<code>PyDict_FetchItem</code>) return “new references”. The existing APIs (e.g., <code>PyDict_GetItem</code>) return “borrowed references.”  The borrowed references are sometimes unsafe without the GIL, such as when another thread might concurrently modify the container.</p>
+<p>The PEP does <em>not</em> propose making the borrowed reference versions a compile error (nor does it deprecate them). This for a few reasons:</p>
+<ul>
+<li>Many of the uses of <code>PyDict/List_GetItem</code> are safe even without the GIL. For example, accessing kwargs with PyDict_GetItem is safe because the kwargs generally cannot be modified by another thread.</li>
+<li>I tried this approach briefly early on, and, in my experience, wholesale replacing “borrowed references” with “new references” in existing code made it too easy to introduce new reference counting bugs.</li>
+</ul>
+<p>I think the risk of introducing new reference counting bugs generally outweighs the risks of missing a PyDict/List_GetItem call that’s unsafe without the GIL. That said, extension authors know their own code best, so if someone wants to replace <code>PyDict_GetItem</code> with <code>PyDict_FetchItem</code> they certainly can do so.</p>
+<p>I’ll add this reasoning to the PEP.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="3" />
+                <span class='post-likes'>3 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_12' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/colesbury'><span itemprop="name">colesbury</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/colesbury'>
+                (Sam Gross)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T06:06:26Z' class='post-time'>
+                    January 11, 2023,  6:06am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T06:06:26Z'>
+              <span itemprop="position">12</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote no-group" data-username="h-vetinari" data-post="6" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/h-vetinari/48/1220_2.png" class="avatar"> H. Vetinari:</div>
+<blockquote>
+<p>I’m surprised to see this diverge from existing efforts in the same direction. Is it impossible to make nogil work with PEP 683 semantics, should PEP 683 be modified, or what are the trade-offs (performance?) if PEP 683 were used as is?</p>
+</blockquote>
+</aside>
+<p>PEP 683 tries to be compatible with the stable ABI (abi3) and makes some trade-offs to support that, such as putting the immortal bit as the 2nd highest bit. You could make this PEP look more like a bit more like PEP 683 (by placing the immortal bit in the same spot), but I think it would only be superficial similarity because this PEP depends on biased reference counting (there are two reference counting fields instead of one), so the overall reference counting scheme is going to be different regardless. On x86-64, using one of the low bits instead of the 2nd highest bit makes checking if an object is immortal a teeny bit faster. I don’t think PEP 683 should be changed – I think it’s a good solution given the constraints of ABI stability. I’ll wait a bit to see if there are more comments on immortalization and then try to summarize this in the PEP.</p>
+<p>Regarding motivation: I’m hoping that people that use Python for the many other use cases not mentioned in the PEP can weigh in here about either the problems the GIL poses for them or with their concerns about this PEP.  To the extent that there are common themes, I’ll try to capture them in the PEP.</p>
+<p>Regarding the build modes: I <a href="https://peps.python.org/pep-0703/#python-build-modes" rel="noopener nofollow ugc">wrote</a> this in the PEP, but my hope is for the two build modes to be temporary. I think having two build modes – for a short period – is worthwhile because it reduces the risks during integration into CPython and gives a bit more time for extensions to adapt. I don’t really see the build modes as a means for extension authors to “opt-out” of supporting it, although it’s possible it’s used that way. Like you, I think there will be pressure from users on extension authors to support it, and I think that pressure will be because the users see value in running without the GIL.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_13' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/colesbury'><span itemprop="name">colesbury</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/colesbury'>
+                (Sam Gross)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T06:10:07Z' class='post-time'>
+                    January 11, 2023,  6:10am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T06:10:07Z'>
+              <span itemprop="position">13</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote group-committers" data-username="methane" data-post="9" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/methane/48/43_2.png" class="avatar"> Inada Naoki:</div>
+<blockquote>
+<p>I prefer <code>--enable-gil / --disable-gil</code> option.</p>
+</blockquote>
+</aside>
+<p>I like <code>--enable-gil / --disable-gil</code> too. I’ll wait a bit to see if there are additional comments on the build option naming and then update the PEP.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="6" />
+                <span class='post-likes'>6 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_14' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/petersuter'><span itemprop="name">petersuter</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/petersuter'>
+                (Peter Suter)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T07:10:04Z' class='post-time'>
+                    January 11, 2023,  7:10am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T07:10:04Z'>
+              <span itemprop="position">14</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>What is the impact on packaging, wheel tags, PyPI, pip, python org installers etc.?</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="2" />
+                <span class='post-likes'>2 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_15' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/h-vetinari'><span itemprop="name">h-vetinari</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/h-vetinari'>
+                (H. Vetinari)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T07:14:55Z' class='post-time'>
+                    January 11, 2023,  7:14am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T07:47:50Z'>
+              <span itemprop="position">15</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Thanks for the response!</p>
+<aside class="quote group-committers quote-modified" data-username="colesbury" data-post="12" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex002/user_avatar/discuss.python.org/colesbury/48/28031_2.png" class="avatar"> Sam Gross:</div>
+<blockquote>
+<p>PEP 683 tries to be compatible with the stable ABI (abi3) and makes some trade-offs to support that, such as putting the immortal bit as the 2nd highest bit. […] I don’t think PEP 683 should be changed – I think it’s a good solution given the constraints of ABI stability.</p>
+</blockquote>
+</aside>
+<p>So if I’m reading this (and the PEP) correctly:</p>
+<ul>
+<li>nogil needs <em>both</em> biased &amp; deferred reference counting (for thread safety resp. performance)</li>
+<li>nogil needs a break of the stable ABI<sup class="footnote-ref"><a href="#footnote-80783-1" id="footnote-ref-80783-1">[1]</a></sup></li>
+<li>it’s thus independent of PEP 683, but would replace(?) PEP 683’s changes in this space with its own</li>
+</ul>
+<aside class="quote group-committers" data-username="colesbury" data-post="12" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex002/user_avatar/discuss.python.org/colesbury/48/28031_2.png" class="avatar"> Sam Gross:</div>
+<blockquote>
+<p>Regarding the build modes: I <a href="https://peps.python.org/pep-0703/#python-build-modes" rel="noopener nofollow ugc">wrote</a> this in the PEP, but my hope is for the two build modes to be temporary. I think having two build modes – for a short period – is worthwhile because it reduces the risks during integration into CPython and gives a bit more time for extensions to adapt.</p>
+</blockquote>
+</aside>
+<p>Not to nitpick, but the linked section says “These may be worthwhile if a longer term goal is to have a single build mode”, which is… at odds… with “for a short period”. BTW, this choice is a really hard problem, and it’s fine that the PEP doesn’t really commit to a timeline, but IMO those trade-offs (additional build mode – what would that imply over short/long term? – or new default) could use some more discussion.</p>
+<aside class="quote group-committers" data-username="colesbury" data-post="12" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex002/user_avatar/discuss.python.org/colesbury/48/28031_2.png" class="avatar"> Sam Gross:</div>
+<blockquote>
+<p>I don’t really see the build modes as a means for extension authors to “opt-out” of supporting it, although it’s possible it’s used that way. Like you, I think there will be pressure from users on extension authors to support it, and I think that pressure will be because the users see value in running without the GIL.</p>
+</blockquote>
+</aside>
+<p>I absolutely see libraries opting out of this, at least for a while (e.g. “making our library threadsafe needs a large overhaul of core component X, and we’ll do it in the next Y months”), which will create a situation where people want to install a given library on the nogil ABI, only to find out that it doesn’t exist (or worse: since there are no nogil-wheels, it falls back to trying to install from source) – would pip even be able to take the python ABI flavour into account for the resolver, resp. give a reasonable error?</p>
+<p>It’s also going to create confusion for users who have no idea what an ABI is, when a library advertises itself as “we support Python 3.12 (but not nogil)”, and then users need to understand that distinction.</p>
+<p>The least painful scenario I could imagine (very subjective, obviously) is to redeclare Python 3.13 as 4.0, no additional build mode but with changed ABI, merge nogil immediately after branching 3.12 (and publish an alpha right after), then work with the extension ecosystem over the following year to get as far as possible in getting the most used libraries “4.0/nogil-ready”. I know you have some experience with that already with the libraries you patched for the existing nogil fork, but it’s gonna take a while for the ecosystem to digest such a change IMO (whether with a separate build mode or not<sup class="footnote-ref"><a href="#footnote-80783-2" id="footnote-ref-80783-2">[2]</a></sup>).</p>
+<hr class="footnotes-sep">
+
+<ol class="footnotes-list">
+<li id="footnote-80783-1" class="footnote-item"><p>that in and of itself probably makes it “Python 4.0” material? <a href="#footnote-ref-80783-1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="footnote-80783-2" class="footnote-item"><p>I just think a changed default will cause less friction overall, rather than subjecting the library maintainers (as well as tooling &amp; infrastructure) to having to deal with both modes + users who can’t wait for nogil either way. <a href="#footnote-ref-80783-2" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="9" />
+                <span class='post-likes'>9 Likes</span>
+              </div>
+
+                <div class='crawler-linkback-list'>
+                    <div>
+                      <a href="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional-3-12-updates/26503/102">PEP 703: Making the Global Interpreter Lock Optional (3.12 updates)</a>
+                    </div>
+                    <div>
+                      <a href="https://discuss.python.org/t/pep-703-making-the-global-interpreter-lock-optional-3-12-updates/26503/61">PEP 703: Making the Global Interpreter Lock Optional (3.12 updates)</a>
+                    </div>
+                </div>
+
+            
+
+
+          </div>
+          <div id='post_16' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/encukou'><span itemprop="name">encukou</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/encukou'>
+                (Petr Viktorin)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T08:49:45Z' class='post-time'>
+                    January 11, 2023,  8:49am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T08:49:45Z'>
+              <span itemprop="position">16</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>This would place a huge burden on authors of third-party C-API extensions. I don’t see how we could have nogil without a situation similar to the Python 2→3 transition – two incompatible versions of Python existing in parallel for a long time.</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="10" />
+                <span class='post-likes'>10 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_17' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/ashbt'><span itemprop="name">ashbt</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/ashbt'>
+                (Ash Berlin-Taylor)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T09:53:00Z' class='post-time'>
+                    January 11, 2023,  9:53am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T10:08:53Z'>
+              <span itemprop="position">17</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>In <a href="https://peps.python.org/pep-0703/#cpython-free-lists" rel="noopener nofollow ugc">CPython Free Lists</a> you mention that freelists will be disabled when building without the GIL – is there a reason to not have a pre-thread freelist instead?</p>
+<p>Oh, because allocations are global, and a pre thread list just doesn’t really make sense. Sorry, I haven’t had enough coffee yet <img src="https://emoji.discourse-cdn.com/apple/slight_smile.png?v=12" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_18' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/ashbt'><span itemprop="name">ashbt</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/ashbt'>
+                (Ash Berlin-Taylor)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T09:54:20Z' class='post-time'>
+                    January 11, 2023,  9:54am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T09:54:20Z'>
+              <span itemprop="position">18</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote no-group" data-username="jeanas" data-post="8" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/jeanas/48/8115_2.png" class="avatar"> Jean Abou Samra:</div>
+<blockquote>
+<p>Minor note: perhaps the PEP should say what happens to the <code>generation</code> argument of<br>
+<a href="https://docs.python.org/3/library/gc.html#gc.collect" rel="noopener nofollow ugc">gc.collect </a>.</p>
+</blockquote>
+</aside>
+<p>In <a href="https://peps.python.org/pep-0703/#garbage-collection-cycle-collection" rel="noopener nofollow ugc">Garbage Collection (Cycle Collection)</a> it says</p>
+<blockquote>
+<ul>
+<li>Elimination of generational garbage collection in favor of non-generational collector.</li>
+</ul>
+</blockquote>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_19' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/mattip'><span itemprop="name">mattip</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/mattip'>
+                (Matti Picus)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T09:59:40Z' class='post-time'>
+                    January 11, 2023,  9:59am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T09:59:40Z'>
+              <span itemprop="position">19</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <aside class="quote no-group" data-username="h-vetinari" data-post="15" data-topic="22606">
+<div class="title">
+<div class="quote-controls"></div>
+<img loading="lazy" alt="" width="24" height="24" src="https://sea2.discourse-cdn.com/flex016/user_avatar/discuss.python.org/h-vetinari/48/1220_2.png" class="avatar"> H. Vetinari:</div>
+<blockquote>
+<p>it falls back to trying to install from source)</p>
+</blockquote>
+</aside>
+<p>There <a href="https://github.com/pypa/pip/issues/9140" rel="noopener nofollow ugc">is a proposal</a> to change this.  Maybe there should be an explicit section of the PEP to discuss implications for c-extension library authors.</p>
+<p>In any case, the Distribution section should be extended to describe what resources lie behind the statement below. Has this been discussed with Anaconda (maybe the author means “the conda-forge community”, which maintains the cutting-edge versions of packages like NumPy)? Will the conda package be a fork of the upstream package or does it depend on the package maintainers to do the work?</p>
+<blockquote>
+<p>the author will work with Anaconda to distribute a <code>--without-gil</code> version of Python".</p>
+</blockquote>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="2" />
+                <span class='post-likes'>2 Likes</span>
+              </div>
+
+
+            
+
+
+          </div>
+          <div id='post_20' itemprop="comment" itemscope="itemscope" itemtype="http://schema.org/Comment" class='topic-body crawler-post'>
+            <div class='crawler-post-meta'>
+              <span class="creator" itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person">
+                <a rel='nofollow' href='https://discuss.python.org/u/ashbt'><span itemprop="name">ashbt</span></a>
+                  <meta itemprop='url' content='https://discuss.python.org/u/ashbt'>
+                (Ash Berlin-Taylor)
+              </span>
+
+
+
+              <span class="crawler-post-infos">
+                  <time itemprop="datePublished" datetime='2023-01-11T10:29:07Z' class='post-time'>
+                    January 11, 2023, 10:29am
+                  </time>
+                  <meta itemprop='dateModified' content='2023-01-11T10:29:07Z'>
+              <span itemprop="position">20</span>
+              </span>
+            </div>
+            <div class='post' itemprop="text">
+              <p>Somewhat relatedly, this came up in my feed today about a similar issue in bind <a href="https://dotat.at/@/2023-01-10-qsbr.html" class="inline-onebox" rel="noopener nofollow ugc">Safe memory reclamation for BIND – Tony Finch</a> and it talks about <a href="https://liburcu.org/" rel="noopener nofollow ugc">https://liburcu.org/</a> (which is LGPL’d, so I suspect not of use to Python core.)</p>
+            </div>
+
+              <div itemprop="interactionStatistic" itemscope="itemscope" itemtype="http://schema.org/InteractionCounter">
+                  <meta itemprop="interactionType" content="http://schema.org/LikeAction"/>
+                  <meta itemprop="userInteractionCount" content="0" />
+                <span class='post-likes'></span>
+              </div>
+
+
+            
+
+
+          </div>
+
+    </div>
+
+      <div role='navigation' itemscope itemtype='http://schema.org/SiteNavigationElement' class="topic-body crawler-post">
+            <span itemprop='name'><b><a rel="next" itemprop="url" href="/t/pep-703-making-the-global-interpreter-lock-optional/22606?page=2">next page →</a></b></span>
+      </div>
+
+    
+
+
+
+
+    </div>
+    <footer class="container wrap">
+  <nav class='crawler-nav'>
+    <ul>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/' itemprop="url">Home </a>
+        </span>
+      </li>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/categories' itemprop="url">Categories </a>
+        </span>
+      </li>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/guidelines' itemprop="url">Guidelines </a>
+        </span>
+      </li>
+        <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+          <span itemprop='name'>
+            <a href='/tos' itemprop="url">Terms of Service </a>
+          </span>
+        </li>
+        <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+          <span itemprop='name'>
+            <a href='/privacy' itemprop="url">Privacy Policy </a>
+          </span>
+        </li>
+    </ul>
+  </nav>
+  <p class='powered-by-link'>Powered by <a href="https://www.discourse.org">Discourse</a>, best viewed with JavaScript enabled</p>
+</footer>
+
+    
+    
+  </body>
+  
+</html>

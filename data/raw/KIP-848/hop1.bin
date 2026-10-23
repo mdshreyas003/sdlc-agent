@@ -1,0 +1,760 @@
+{
+  "thread": {
+    "from": "Jun Rao <ju...@confluent.io.INVALID>",
+    "gravatar": "f16baba0c5aa1f84b809f9d1b1a52184",
+    "subject": "[DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+    "message-id": "<CAFc58G88MCTcr7J1Mf0VELwNVdJ_HTRj3vA7=v=0wJU8pf674Q@mail.gmail.com>",
+    "mid": "oym1hyolwkpwyozozxydcpvdtg6p68fd",
+    "dbid": "dac0367085d8655b2fa00a55e43782a1aa101d51a994de68f81729687dc5ad88",
+    "epoch": 1665678101,
+    "list": "<dev.kafka.apache.org>",
+    "list_raw": "<dev.kafka.apache.org>",
+    "private": false,
+    "in-reply-to": "",
+    "body": "Hi, David,\n\nThanks for the reply and the updated KIP. A few more comments on the\ninterfaces and the protocols.\n\n60.  On the consumer side, do we need both PartitionAssignor.onAssignment\nand ConsumerRebalanceListener.onPartitionsAssigned? My understanding is\nthat the former was added for cooperative rebalance, which is now handled\nby the coordinator. If we do need both, should we make them more consistent\n(e.g. topic name vs topic id, list vs set vs collection)?\n\n61. group.local.assignors: Could we make it clear that it's the full class\nname that implements PartitionAssignor?\n\n62. MemberAssignment: It currently has the following method.\n    public Set<TopicPartition> topicPartitions()\nWe are adding List<TopicIdPartition> ownedPartitions. Should we keep the\nnaming and the return type consistent?\n\n63. MemberAssignment.error: should that be reason?\n\n64. group.remote.assignor: The client may not know what assignors the\nbroker supports. Should we default this to what the broker determines (e.g.\nfirst assignor listed in group.consumer.assignors)?\n\n65. After the text \"When A heartbeats again and acknowledges the\nrevocation, the group coordinator transitions him to epoch 2 and releases\nfoo-2.\", we have the following.\n  B - epoch=2, partitions=[foo-2], pending-partitions=[]\nShould foo-2 be in pending-partitions?\n\n66. In the Online Migration example, is the first occurence of \"C -\nepoch=23, partitions=[foo-2, foo-5, foo-4], pending-partitions=[]\" correct?\nIt seems that should happen after C receives a SyncGroup response? If so,\nsubsequent examples have the same issue.\n\n67. ConsumerGroupHeartbeatRequest.RebalanceTimeoutMs : Which config\ncontrols this? How is this used by the group coordinator since there is no\nsync barrier anymore?\n\n68. ConsumerGroupHeartbeatResponse:\n68.1 AssignedTopicPartitions and PendingTopicPartitions are of type\n[]TopicPartition. Should they be TopicPartitions?\n68.2 Assignment.error. Should we also have an errorMessage field?\n\n69. ConsumerGroupPrepareAssignmentResponse.Members.Assignor: Should it\ninclude the selected assignor name?\n\n70. ConsumerGroupInstallAssignmentRequest.GroupEpoch: Should we let the\nclient set this? Intuitively, it seems the coordinator should manage the\ngroup epoch.\n\n71. ConsumerGroupDescribeResponse:\n71.1 Members.Assignment.Partitions. Should we include the topic name too\nsince it's convenient for building tools? Ditto for TargetAssignment.\n71.2 Members: Should we include SubscribedTopicRegex too?\n\n72. OffsetFetchRequest: Is GenerationIdOrMemberEpoch needed since tools may\nalso want to issue this request?\n\nThanks,\n\nJun\n",
+    "attachments": [],
+    "id": "oym1hyolwkpwyozozxydcpvdtg6p68fd",
+    "children": [
+      {
+        "tid": "rv9f4kxn57km0sjvt6jm7ydz9sw5rb90",
+        "mid": "rv9f4kxn57km0sjvt6jm7ydz9sw5rb90",
+        "message-id": "<CALkmrLQxCAnKJt39Y5SRtY=8v0ebzCjXNguzKSZcKhieNrQTyA@mail.gmail.com>",
+        "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+        "from": "Luke Chen <sh...@gmail.com>",
+        "id": "rv9f4kxn57km0sjvt6jm7ydz9sw5rb90",
+        "epoch": 1665717073,
+        "children": [
+          {
+            "tid": "p85wol7y77vfqfx7wgxovl6g9ofjp2h3",
+            "mid": "p85wol7y77vfqfx7wgxovl6g9ofjp2h3",
+            "message-id": "<CAHn4u3uKGJzyOzh39SGegatqyH3HAJLTSmDow2wQLaHQp4fD6Q@mail.gmail.com>",
+            "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+            "from": "David Jacot <dj...@confluent.io.INVALID>",
+            "id": "p85wol7y77vfqfx7wgxovl6g9ofjp2h3",
+            "epoch": 1665738953,
+            "children": [
+              {
+                "tid": "5khgvogp381stbtor4yzx4clox3lsh1w",
+                "mid": "5khgvogp381stbtor4yzx4clox3lsh1w",
+                "message-id": "<CALkmrLTUOV88GC=YBSERiyiWn9ivBMZ_c=s77GxuV+rSYUYkfw@mail.gmail.com>",
+                "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                "from": "Luke Chen <sh...@gmail.com>",
+                "id": "5khgvogp381stbtor4yzx4clox3lsh1w",
+                "epoch": 1665740921,
+                "children": [
+                  {
+                    "tid": "zzxov82xbt2k4lntjfmyg93xlokqc7oc",
+                    "mid": "zzxov82xbt2k4lntjfmyg93xlokqc7oc",
+                    "message-id": "<CAFc58G-7R2sS976GSA35BKpNbOCDa6VXFDssJ5JM=XmtFnaF7A@mail.gmail.com>",
+                    "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                    "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                    "id": "zzxov82xbt2k4lntjfmyg93xlokqc7oc",
+                    "epoch": 1665770662,
+                    "children": [
+                      {
+                        "tid": "djztz3j2ytm71gclpoozhd3990ptw602",
+                        "mid": "djztz3j2ytm71gclpoozhd3990ptw602",
+                        "message-id": "<CAHn4u3uTL3bpnseuzPAy08Z5WjmR0SAs+ouT8+68HYqBJ8b6cA@mail.gmail.com>",
+                        "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                        "from": "David Jacot <dj...@confluent.io.INVALID>",
+                        "id": "djztz3j2ytm71gclpoozhd3990ptw602",
+                        "epoch": 1665999259,
+                        "children": [
+                          {
+                            "tid": "pymvtjk6sf8rmlxyp5b7dnxmsc9h9b9m",
+                            "mid": "pymvtjk6sf8rmlxyp5b7dnxmsc9h9b9m",
+                            "message-id": "<CAHCQUcB0AWs_KC_G4=AK2yCForLrwegzUyFjX=agtEF04KJ8UA@mail.gmail.com>",
+                            "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                            "from": "Magnus Edenhill <ma...@edenhill.se>",
+                            "id": "pymvtjk6sf8rmlxyp5b7dnxmsc9h9b9m",
+                            "epoch": 1666002836,
+                            "children": [
+                              {
+                                "tid": "nzwj5z34r8rpgn0hshct2ft7nxhw0fnv",
+                                "mid": "nzwj5z34r8rpgn0hshct2ft7nxhw0fnv",
+                                "message-id": "<CAHn4u3sZSZzN307n2OfmwHBOYBGJD_bky2MVXCW6xra4KD5y5w@mail.gmail.com>",
+                                "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                "id": "nzwj5z34r8rpgn0hshct2ft7nxhw0fnv",
+                                "epoch": 1666017963,
+                                "children": [],
+                                "irt": "<CAHCQUcB0AWs_KC_G4=AK2yCForLrwegzUyFjX=agtEF04KJ8UA@mail.gmail.com>",
+                                "list_raw": "<dev.kafka.apache.org>"
+                              }
+                            ],
+                            "irt": "<CAHn4u3uTL3bpnseuzPAy08Z5WjmR0SAs+ouT8+68HYqBJ8b6cA@mail.gmail.com>",
+                            "list_raw": "<dev.kafka.apache.org>"
+                          },
+                          {
+                            "tid": "glromvy7gsgrg73wyshohd498j3gc4jn",
+                            "mid": "glromvy7gsgrg73wyshohd498j3gc4jn",
+                            "message-id": "<CAFc58G_s_gOsmv_a5-gPFmeUAag8NR1K-UfpUddB8bwv4Wa07Q@mail.gmail.com>",
+                            "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                            "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                            "id": "glromvy7gsgrg73wyshohd498j3gc4jn",
+                            "epoch": 1666050695,
+                            "children": [
+                              {
+                                "tid": "87bhsdw6j0tvn0ddpm5pdtxphdw05rb1",
+                                "mid": "87bhsdw6j0tvn0ddpm5pdtxphdw05rb1",
+                                "message-id": "<CAHn4u3uN-wjm1C7jGMT6Ks8TRjsZ36et7r2pWRGnK-K+x0FU7w@mail.gmail.com>",
+                                "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                "id": "87bhsdw6j0tvn0ddpm5pdtxphdw05rb1",
+                                "epoch": 1666085758,
+                                "children": [
+                                  {
+                                    "tid": "ffxfxqy7mw3byok03mh7lkook1czlgs3",
+                                    "mid": "ffxfxqy7mw3byok03mh7lkook1czlgs3",
+                                    "message-id": "<CAFc58G_=8c6rYXMTjh+OJ7bE89st_LkUM34sJ4diN4zrNWqMOA@mail.gmail.com>",
+                                    "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                    "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                    "id": "ffxfxqy7mw3byok03mh7lkook1czlgs3",
+                                    "epoch": 1666115996,
+                                    "children": [
+                                      {
+                                        "tid": "dvjzbmfqyy2fzy9pb77phgkgt9bdrrj0",
+                                        "mid": "dvjzbmfqyy2fzy9pb77phgkgt9bdrrj0",
+                                        "message-id": "<CAHn4u3tLHgfUUnyoLpY82mt0XFJThX859uwg0n0Z8=-03=HS_A@mail.gmail.com>",
+                                        "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                        "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                        "id": "dvjzbmfqyy2fzy9pb77phgkgt9bdrrj0",
+                                        "epoch": 1666117980,
+                                        "children": [
+                                          {
+                                            "tid": "jd39b2snn0l0yzjl24xbofd3pc7m135v",
+                                            "mid": "jd39b2snn0l0yzjl24xbofd3pc7m135v",
+                                            "message-id": "<CAHn4u3ss-XzNKUsnujALHc9ceHO7V=X5AOPuvT7is59rmhPwBQ@mail.gmail.com>",
+                                            "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                            "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                            "id": "jd39b2snn0l0yzjl24xbofd3pc7m135v",
+                                            "epoch": 1666118691,
+                                            "children": [
+                                              {
+                                                "tid": "5xdw17gpczd252q1350gf22bo76mv2r0",
+                                                "mid": "5xdw17gpczd252q1350gf22bo76mv2r0",
+                                                "message-id": "<CAFc58G8vwetruoi5dy9dJNH7FNYFc0TOcZ=+7pPVTcER=SU8Sw@mail.gmail.com>",
+                                                "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                "id": "5xdw17gpczd252q1350gf22bo76mv2r0",
+                                                "epoch": 1666127246,
+                                                "children": [
+                                                  {
+                                                    "tid": "6lc52b23544r8ph94tlbrgd29ynlp2rz",
+                                                    "mid": "6lc52b23544r8ph94tlbrgd29ynlp2rz",
+                                                    "message-id": "<CAHn4u3vfuUD6haFMo-cJEH7U8XECdkw2yvqNeLi+rmoooT8TAg@mail.gmail.com>",
+                                                    "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                    "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                    "id": "6lc52b23544r8ph94tlbrgd29ynlp2rz",
+                                                    "epoch": 1666166750,
+                                                    "children": [
+                                                      {
+                                                        "tid": "zr37c07nqhr5mh92jx7ptytzq8pv2t29",
+                                                        "mid": "zr37c07nqhr5mh92jx7ptytzq8pv2t29",
+                                                        "message-id": "<CAHn4u3ug0Q_fnhpk1DCyMW0M2M9xHseOmwgY+W2iZNdW4DMamw@mail.gmail.com>",
+                                                        "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                        "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                        "id": "zr37c07nqhr5mh92jx7ptytzq8pv2t29",
+                                                        "epoch": 1666182565,
+                                                        "children": [
+                                                          {
+                                                            "tid": "rshkwqj6v5w3p1ox0dmfp1rmfrbrntyd",
+                                                            "mid": "rshkwqj6v5w3p1ox0dmfp1rmfrbrntyd",
+                                                            "message-id": "<CAJDuW=DVo47jV-kf-3Nhs7ZjyjrKkbSMwrOhWfs0kEs43_6Mvg@mail.gmail.com>",
+                                                            "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                            "from": "Jason Gustafson <ja...@confluent.io.INVALID>",
+                                                            "id": "rshkwqj6v5w3p1ox0dmfp1rmfrbrntyd",
+                                                            "epoch": 1666198391,
+                                                            "children": [
+                                                              {
+                                                                "tid": "30vtombgpq09todwbglqyxpcd8wvjhfj",
+                                                                "mid": "30vtombgpq09todwbglqyxpcd8wvjhfj",
+                                                                "message-id": "<CAHn4u3suDsRdLM0KNVtWwGiwApu2JghEjCARveLhzc_cJ60y3A@mail.gmail.com>",
+                                                                "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                "id": "30vtombgpq09todwbglqyxpcd8wvjhfj",
+                                                                "epoch": 1666201604,
+                                                                "children": [
+                                                                  {
+                                                                    "tid": "9byq03g7wdxm28sgt8gv7l2d96d73p58",
+                                                                    "mid": "9byq03g7wdxm28sgt8gv7l2d96d73p58",
+                                                                    "message-id": "<CAJDuW=As02jnrJ=Qm7TR7ngbJZCZUy7_mb+3B+_X5vk2r8jevg@mail.gmail.com>",
+                                                                    "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                    "from": "Jason Gustafson <ja...@confluent.io.INVALID>",
+                                                                    "id": "9byq03g7wdxm28sgt8gv7l2d96d73p58",
+                                                                    "epoch": 1666270724,
+                                                                    "children": [
+                                                                      {
+                                                                        "tid": "f5r1z24ssft9254xt4nq9m8jntftp6rf",
+                                                                        "mid": "f5r1z24ssft9254xt4nq9m8jntftp6rf",
+                                                                        "message-id": "<CAHn4u3vR-EAew-OrxLRDPVQNArZUuWZmufOa_fob148oiVPLmg@mail.gmail.com>",
+                                                                        "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                        "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                        "id": "f5r1z24ssft9254xt4nq9m8jntftp6rf",
+                                                                        "epoch": 1666281364,
+                                                                        "children": [
+                                                                          {
+                                                                            "tid": "90p7hkj4sp4wf1yjot865j9h8026014o",
+                                                                            "mid": "90p7hkj4sp4wf1yjot865j9h8026014o",
+                                                                            "message-id": "<CAHn4u3uR-wDrXNx=eoudPfVvh_f0BEGsuBARoRrNb_dAH_=ehQ@mail.gmail.com>",
+                                                                            "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                            "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                            "id": "90p7hkj4sp4wf1yjot865j9h8026014o",
+                                                                            "epoch": 1666621531,
+                                                                            "children": [
+                                                                              {
+                                                                                "tid": "lkqlmh9qpgys6xogxzqy8d196pdr25ox",
+                                                                                "mid": "lkqlmh9qpgys6xogxzqy8d196pdr25ox",
+                                                                                "message-id": "<CAHCQUcD+fbr3EyHXy8cGBxfMFOmQkbYpxk91p1jAz9hgFk9+gg@mail.gmail.com>",
+                                                                                "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                "from": "Magnus Edenhill <ma...@edenhill.se>",
+                                                                                "id": "lkqlmh9qpgys6xogxzqy8d196pdr25ox",
+                                                                                "epoch": 1666622965,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "tid": "qvn7w68qq2ofzz1lhcmnomff0h9x3xct",
+                                                                                    "mid": "qvn7w68qq2ofzz1lhcmnomff0h9x3xct",
+                                                                                    "message-id": "<CAHn4u3usuqFK-UofANxuppMjpCzDOv-BoXs=1FWiyyoWO_GQhg@mail.gmail.com>",
+                                                                                    "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                    "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                                    "id": "qvn7w68qq2ofzz1lhcmnomff0h9x3xct",
+                                                                                    "epoch": 1666706233,
+                                                                                    "children": [],
+                                                                                    "irt": "<CAHCQUcD+fbr3EyHXy8cGBxfMFOmQkbYpxk91p1jAz9hgFk9+gg@mail.gmail.com>",
+                                                                                    "list_raw": "<dev.kafka.apache.org>"
+                                                                                  },
+                                                                                  {
+                                                                                    "tid": "r0ghfkojx3wzcor1287vtrv4rx5s0zom",
+                                                                                    "mid": "r0ghfkojx3wzcor1287vtrv4rx5s0zom",
+                                                                                    "message-id": "<CAFc58G_o9fnSvNgjzi0ejp5r-pRB9mOE0V7TyFBRUzpy6FW1=g@mail.gmail.com>",
+                                                                                    "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                    "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                                                    "id": "r0ghfkojx3wzcor1287vtrv4rx5s0zom",
+                                                                                    "epoch": 1666632510,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "tid": "ytkhkxb1khjqvdh12rpfz50f4t1y6r49",
+                                                                                        "mid": "ytkhkxb1khjqvdh12rpfz50f4t1y6r49",
+                                                                                        "message-id": "<CAHn4u3tgWN5W0Bi5enRZMVU+i9tvK3iJvUyw3i3OAaWgVrBuVQ@mail.gmail.com>",
+                                                                                        "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                        "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                                        "id": "ytkhkxb1khjqvdh12rpfz50f4t1y6r49",
+                                                                                        "epoch": 1666706954,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "tid": "rg6zj2bgt0xxj50y495d7o67zylxcxl9",
+                                                                                            "mid": "rg6zj2bgt0xxj50y495d7o67zylxcxl9",
+                                                                                            "message-id": "<CAFc58G-jbq2kXr9aHWmyUCTUGj3=O09KjMGzpsnnMhYUAVMoCA@mail.gmail.com>",
+                                                                                            "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                            "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                                                            "id": "rg6zj2bgt0xxj50y495d7o67zylxcxl9",
+                                                                                            "epoch": 1666719645,
+                                                                                            "children": [
+                                                                                              {
+                                                                                                "tid": "yoflgsrzk4o7d18fg764sm8tvhgcdck4",
+                                                                                                "mid": "yoflgsrzk4o7d18fg764sm8tvhgcdck4",
+                                                                                                "message-id": "<CAA05fTnF9maOzQN+OdOsHdLX3SeSoxbqbbMFYAtGOJWZwQLobQ@mail.gmail.com>",
+                                                                                                "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                                "from": "David Jacot <da...@gmail.com>",
+                                                                                                "id": "yoflgsrzk4o7d18fg764sm8tvhgcdck4",
+                                                                                                "epoch": 1666725535,
+                                                                                                "children": [
+                                                                                                  {
+                                                                                                    "tid": "n6wfcrqqx0y178f90xsf1jtc62ks2zzt",
+                                                                                                    "mid": "n6wfcrqqx0y178f90xsf1jtc62ks2zzt",
+                                                                                                    "message-id": "<CAFc58G9r43Lo62TOgLS5VR8rKTV7dmxtDjhu_yKm3rD9tRFurA@mail.gmail.com>",
+                                                                                                    "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                                    "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                                                                    "id": "n6wfcrqqx0y178f90xsf1jtc62ks2zzt",
+                                                                                                    "epoch": 1666730971,
+                                                                                                    "children": [],
+                                                                                                    "irt": "<CAA05fTnF9maOzQN+OdOsHdLX3SeSoxbqbbMFYAtGOJWZwQLobQ@mail.gmail.com>",
+                                                                                                    "list_raw": "<dev.kafka.apache.org>"
+                                                                                                  }
+                                                                                                ],
+                                                                                                "irt": "<CAFc58G-jbq2kXr9aHWmyUCTUGj3=O09KjMGzpsnnMhYUAVMoCA@mail.gmail.com>",
+                                                                                                "list_raw": "<dev.kafka.apache.org>"
+                                                                                              }
+                                                                                            ],
+                                                                                            "irt": "<CAHn4u3tgWN5W0Bi5enRZMVU+i9tvK3iJvUyw3i3OAaWgVrBuVQ@mail.gmail.com>",
+                                                                                            "list_raw": "<dev.kafka.apache.org>"
+                                                                                          }
+                                                                                        ],
+                                                                                        "irt": "<CAFc58G_o9fnSvNgjzi0ejp5r-pRB9mOE0V7TyFBRUzpy6FW1=g@mail.gmail.com>",
+                                                                                        "list_raw": "<dev.kafka.apache.org>"
+                                                                                      }
+                                                                                    ],
+                                                                                    "irt": "<CAHCQUcD+fbr3EyHXy8cGBxfMFOmQkbYpxk91p1jAz9hgFk9+gg@mail.gmail.com>",
+                                                                                    "list_raw": "<dev.kafka.apache.org>"
+                                                                                  }
+                                                                                ],
+                                                                                "irt": "<CAHn4u3uR-wDrXNx=eoudPfVvh_f0BEGsuBARoRrNb_dAH_=ehQ@mail.gmail.com>",
+                                                                                "list_raw": "<dev.kafka.apache.org>"
+                                                                              }
+                                                                            ],
+                                                                            "irt": "<CAHn4u3vR-EAew-OrxLRDPVQNArZUuWZmufOa_fob148oiVPLmg@mail.gmail.com>",
+                                                                            "list_raw": "<dev.kafka.apache.org>"
+                                                                          }
+                                                                        ],
+                                                                        "irt": "<CAJDuW=As02jnrJ=Qm7TR7ngbJZCZUy7_mb+3B+_X5vk2r8jevg@mail.gmail.com>",
+                                                                        "list_raw": "<dev.kafka.apache.org>"
+                                                                      }
+                                                                    ],
+                                                                    "irt": "<CAHn4u3suDsRdLM0KNVtWwGiwApu2JghEjCARveLhzc_cJ60y3A@mail.gmail.com>",
+                                                                    "list_raw": "<dev.kafka.apache.org>"
+                                                                  }
+                                                                ],
+                                                                "irt": "<CAJDuW=DVo47jV-kf-3Nhs7ZjyjrKkbSMwrOhWfs0kEs43_6Mvg@mail.gmail.com>",
+                                                                "list_raw": "<dev.kafka.apache.org>"
+                                                              }
+                                                            ],
+                                                            "irt": "<CAHn4u3ug0Q_fnhpk1DCyMW0M2M9xHseOmwgY+W2iZNdW4DMamw@mail.gmail.com>",
+                                                            "list_raw": "<dev.kafka.apache.org>"
+                                                          }
+                                                        ],
+                                                        "irt": "<CAHn4u3vfuUD6haFMo-cJEH7U8XECdkw2yvqNeLi+rmoooT8TAg@mail.gmail.com>",
+                                                        "list_raw": "<dev.kafka.apache.org>"
+                                                      }
+                                                    ],
+                                                    "irt": "<CAFc58G8vwetruoi5dy9dJNH7FNYFc0TOcZ=+7pPVTcER=SU8Sw@mail.gmail.com>",
+                                                    "list_raw": "<dev.kafka.apache.org>"
+                                                  }
+                                                ],
+                                                "irt": "<CAHn4u3ss-XzNKUsnujALHc9ceHO7V=X5AOPuvT7is59rmhPwBQ@mail.gmail.com>",
+                                                "list_raw": "<dev.kafka.apache.org>"
+                                              }
+                                            ],
+                                            "irt": "<CAHn4u3tLHgfUUnyoLpY82mt0XFJThX859uwg0n0Z8=-03=HS_A@mail.gmail.com>",
+                                            "list_raw": "<dev.kafka.apache.org>"
+                                          }
+                                        ],
+                                        "irt": "<CAFc58G_=8c6rYXMTjh+OJ7bE89st_LkUM34sJ4diN4zrNWqMOA@mail.gmail.com>",
+                                        "list_raw": "<dev.kafka.apache.org>"
+                                      }
+                                    ],
+                                    "irt": "<CAHn4u3uN-wjm1C7jGMT6Ks8TRjsZ36et7r2pWRGnK-K+x0FU7w@mail.gmail.com>",
+                                    "list_raw": "<dev.kafka.apache.org>"
+                                  }
+                                ],
+                                "irt": "<CAFc58G_s_gOsmv_a5-gPFmeUAag8NR1K-UfpUddB8bwv4Wa07Q@mail.gmail.com>",
+                                "list_raw": "<dev.kafka.apache.org>"
+                              }
+                            ],
+                            "irt": "<CAHn4u3uTL3bpnseuzPAy08Z5WjmR0SAs+ouT8+68HYqBJ8b6cA@mail.gmail.com>",
+                            "list_raw": "<dev.kafka.apache.org>"
+                          }
+                        ],
+                        "irt": "<CAFc58G-7R2sS976GSA35BKpNbOCDa6VXFDssJ5JM=XmtFnaF7A@mail.gmail.com>",
+                        "list_raw": "<dev.kafka.apache.org>"
+                      }
+                    ],
+                    "irt": "<CALkmrLTUOV88GC=YBSERiyiWn9ivBMZ_c=s77GxuV+rSYUYkfw@mail.gmail.com>",
+                    "list_raw": "<dev.kafka.apache.org>"
+                  }
+                ],
+                "irt": "<CAHn4u3uKGJzyOzh39SGegatqyH3HAJLTSmDow2wQLaHQp4fD6Q@mail.gmail.com>",
+                "list_raw": "<dev.kafka.apache.org>"
+              }
+            ],
+            "irt": "<CALkmrLQxCAnKJt39Y5SRtY=8v0ebzCjXNguzKSZcKhieNrQTyA@mail.gmail.com>",
+            "list_raw": "<dev.kafka.apache.org>"
+          }
+        ],
+        "irt": "<CAFc58G88MCTcr7J1Mf0VELwNVdJ_HTRj3vA7=v=0wJU8pf674Q@mail.gmail.com>",
+        "list_raw": "<dev.kafka.apache.org>"
+      },
+      {
+        "tid": "8c21n2l4g86951rpz437m2vkx2v09h6l",
+        "mid": "8c21n2l4g86951rpz437m2vkx2v09h6l",
+        "message-id": "<CAHn4u3sRtu5UE3Jhzyz-0pWFb9g-g=urdidubTo5m9_8255XKA@mail.gmail.com>",
+        "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+        "from": "David Jacot <dj...@confluent.io.INVALID>",
+        "id": "8c21n2l4g86951rpz437m2vkx2v09h6l",
+        "epoch": 1665737816,
+        "children": [],
+        "irt": "<CAFc58G88MCTcr7J1Mf0VELwNVdJ_HTRj3vA7=v=0wJU8pf674Q@mail.gmail.com>",
+        "list_raw": "<dev.kafka.apache.org>"
+      }
+    ]
+  },
+  "emails": [
+    {
+      "from": "Jun Rao <ju...@confluent.io.INVALID>",
+      "gravatar": "f16baba0c5aa1f84b809f9d1b1a52184",
+      "subject": "[DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+      "message-id": "<CAFc58G88MCTcr7J1Mf0VELwNVdJ_HTRj3vA7=v=0wJU8pf674Q@mail.gmail.com>",
+      "mid": "oym1hyolwkpwyozozxydcpvdtg6p68fd",
+      "dbid": "dac0367085d8655b2fa00a55e43782a1aa101d51a994de68f81729687dc5ad88",
+      "epoch": 1665678101,
+      "list": "<dev.kafka.apache.org>",
+      "list_raw": "<dev.kafka.apache.org>",
+      "private": false,
+      "in-reply-to": "",
+      "body": "Hi, David,\n\nThanks for the reply and the updated KIP. A few more comments on the\ninterfaces and the protocols.\n\n60.  On the consumer side, do we need both PartitionAssignor.onAssignment\nand ConsumerRebalanceListener.onPartitionsAssigned? My understanding is\nthat the former was added for cooperative rebalance, which is now handled\nby the coordinator. If we do need both, should we make them more consistent\n(e.g. topic name vs topic id, list vs set vs collection)?\n\n61. group.local.assignors: Could we make it clear that it's the full class\nname that implements PartitionAssignor?\n\n62. MemberAssignment: It currently has the following method.\n    public Set<TopicPartition> topicPartitions()\nWe are adding List<TopicIdPartition> ownedPartitions. Should we keep the\nnaming and the return type consistent?\n\n63. MemberAssignment.error: should that be reason?\n\n64. group.remote.assignor: The client may not know what assignors the\nbroker supports. Should we default this to what the broker determines (e.g.\nfirst assignor listed in group.consumer.assignors)?\n\n65. After the text \"When A heartbeats again and acknowledges the\nrevocation, the group coordinator transitions him to epoch 2 and releases\nfoo-2.\", we have the following.\n  B - epoch=2, partitions=[foo-2], pending-partitions=[]\nShould foo-2 be in pending-partitions?\n\n66. In the Online Migration example, is the first occurence of \"C -\nepoch=23, partitions=[foo-2, foo-5, foo-4], pending-partitions=[]\" correct?\nIt seems that should happen after C receives a SyncGroup response? If so,\nsubsequent examples have the same issue.\n\n67. ConsumerGroupHeartbeatRequest.RebalanceTimeoutMs : Which config\ncontrols this? How is this used by the group coordinator since there is no\nsync barrier anymore?\n\n68. ConsumerGroupHeartbeatResponse:\n68.1 AssignedTopicPartitions and PendingTopicPartitions are of type\n[]TopicPartition. Should they be TopicPartitions?\n68.2 Assignment.error. Should we also have an errorMessage field?\n\n69. ConsumerGroupPrepareAssignmentResponse.Members.Assignor: Should it\ninclude the selected assignor name?\n\n70. ConsumerGroupInstallAssignmentRequest.GroupEpoch: Should we let the\nclient set this? Intuitively, it seems the coordinator should manage the\ngroup epoch.\n\n71. ConsumerGroupDescribeResponse:\n71.1 Members.Assignment.Partitions. Should we include the topic name too\nsince it's convenient for building tools? Ditto for TargetAssignment.\n71.2 Members: Should we include SubscribedTopicRegex too?\n\n72. OffsetFetchRequest: Is GenerationIdOrMemberEpoch needed since tools may\nalso want to issue this request?\n\nThanks,\n\nJun\n",
+      "attachments": [],
+      "id": "oym1hyolwkpwyozozxydcpvdtg6p68fd",
+      "children": [
+        {
+          "tid": "rv9f4kxn57km0sjvt6jm7ydz9sw5rb90",
+          "mid": "rv9f4kxn57km0sjvt6jm7ydz9sw5rb90",
+          "message-id": "<CALkmrLQxCAnKJt39Y5SRtY=8v0ebzCjXNguzKSZcKhieNrQTyA@mail.gmail.com>",
+          "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+          "from": "Luke Chen <sh...@gmail.com>",
+          "id": "rv9f4kxn57km0sjvt6jm7ydz9sw5rb90",
+          "epoch": 1665717073,
+          "children": [
+            {
+              "tid": "p85wol7y77vfqfx7wgxovl6g9ofjp2h3",
+              "mid": "p85wol7y77vfqfx7wgxovl6g9ofjp2h3",
+              "message-id": "<CAHn4u3uKGJzyOzh39SGegatqyH3HAJLTSmDow2wQLaHQp4fD6Q@mail.gmail.com>",
+              "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+              "from": "David Jacot <dj...@confluent.io.INVALID>",
+              "id": "p85wol7y77vfqfx7wgxovl6g9ofjp2h3",
+              "epoch": 1665738953,
+              "children": [
+                {
+                  "tid": "5khgvogp381stbtor4yzx4clox3lsh1w",
+                  "mid": "5khgvogp381stbtor4yzx4clox3lsh1w",
+                  "message-id": "<CALkmrLTUOV88GC=YBSERiyiWn9ivBMZ_c=s77GxuV+rSYUYkfw@mail.gmail.com>",
+                  "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                  "from": "Luke Chen <sh...@gmail.com>",
+                  "id": "5khgvogp381stbtor4yzx4clox3lsh1w",
+                  "epoch": 1665740921,
+                  "children": [
+                    {
+                      "tid": "zzxov82xbt2k4lntjfmyg93xlokqc7oc",
+                      "mid": "zzxov82xbt2k4lntjfmyg93xlokqc7oc",
+                      "message-id": "<CAFc58G-7R2sS976GSA35BKpNbOCDa6VXFDssJ5JM=XmtFnaF7A@mail.gmail.com>",
+                      "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                      "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                      "id": "zzxov82xbt2k4lntjfmyg93xlokqc7oc",
+                      "epoch": 1665770662,
+                      "children": [
+                        {
+                          "tid": "djztz3j2ytm71gclpoozhd3990ptw602",
+                          "mid": "djztz3j2ytm71gclpoozhd3990ptw602",
+                          "message-id": "<CAHn4u3uTL3bpnseuzPAy08Z5WjmR0SAs+ouT8+68HYqBJ8b6cA@mail.gmail.com>",
+                          "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                          "from": "David Jacot <dj...@confluent.io.INVALID>",
+                          "id": "djztz3j2ytm71gclpoozhd3990ptw602",
+                          "epoch": 1665999259,
+                          "children": [
+                            {
+                              "tid": "pymvtjk6sf8rmlxyp5b7dnxmsc9h9b9m",
+                              "mid": "pymvtjk6sf8rmlxyp5b7dnxmsc9h9b9m",
+                              "message-id": "<CAHCQUcB0AWs_KC_G4=AK2yCForLrwegzUyFjX=agtEF04KJ8UA@mail.gmail.com>",
+                              "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                              "from": "Magnus Edenhill <ma...@edenhill.se>",
+                              "id": "pymvtjk6sf8rmlxyp5b7dnxmsc9h9b9m",
+                              "epoch": 1666002836,
+                              "children": [
+                                {
+                                  "tid": "nzwj5z34r8rpgn0hshct2ft7nxhw0fnv",
+                                  "mid": "nzwj5z34r8rpgn0hshct2ft7nxhw0fnv",
+                                  "message-id": "<CAHn4u3sZSZzN307n2OfmwHBOYBGJD_bky2MVXCW6xra4KD5y5w@mail.gmail.com>",
+                                  "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                  "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                  "id": "nzwj5z34r8rpgn0hshct2ft7nxhw0fnv",
+                                  "epoch": 1666017963,
+                                  "children": [],
+                                  "irt": "<CAHCQUcB0AWs_KC_G4=AK2yCForLrwegzUyFjX=agtEF04KJ8UA@mail.gmail.com>",
+                                  "list_raw": "<dev.kafka.apache.org>"
+                                }
+                              ],
+                              "irt": "<CAHn4u3uTL3bpnseuzPAy08Z5WjmR0SAs+ouT8+68HYqBJ8b6cA@mail.gmail.com>",
+                              "list_raw": "<dev.kafka.apache.org>"
+                            },
+                            {
+                              "tid": "glromvy7gsgrg73wyshohd498j3gc4jn",
+                              "mid": "glromvy7gsgrg73wyshohd498j3gc4jn",
+                              "message-id": "<CAFc58G_s_gOsmv_a5-gPFmeUAag8NR1K-UfpUddB8bwv4Wa07Q@mail.gmail.com>",
+                              "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                              "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                              "id": "glromvy7gsgrg73wyshohd498j3gc4jn",
+                              "epoch": 1666050695,
+                              "children": [
+                                {
+                                  "tid": "87bhsdw6j0tvn0ddpm5pdtxphdw05rb1",
+                                  "mid": "87bhsdw6j0tvn0ddpm5pdtxphdw05rb1",
+                                  "message-id": "<CAHn4u3uN-wjm1C7jGMT6Ks8TRjsZ36et7r2pWRGnK-K+x0FU7w@mail.gmail.com>",
+                                  "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                  "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                  "id": "87bhsdw6j0tvn0ddpm5pdtxphdw05rb1",
+                                  "epoch": 1666085758,
+                                  "children": [
+                                    {
+                                      "tid": "ffxfxqy7mw3byok03mh7lkook1czlgs3",
+                                      "mid": "ffxfxqy7mw3byok03mh7lkook1czlgs3",
+                                      "message-id": "<CAFc58G_=8c6rYXMTjh+OJ7bE89st_LkUM34sJ4diN4zrNWqMOA@mail.gmail.com>",
+                                      "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                      "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                      "id": "ffxfxqy7mw3byok03mh7lkook1czlgs3",
+                                      "epoch": 1666115996,
+                                      "children": [
+                                        {
+                                          "tid": "dvjzbmfqyy2fzy9pb77phgkgt9bdrrj0",
+                                          "mid": "dvjzbmfqyy2fzy9pb77phgkgt9bdrrj0",
+                                          "message-id": "<CAHn4u3tLHgfUUnyoLpY82mt0XFJThX859uwg0n0Z8=-03=HS_A@mail.gmail.com>",
+                                          "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                          "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                          "id": "dvjzbmfqyy2fzy9pb77phgkgt9bdrrj0",
+                                          "epoch": 1666117980,
+                                          "children": [
+                                            {
+                                              "tid": "jd39b2snn0l0yzjl24xbofd3pc7m135v",
+                                              "mid": "jd39b2snn0l0yzjl24xbofd3pc7m135v",
+                                              "message-id": "<CAHn4u3ss-XzNKUsnujALHc9ceHO7V=X5AOPuvT7is59rmhPwBQ@mail.gmail.com>",
+                                              "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                              "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                              "id": "jd39b2snn0l0yzjl24xbofd3pc7m135v",
+                                              "epoch": 1666118691,
+                                              "children": [
+                                                {
+                                                  "tid": "5xdw17gpczd252q1350gf22bo76mv2r0",
+                                                  "mid": "5xdw17gpczd252q1350gf22bo76mv2r0",
+                                                  "message-id": "<CAFc58G8vwetruoi5dy9dJNH7FNYFc0TOcZ=+7pPVTcER=SU8Sw@mail.gmail.com>",
+                                                  "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                  "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                  "id": "5xdw17gpczd252q1350gf22bo76mv2r0",
+                                                  "epoch": 1666127246,
+                                                  "children": [
+                                                    {
+                                                      "tid": "6lc52b23544r8ph94tlbrgd29ynlp2rz",
+                                                      "mid": "6lc52b23544r8ph94tlbrgd29ynlp2rz",
+                                                      "message-id": "<CAHn4u3vfuUD6haFMo-cJEH7U8XECdkw2yvqNeLi+rmoooT8TAg@mail.gmail.com>",
+                                                      "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                      "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                      "id": "6lc52b23544r8ph94tlbrgd29ynlp2rz",
+                                                      "epoch": 1666166750,
+                                                      "children": [
+                                                        {
+                                                          "tid": "zr37c07nqhr5mh92jx7ptytzq8pv2t29",
+                                                          "mid": "zr37c07nqhr5mh92jx7ptytzq8pv2t29",
+                                                          "message-id": "<CAHn4u3ug0Q_fnhpk1DCyMW0M2M9xHseOmwgY+W2iZNdW4DMamw@mail.gmail.com>",
+                                                          "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                          "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                          "id": "zr37c07nqhr5mh92jx7ptytzq8pv2t29",
+                                                          "epoch": 1666182565,
+                                                          "children": [
+                                                            {
+                                                              "tid": "rshkwqj6v5w3p1ox0dmfp1rmfrbrntyd",
+                                                              "mid": "rshkwqj6v5w3p1ox0dmfp1rmfrbrntyd",
+                                                              "message-id": "<CAJDuW=DVo47jV-kf-3Nhs7ZjyjrKkbSMwrOhWfs0kEs43_6Mvg@mail.gmail.com>",
+                                                              "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                              "from": "Jason Gustafson <ja...@confluent.io.INVALID>",
+                                                              "id": "rshkwqj6v5w3p1ox0dmfp1rmfrbrntyd",
+                                                              "epoch": 1666198391,
+                                                              "children": [
+                                                                {
+                                                                  "tid": "30vtombgpq09todwbglqyxpcd8wvjhfj",
+                                                                  "mid": "30vtombgpq09todwbglqyxpcd8wvjhfj",
+                                                                  "message-id": "<CAHn4u3suDsRdLM0KNVtWwGiwApu2JghEjCARveLhzc_cJ60y3A@mail.gmail.com>",
+                                                                  "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                  "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                  "id": "30vtombgpq09todwbglqyxpcd8wvjhfj",
+                                                                  "epoch": 1666201604,
+                                                                  "children": [
+                                                                    {
+                                                                      "tid": "9byq03g7wdxm28sgt8gv7l2d96d73p58",
+                                                                      "mid": "9byq03g7wdxm28sgt8gv7l2d96d73p58",
+                                                                      "message-id": "<CAJDuW=As02jnrJ=Qm7TR7ngbJZCZUy7_mb+3B+_X5vk2r8jevg@mail.gmail.com>",
+                                                                      "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                      "from": "Jason Gustafson <ja...@confluent.io.INVALID>",
+                                                                      "id": "9byq03g7wdxm28sgt8gv7l2d96d73p58",
+                                                                      "epoch": 1666270724,
+                                                                      "children": [
+                                                                        {
+                                                                          "tid": "f5r1z24ssft9254xt4nq9m8jntftp6rf",
+                                                                          "mid": "f5r1z24ssft9254xt4nq9m8jntftp6rf",
+                                                                          "message-id": "<CAHn4u3vR-EAew-OrxLRDPVQNArZUuWZmufOa_fob148oiVPLmg@mail.gmail.com>",
+                                                                          "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                          "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                          "id": "f5r1z24ssft9254xt4nq9m8jntftp6rf",
+                                                                          "epoch": 1666281364,
+                                                                          "children": [
+                                                                            {
+                                                                              "tid": "90p7hkj4sp4wf1yjot865j9h8026014o",
+                                                                              "mid": "90p7hkj4sp4wf1yjot865j9h8026014o",
+                                                                              "message-id": "<CAHn4u3uR-wDrXNx=eoudPfVvh_f0BEGsuBARoRrNb_dAH_=ehQ@mail.gmail.com>",
+                                                                              "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                              "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                              "id": "90p7hkj4sp4wf1yjot865j9h8026014o",
+                                                                              "epoch": 1666621531,
+                                                                              "children": [
+                                                                                {
+                                                                                  "tid": "lkqlmh9qpgys6xogxzqy8d196pdr25ox",
+                                                                                  "mid": "lkqlmh9qpgys6xogxzqy8d196pdr25ox",
+                                                                                  "message-id": "<CAHCQUcD+fbr3EyHXy8cGBxfMFOmQkbYpxk91p1jAz9hgFk9+gg@mail.gmail.com>",
+                                                                                  "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                  "from": "Magnus Edenhill <ma...@edenhill.se>",
+                                                                                  "id": "lkqlmh9qpgys6xogxzqy8d196pdr25ox",
+                                                                                  "epoch": 1666622965,
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "tid": "qvn7w68qq2ofzz1lhcmnomff0h9x3xct",
+                                                                                      "mid": "qvn7w68qq2ofzz1lhcmnomff0h9x3xct",
+                                                                                      "message-id": "<CAHn4u3usuqFK-UofANxuppMjpCzDOv-BoXs=1FWiyyoWO_GQhg@mail.gmail.com>",
+                                                                                      "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                      "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                                      "id": "qvn7w68qq2ofzz1lhcmnomff0h9x3xct",
+                                                                                      "epoch": 1666706233,
+                                                                                      "children": [],
+                                                                                      "irt": "<CAHCQUcD+fbr3EyHXy8cGBxfMFOmQkbYpxk91p1jAz9hgFk9+gg@mail.gmail.com>",
+                                                                                      "list_raw": "<dev.kafka.apache.org>"
+                                                                                    },
+                                                                                    {
+                                                                                      "tid": "r0ghfkojx3wzcor1287vtrv4rx5s0zom",
+                                                                                      "mid": "r0ghfkojx3wzcor1287vtrv4rx5s0zom",
+                                                                                      "message-id": "<CAFc58G_o9fnSvNgjzi0ejp5r-pRB9mOE0V7TyFBRUzpy6FW1=g@mail.gmail.com>",
+                                                                                      "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                      "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                                                      "id": "r0ghfkojx3wzcor1287vtrv4rx5s0zom",
+                                                                                      "epoch": 1666632510,
+                                                                                      "children": [
+                                                                                        {
+                                                                                          "tid": "ytkhkxb1khjqvdh12rpfz50f4t1y6r49",
+                                                                                          "mid": "ytkhkxb1khjqvdh12rpfz50f4t1y6r49",
+                                                                                          "message-id": "<CAHn4u3tgWN5W0Bi5enRZMVU+i9tvK3iJvUyw3i3OAaWgVrBuVQ@mail.gmail.com>",
+                                                                                          "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                          "from": "David Jacot <dj...@confluent.io.INVALID>",
+                                                                                          "id": "ytkhkxb1khjqvdh12rpfz50f4t1y6r49",
+                                                                                          "epoch": 1666706954,
+                                                                                          "children": [
+                                                                                            {
+                                                                                              "tid": "rg6zj2bgt0xxj50y495d7o67zylxcxl9",
+                                                                                              "mid": "rg6zj2bgt0xxj50y495d7o67zylxcxl9",
+                                                                                              "message-id": "<CAFc58G-jbq2kXr9aHWmyUCTUGj3=O09KjMGzpsnnMhYUAVMoCA@mail.gmail.com>",
+                                                                                              "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                              "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                                                              "id": "rg6zj2bgt0xxj50y495d7o67zylxcxl9",
+                                                                                              "epoch": 1666719645,
+                                                                                              "children": [
+                                                                                                {
+                                                                                                  "tid": "yoflgsrzk4o7d18fg764sm8tvhgcdck4",
+                                                                                                  "mid": "yoflgsrzk4o7d18fg764sm8tvhgcdck4",
+                                                                                                  "message-id": "<CAA05fTnF9maOzQN+OdOsHdLX3SeSoxbqbbMFYAtGOJWZwQLobQ@mail.gmail.com>",
+                                                                                                  "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                                  "from": "David Jacot <da...@gmail.com>",
+                                                                                                  "id": "yoflgsrzk4o7d18fg764sm8tvhgcdck4",
+                                                                                                  "epoch": 1666725535,
+                                                                                                  "children": [
+                                                                                                    {
+                                                                                                      "tid": "n6wfcrqqx0y178f90xsf1jtc62ks2zzt",
+                                                                                                      "mid": "n6wfcrqqx0y178f90xsf1jtc62ks2zzt",
+                                                                                                      "message-id": "<CAFc58G9r43Lo62TOgLS5VR8rKTV7dmxtDjhu_yKm3rD9tRFurA@mail.gmail.com>",
+                                                                                                      "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+                                                                                                      "from": "Jun Rao <ju...@confluent.io.INVALID>",
+                                                                                                      "id": "n6wfcrqqx0y178f90xsf1jtc62ks2zzt",
+                                                                                                      "epoch": 1666730971,
+                                                                                                      "children": [],
+                                                                                                      "irt": "<CAA05fTnF9maOzQN+OdOsHdLX3SeSoxbqbbMFYAtGOJWZwQLobQ@mail.gmail.com>",
+                                                                                                      "list_raw": "<dev.kafka.apache.org>"
+                                                                                                    }
+                                                                                                  ],
+                                                                                                  "irt": "<CAFc58G-jbq2kXr9aHWmyUCTUGj3=O09KjMGzpsnnMhYUAVMoCA@mail.gmail.com>",
+                                                                                                  "list_raw": "<dev.kafka.apache.org>"
+                                                                                                }
+                                                                                              ],
+                                                                                              "irt": "<CAHn4u3tgWN5W0Bi5enRZMVU+i9tvK3iJvUyw3i3OAaWgVrBuVQ@mail.gmail.com>",
+                                                                                              "list_raw": "<dev.kafka.apache.org>"
+                                                                                            }
+                                                                                          ],
+                                                                                          "irt": "<CAFc58G_o9fnSvNgjzi0ejp5r-pRB9mOE0V7TyFBRUzpy6FW1=g@mail.gmail.com>",
+                                                                                          "list_raw": "<dev.kafka.apache.org>"
+                                                                                        }
+                                                                                      ],
+                                                                                      "irt": "<CAHCQUcD+fbr3EyHXy8cGBxfMFOmQkbYpxk91p1jAz9hgFk9+gg@mail.gmail.com>",
+                                                                                      "list_raw": "<dev.kafka.apache.org>"
+                                                                                    }
+                                                                                  ],
+                                                                                  "irt": "<CAHn4u3uR-wDrXNx=eoudPfVvh_f0BEGsuBARoRrNb_dAH_=ehQ@mail.gmail.com>",
+                                                                                  "list_raw": "<dev.kafka.apache.org>"
+                                                                                }
+                                                                              ],
+                                                                              "irt": "<CAHn4u3vR-EAew-OrxLRDPVQNArZUuWZmufOa_fob148oiVPLmg@mail.gmail.com>",
+                                                                              "list_raw": "<dev.kafka.apache.org>"
+                                                                            }
+                                                                          ],
+                                                                          "irt": "<CAJDuW=As02jnrJ=Qm7TR7ngbJZCZUy7_mb+3B+_X5vk2r8jevg@mail.gmail.com>",
+                                                                          "list_raw": "<dev.kafka.apache.org>"
+                                                                        }
+                                                                      ],
+                                                                      "irt": "<CAHn4u3suDsRdLM0KNVtWwGiwApu2JghEjCARveLhzc_cJ60y3A@mail.gmail.com>",
+                                                                      "list_raw": "<dev.kafka.apache.org>"
+                                                                    }
+                                                                  ],
+                                                                  "irt": "<CAJDuW=DVo47jV-kf-3Nhs7ZjyjrKkbSMwrOhWfs0kEs43_6Mvg@mail.gmail.com>",
+                                                                  "list_raw": "<dev.kafka.apache.org>"
+                                                                }
+                                                              ],
+                                                              "irt": "<CAHn4u3ug0Q_fnhpk1DCyMW0M2M9xHseOmwgY+W2iZNdW4DMamw@mail.gmail.com>",
+                                                              "list_raw": "<dev.kafka.apache.org>"
+                                                            }
+                                                          ],
+                                                          "irt": "<CAHn4u3vfuUD6haFMo-cJEH7U8XECdkw2yvqNeLi+rmoooT8TAg@mail.gmail.com>",
+                                                          "list_raw": "<dev.kafka.apache.org>"
+                                                        }
+                                                      ],
+                                                      "irt": "<CAFc58G8vwetruoi5dy9dJNH7FNYFc0TOcZ=+7pPVTcER=SU8Sw@mail.gmail.com>",
+                                                      "list_raw": "<dev.kafka.apache.org>"
+                                                    }
+                                                  ],
+                                                  "irt": "<CAHn4u3ss-XzNKUsnujALHc9ceHO7V=X5AOPuvT7is59rmhPwBQ@mail.gmail.com>",
+                                                  "list_raw": "<dev.kafka.apache.org>"
+                                                }
+                                              ],
+                                              "irt": "<CAHn4u3tLHgfUUnyoLpY82mt0XFJThX859uwg0n0Z8=-03=HS_A@mail.gmail.com>",
+                                              "list_raw": "<dev.kafka.apache.org>"
+                                            }
+                                          ],
+                                          "irt": "<CAFc58G_=8c6rYXMTjh+OJ7bE89st_LkUM34sJ4diN4zrNWqMOA@mail.gmail.com>",
+                                          "list_raw": "<dev.kafka.apache.org>"
+                                        }
+                                      ],
+                                      "irt": "<CAHn4u3uN-wjm1C7jGMT6Ks8TRjsZ36et7r2pWRGnK-K+x0FU7w@mail.gmail.com>",
+                                      "list_raw": "<dev.kafka.apache.org>"
+                                    }
+                                  ],
+                                  "irt": "<CAFc58G_s_gOsmv_a5-gPFmeUAag8NR1K-UfpUddB8bwv4Wa07Q@mail.gmail.com>",
+                                  "list_raw": "<dev.kafka.apache.org>"
+                                }
+                              ],
+                              "irt": "<CAHn4u3uTL3bpnseuzPAy08Z5WjmR0SAs+ouT8+68HYqBJ8b6cA@mail.gmail.com>",
+                              "list_raw": "<dev.kafka.apache.org>"
+                            }
+                          ],
+                          "irt": "<CAFc58G-7R2sS976GSA35BKpNbOCDa6VXFDssJ5JM=XmtFnaF7A@mail.gmail.com>",
+                          "list_raw": "<dev.kafka.apache.org>"
+                        }
+                      ],
+                      "irt": "<CALkmrLTUOV88GC=YBSERiyiWn9ivBMZ_c=s77GxuV+rSYUYkfw@mail.gmail.com>",
+                      "list_raw": "<dev.kafka.apache.org>"
+                    }
+                  ],
+                  "irt": "<CAHn4u3uKGJzyOzh39SGegatqyH3HAJLTSmDow2wQLaHQp4fD6Q@mail.gmail.com>",
+                  "list_raw": "<dev.kafka.apache.org>"
+                }
+              ],
+              "irt": "<CALkmrLQxCAnKJt39Y5SRtY=8v0ebzCjXNguzKSZcKhieNrQTyA@mail.gmail.com>",
+              "list_raw": "<dev.kafka.apache.org>"
+            }
+          ],
+          "irt": "<CAFc58G88MCTcr7J1Mf0VELwNVdJ_HTRj3vA7=v=0wJU8pf674Q@mail.gmail.com>",
+          "list_raw": "<dev.kafka.apache.org>"
+        },
+        {
+          "tid": "8c21n2l4g86951rpz437m2vkx2v09h6l",
+          "mid": "8c21n2l4g86951rpz437m2vkx2v09h6l",
+          "message-id": "<CAHn4u3sRtu5UE3Jhzyz-0pWFb9g-g=urdidubTo5m9_8255XKA@mail.gmail.com>",
+          "subject": "Re: [DISCUSS] (continued) KIP-848: The Next Generation of the Consumer Rebalance Protocol",
+          "from": "David Jacot <dj...@confluent.io.INVALID>",
+          "id": "8c21n2l4g86951rpz437m2vkx2v09h6l",
+          "epoch": 1665737816,
+          "children": [],
+          "irt": "<CAFc58G88MCTcr7J1Mf0VELwNVdJ_HTRj3vA7=v=0wJU8pf674Q@mail.gmail.com>",
+          "list_raw": "<dev.kafka.apache.org>"
+        }
+      ]
+    }
+  ]
+}

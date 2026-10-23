@@ -19,6 +19,12 @@ ID_RE = re.compile(r"[A-Za-z0-9._~%:\-]{1,200}")  # canonical_id: percent-quoted
 WRITE_RE = re.compile(r"\b(CREATE|MERGE|DELETE|SET|REMOVE|DROP|LOAD|FOREACH|CALL|DETACH)\b", re.I)
 
 
+def canon_url(url: str | None) -> str:
+    """Identity used by the benchmark: drop ?query and #fragment, except a Jira comment's focusedCommentId."""
+    url = (url or "").split("#", 1)[0]
+    return url if "focusedCommentId=" in url else url.split("?", 1)[0]
+
+
 class HarnessError(ValueError):
     """A tool call the harness refused (bad tool, bad argument, unseen id)."""
 
@@ -131,11 +137,13 @@ def words(query: str) -> list[str]:
 
 
 class Harness:
-    def __init__(self, driver, database: str | None = None, cypher_llm=None, scopes: list[str] | None = None):
+    def __init__(self, driver, database: str | None = None, cypher_llm=None, scopes: list[str] | None = None,
+                 exclude: set[str] | None = None):
         """cypher_llm(question, error_or_None) -> cypher string; enables cypher_query.
         scopes: only artifacts with scope in this list are ever returned (None = unscoped, tests only; [] = nothing)."""
         self.driver, self.database, self.cypher_llm = driver, database, cypher_llm
         self.scopes = None if scopes is None else list(scopes)
+        self.exclude = set(exclude or ())  # benchmark ablation: artifacts (by canon_url) treated as absent from the graph
         self.cypher_log: list[dict] = []  # compact trace items for cypher_query; drained by the flow
         self.seen: set[str] = set()  # ids the planner may use: retrieved evidence + seeds from the question
 
@@ -180,10 +188,13 @@ class Harness:
                                              ids=ids, limit=len(ids), n=TEXT_LEN, scopes=self.scopes)}
         return [by_id[i] for i in ids if i in by_id][:MAX_ROWS]
 
+    def _keep(self, rows: list[dict]) -> list[dict]:
+        return [r for r in rows if canon_url(r.get("url")) not in self.exclude] if self.exclude else rows
+
     def call(self, tool: str, arg: str) -> list[dict]:
         arg = self._arg(tool, arg)
         if tool == "cypher_query":
-            rows = self._cypher_query(arg)
+            rows = self._keep(self._cypher_query(arg))
             self.see(r["id"] for r in rows)
             return rows
         if tool == "find_text":
@@ -202,7 +213,8 @@ class Harness:
                 continue
             seen_ids.add(row["id"])
             rows.append(row)
-        self.see(seen_ids)
+        rows = self._keep(rows)
+        self.see(r["id"] for r in rows)
         return rows
 
     def edges_among(self, ids) -> list[dict]:
