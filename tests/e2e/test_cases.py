@@ -40,11 +40,10 @@ def require(provider: str) -> None:
 @pytest.fixture(scope="module")
 def demo(neo4j_test_driver, tmp_path_factory):
     """A demo workspace synced through the real pipeline into the throwaway DB."""
-    from tests.conftest import TEST_AUTH, TEST_URI
-
     from hackfront.ingest.demo import DEMO_WORKSPACE
     from hackfront.ingest.storage.neo4j.schema import initialize_schema
     from hackfront.ingest.sync import start_sync, sync_status
+    from tests.conftest import TEST_AUTH, TEST_URI
 
     mp = pytest.MonkeyPatch()
     mp.setattr(config, "HOME", tmp_path_factory.mktemp("home"))
