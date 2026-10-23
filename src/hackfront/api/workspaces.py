@@ -169,8 +169,14 @@ def workbench(ws: str):
         "github": demo or (have("github_token") and bool(scopes["repos"])),
         "jira": demo or (have("jira_email") and have("jira_token") and bool(cfg["jira"]["site"]) and bool(scopes["jira"])),
         "slack": demo or (have("slack_token") and bool(scopes["slack"])),
-        "llm": (have("azure_key") and have("azure_endpoint")) or have("sarvam_key"),
     }
+    try:
+        from ..agent import llm
+
+        providers = llm.providers(ws)
+    except Exception:
+        providers = []
+    configured["llm"] = any(p["configured"] for p in providers)
     targets = {"github": len(scopes["repos"]), "jira": len(scopes["jira"]), "slack": len(scopes["slack"])}
     integrations = {}
     for name, keys in SECRET_KEYS.items():
@@ -178,12 +184,6 @@ def workbench(ws: str):
         if name in targets:
             integrations[name]["targets"] = targets[name]
     indexed, neo4j = _graph_facts(scopes)
-    try:
-        from ..agent import llm
-
-        providers = llm.providers(ws)
-    except Exception:
-        providers = []
     return {
         "workspace": {"slug": ws, "name": cfg["name"] or ws, "demo": demo, "targets": {
             "github": cfg["github"], "jira": cfg["jira"],
