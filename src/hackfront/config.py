@@ -54,7 +54,7 @@ def load_env(path: Path | None = None) -> None:
 
 
 def neo4j_database() -> str:
-    return os.environ.get("NEO4J_DATABASE", "neo4j")
+    return os.environ.get("NEO4J_DATABASE") or "neo4j"  # unset or empty -> default
 
 
 _shared_drivers: dict = {}

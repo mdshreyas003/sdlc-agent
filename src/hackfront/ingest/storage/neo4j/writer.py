@@ -127,6 +127,18 @@ def _write_artifact_tx(tx, artifact: Artifact, properties: dict[str, Any]) -> No
         ).consume()
 
 
+class Neo4jNotConfigured(ValueError):
+    """Required NEO4J_* settings are missing. The message names only setting names, so it is safe to show users."""
+
+
+REQUIRED_SETTINGS = ("NEO4J_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD")
+
+
+def neo4j_database() -> str:
+    """NEO4J_DATABASE, defaulting to `neo4j` when unset or empty (an empty line copied from .env.example)."""
+    return os.environ.get("NEO4J_DATABASE") or "neo4j"
+
+
 class Neo4jStore:
     """Own one driver and use managed transactions for stable, retry-safe writes."""
 
@@ -138,18 +150,17 @@ class Neo4jStore:
 
     @classmethod
     def from_environment(cls) -> "Neo4jStore":
-        uri = os.environ.get("NEO4J_URI")
-        username = os.environ.get("NEO4J_USERNAME")
-        password = os.environ.get("NEO4J_PASSWORD")
-        if not all((uri, username, password)):
-            raise ValueError("NEO4J_URI, NEO4J_USERNAME, and NEO4J_PASSWORD must be configured")
+        missing = [k for k in REQUIRED_SETTINGS if not os.environ.get(k)]
+        if missing:
+            raise Neo4jNotConfigured(f"Neo4j is not configured: set {', '.join(missing)} (see .env.example)")
+        uri, username, password = (os.environ[k] for k in REQUIRED_SETTINGS)
         try:
             from neo4j import GraphDatabase
         except ImportError as error:
             raise RuntimeError("install the Neo4j Python driver to use Neo4jStore") from error
         driver = GraphDatabase.driver(uri, auth=(username, password))
         driver.verify_connectivity()
-        return cls(driver, os.environ.get("NEO4J_DATABASE", "neo4j"))
+        return cls(driver, neo4j_database())
 
     def initialize_schema(self) -> None:
         initialize_schema(self.driver, self.database)
