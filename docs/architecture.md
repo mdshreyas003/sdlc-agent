@@ -9,7 +9,7 @@ flowchart LR
   AD --> X[Deterministic extraction<br/>structural + text references]
   X --> NEO[(Neo4j evidence graph)]
   NEO <--> H[Agent harness<br/>fixed read-only Cypher tools]
-  H <--> AG[LangGraph agent<br/>Azure / Sarvam]
+  H <--> AG["LangGraph agent<br/>any OpenAI-compatible provider; Azure/Sarvam presets"]
   AG --> API[FastAPI + SSE]
   API --> UI[Web UI<br/>ask, trace, evidence graph]
   UI -->|sync / demo| AD
