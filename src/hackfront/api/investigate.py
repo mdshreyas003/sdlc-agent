@@ -106,7 +106,9 @@ def investigate(ws: str, body: InvestigateBody):
     error = _invalid(body)
     if error:
         return JSONResponse({"detail": error}, 422)
-    scopes = [*targets["repos"], *targets["jira"], *targets["slack"]]
+    from .mapping import flat_scopes
+
+    scopes = flat_scopes(targets)
     if not _slots.acquire(blocking=False):
         return JSONResponse({"detail": f"At most {MAX_CONCURRENT} investigations can run at once; try again shortly"}, 429)
     driver = None

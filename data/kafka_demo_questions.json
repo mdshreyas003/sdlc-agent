@@ -1,0 +1,6 @@
+[
+  {"id": "Q013", "kip": 405, "mode": "why", "question": "Why are compacted topics not supported with tiered storage in the first version?"},
+  {"id": "Q026", "kip": 500, "mode": "why", "question": "Why does the metadata quorum implement its own Raft replication inside Kafka instead of using an existing library such as Apache Ratis?"},
+  {"id": "Q030", "kip": 595, "mode": "why", "question": "Why is the epoch used for leader election limited to 31 bits instead of being widened to 63 bits?"},
+  {"id": "Q041", "kip": 679, "mode": "why", "question": "Why did producers in 3.0 and 3.1 stay non-idempotent by default even though enable.idempotence defaults to true?"}
+]

@@ -6,7 +6,7 @@ import Detail from "./Detail";
 import { Icon } from "./icons";
 import { useWb } from "./store";
 
-const KIND_ICON = { issue: "issue", discussion: "discussion", pr: "pr", commit: "commit" } as const;
+const KIND_ICON = { doc: "file", issue: "issue", discussion: "discussion", pr: "pr", commit: "commit" } as const;
 
 export function KindBadge({ kind, label }: { kind: Kind; label?: string }) {
   return (
@@ -97,9 +97,9 @@ function Timeline() {
   );
 }
 
-const LANES: Kind[] = ["issue", "discussion", "pr", "commit"];
+const LANES: Kind[] = ["doc", "issue", "discussion", "pr", "commit"];
 const LANE = 62;
-const LABELS: Record<Kind, string> = { issue: "Issues", discussion: "Discussions", pr: "PRs", commit: "Commits" };
+const LABELS: Record<Kind, string> = { doc: "Docs", issue: "Issues", discussion: "Discussions", pr: "PRs", commit: "Commits" };
 
 function Graph() {
   const { inv, visible, selected, selectNode, hoverNodes, lit, showInferred } = useWb();

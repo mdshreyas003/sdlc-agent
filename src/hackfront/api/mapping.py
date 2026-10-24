@@ -11,7 +11,7 @@ import json
 from .. import config
 
 KIND = {"git_commit": "commit", "pull_request": "pr", "issue": "issue",
-        "discussion_thread": "discussion", "discussion_message": "discussion"}
+        "discussion_thread": "discussion", "discussion_message": "discussion", "document": "doc"}
 
 NODE_QUERY = """
 MATCH (a:Artifact) WHERE a.canonical_id IN $ids AND NOT coalesce(a.is_stub, false)
@@ -32,7 +32,7 @@ RETURN a.canonical_id AS id LIMIT $limit"""
 
 def flat_scopes(scopes: dict) -> list[str]:
     """{'repos': [...], 'jira': [...], 'slack': [...]} (config.scopes) -> the flat list stored in Artifact.scope."""
-    return [*scopes["repos"], *scopes["jira"], *scopes["slack"]]
+    return [*scopes["repos"], *scopes["jira"], *scopes["slack"], *scopes.get("docs", [])]
 
 
 def _context(raw) -> dict:
@@ -56,6 +56,9 @@ def to_node(row: dict, names: dict | None = None) -> dict:
     elif provider == "jira":
         scope = row.get("scope") or row["workspace"]
         ref = sid if rtype == "issue" else "comment"
+    elif provider == "confluence":
+        scope = row.get("scope") or row["workspace"]
+        ref = sid
     else:
         scope = str(ctx.get("channel_id") or row["workspace"])
         channel = names.get("channels", {}).get(scope, scope).lstrip("#")

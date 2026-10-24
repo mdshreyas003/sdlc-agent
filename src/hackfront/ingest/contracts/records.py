@@ -18,6 +18,7 @@ class RecordKind(str, Enum):
     ISSUE = "issue"
     DISCUSSION_THREAD = "discussion_thread"
     DISCUSSION_MESSAGE = "discussion_message"
+    DOCUMENT = "document"  # wiki page, e.g. an Apache KIP
 
 
 class RelationshipKind(str, Enum):

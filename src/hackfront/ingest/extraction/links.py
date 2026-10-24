@@ -24,10 +24,14 @@ SLACK_LINK = re.compile(r"https?://([\w-]+)\.slack\.com/archives/([A-Z0-9]+)/p(\
 class LinkConfig:
     jira_projects: frozenset[str] = frozenset()
     slack_workspace: str = ""
+    kip_space: str = ""  # wiki space holding Apache KIP pages: "KIP-123" in text links to that page ...
+    kip_pages: frozenset[str] = frozenset()  # ... only if the workspace has it (no placeholder stubs for other KIPs)
 
     @classmethod
     def from_workspace(cls, workspace: dict) -> "LinkConfig":
-        return cls(frozenset(workspace["jira"]["projects"]), workspace["slack"]["workspace"])
+        docs = workspace.get("docs") or {}
+        return cls(frozenset(workspace["jira"]["projects"]), workspace["slack"]["workspace"],
+                   (docs.get("spaces") or [""])[0], frozenset(docs.get("pages") or ()))
 
 
 def _text_fields(artifact: Artifact) -> tuple[tuple[str, str | None], ...]:
@@ -37,6 +41,8 @@ def _text_fields(artifact: Artifact) -> tuple[tuple[str, str | None], ...]:
         return (("$.commit.message", artifact.text),)
     if provider == "github" and kind == "pull_request":
         return (("$.title", artifact.title), ("$.body", artifact.text))
+    if provider == "confluence":
+        return (("$.title", artifact.title), ("$.body.storage.value", artifact.text))
     if provider == "jira" and kind == "issue":
         return (("$.fields.summary", artifact.title), ("$.fields.description", artifact.text))
     return (("$.body" if provider in ("github", "jira") else "$.text", artifact.text),)
@@ -49,6 +55,8 @@ def _refs_in(text: str, locator: str, artifact: Artifact, config: LinkConfig) ->
     for m in JIRA_KEY.finditer(text):
         if m.group(1) in config.jira_projects:
             found.append((m.start(), m.end(), SourceIdentity("jira", m.group(1), "issue", m.group(0))))
+        elif m.group(1) == "KIP" and config.kip_space and m.group(0) in config.kip_pages:
+            found.append((m.start(), m.end(), SourceIdentity("confluence", config.kip_space, "page", m.group(0))))
     for m in GH_PR_URL.finditer(text):
         found.append((m.start(), m.end(), SourceIdentity(
             "github", f"{m.group(1)}/{m.group(2)}", "pull_request", m.group(3), m.group(0))))

@@ -106,7 +106,7 @@ def test_workbench_shape_and_secrets_never_leak(monkeypatch):
     body = r.json()
     assert {k: body["workspace"][k] for k in ("slug", "name", "demo")} == {"slug": slug, "name": "Acme", "demo": False}
     assert set(body["workspace"]["targets"]) == {"github", "jira", "slack"}  # non-secret targets only
-    assert body["connected"] == body["catalog"] == {"repos": ["acme/api", "acme/web"], "jira": [], "slack": []}
+    assert body["connected"] == body["catalog"] == {"repos": ["acme/api", "acme/web"], "jira": [], "slack": [], "docs": []}
     assert body["indexed_repos"] == ["acme/api"]
     assert body["neo4j"] == {"ok": True, "counts": {"artifacts": 7, "edges": 5, "stubs": 2}}
     assert driver.queries[0][1] == {"repos": ["acme/api", "acme/web"]}

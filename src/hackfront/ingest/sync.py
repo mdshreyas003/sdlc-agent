@@ -253,7 +253,7 @@ def _clients(slug: str, ws: dict, job: _Job):
     if ws["demo"]:
         from .demo import demo_clients
 
-        if slug == "eval":  # benchmark workspace: real public corpus replayed through the same clients
+        if slug in ("eval", "kafka"):  # Kafka corpus (benchmark + demo workspace) replayed through the same clients
             from ..eval.corpus import load
 
             return demo_clients(load())
@@ -321,7 +321,9 @@ def _execute(job: _Job, ws: dict) -> None:
                     _learn_slack_names(slug, slack_client, slack["channels"])
         try:
             scopes = config.scopes(slug)
-            graph = scoped_counts([*scopes["repos"], *scopes["jira"], *scopes["slack"]])
+            from ..api.mapping import flat_scopes
+
+            graph = scoped_counts(flat_scopes(scopes))
         except Exception:  # noqa: BLE001 - counts are informational
             graph = None
         job.end(graph=graph)

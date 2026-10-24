@@ -55,3 +55,18 @@ def test_slack_ts_boundary_and_query_string_url():
     t = ("https://acme.slack.com/archives/C1/p17000000001234567890 "
          "https://x.example/?next=https://github.com/acme/shop/pull/7")
     assert not ids(add_text_references(art("jira", "PAY", "issue", "PAY-1", t, RecordKind.ISSUE), CFG))
+
+
+def test_kip_mentions_link_only_to_wiki_pages_the_workspace_has():
+    from hackfront.ingest.contracts import Artifact, Provenance, RecordKind, SourceIdentity
+    from hackfront.ingest.extraction.links import LinkConfig, add_text_references
+
+    msg = Artifact(SourceIdentity("slack", "kafka-dev", "thread", "1.000001"), RecordKind.DISCUSSION_THREAD,
+                   "2026-01-01T00:00:00Z", Provenance("https://x", "$", "2026-01-01T00:00:00Z", "t"),
+                   text="[DISCUSS] KIP-405 and KAFKA-7739", raw_payload={})
+    plain = add_text_references(msg, LinkConfig(frozenset({"KAFKA"})))
+    assert [r.target.canonical_id for r in plain.references] == ["jira:KAFKA:issue:KAFKA-7739"]
+    assert add_text_references(msg, LinkConfig(frozenset({"KAFKA"}), "", "cwiki.apache.org/KAFKA")).references == plain.references
+    wiki = add_text_references(msg, LinkConfig(frozenset({"KAFKA"}), "", "cwiki.apache.org/KAFKA", frozenset({"KIP-405"})))
+    assert {r.target.canonical_id for r in wiki.references} == {
+        "jira:KAFKA:issue:KAFKA-7739", "confluence:cwiki.apache.org%2FKAFKA:page:KIP-405"}

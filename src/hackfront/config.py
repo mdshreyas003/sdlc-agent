@@ -24,6 +24,7 @@ EMPTY_WORKSPACE = {
     "github": {"owner": "", "repos": []},
     "jira": {"site": "", "projects": []},
     "slack": {"workspace": "", "channels": [], "channel_names": {}, "users": {}},
+    "docs": {"site": "", "spaces": [], "pages": []},  # wiki spaces (document artifacts' scope) and their page keys
 }
 
 # secret key -> (environment fallback, is_secret). Non-secrets (endpoint, provider, model, jira email) may be shown.
@@ -195,13 +196,14 @@ def save_workspace(slug: str, data: dict) -> dict:
 
 
 def scopes(slug: str) -> dict:
-    """What this workspace may see: `owner/repo` names, Jira project keys, Slack channel ids."""
+    """What this workspace may see: `owner/repo` names, Jira project keys, Slack channel ids, wiki spaces."""
     ws = load_workspace(slug)
     owner = ws["github"]["owner"]
     return {
         "repos": [r if "/" in r else f"{owner}/{r}" for r in ws["github"]["repos"]],
         "jira": list(ws["jira"]["projects"]),
         "slack": list(ws["slack"]["channels"]),
+        "docs": list(ws["docs"]["spaces"]),
     }
 
 

@@ -141,7 +141,7 @@ def _graph_facts(scopes: dict) -> tuple[list[str], dict]:
     except Exception:  # noqa: BLE001  any driver failure -> fixed safe status
         return [], {"ok": False}
     try:
-        flat = [*scopes["repos"], *scopes["jira"], *scopes["slack"]]
+        flat = [*scopes["repos"], *scopes["jira"], *scopes["slack"], *scopes.get("docs", [])]
         with driver.session(database=config.neo4j_database(), default_access_mode=READ_ACCESS) as session:
             try:
                 indexed = {r["scope"] for r in session.run(INDEXED_Q, repos=scopes["repos"]).data()}
