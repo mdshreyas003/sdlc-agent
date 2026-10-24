@@ -1,6 +1,7 @@
-"""Pull the pilot slice: 10 KIPs + 10 PEPs plus one hop of links. stdlib only.
+"""Pull the pilot slice: 10 KIPs plus one hop of links. stdlib only.
 
-Writes data/raw/<id>/... and data/raw/hashes.json (sha256 per file, retrieval time).
+Writes data/raw/<id>/... and merges sha256 per file + retrieval time into data/raw/hashes.pull.json.
+Promote: copy reviewed entries from data/raw/hashes.pull.json into data/raw/hashes.json by hand (add kind/fetch), then verify with fetch_kip_raw.py.
 Run: python data/tools/pull_pilot.py
 """
 import hashlib, json, re, sys, time
@@ -11,13 +12,12 @@ from urllib.request import Request, urlopen
 
 RAW = Path(__file__).resolve().parents[1] / "raw"
 KIPS = [98, 129, 405, 447, 500, 595, 630, 679, 848, 890]
-PEPS = [557, 563, 572, 584, 604, 618, 634, 649, 695, 703]
 CONF = "https://cwiki.apache.org/confluence/rest/api/content"
 HOPS_PER_RECORD = 6
 # one hop only to these hosts; everything else is recorded as a link but not fetched
-ALLOWED = {"mail.python.org", "discuss.python.org", "lists.apache.org", "mail-archives.apache.org",
-           "issues.apache.org", "github.com", "bugs.python.org"}
-hashes = {}
+ALLOWED = {"lists.apache.org", "mail-archives.apache.org", "issues.apache.org", "github.com"}
+PULL = RAW / "hashes.pull.json"  # pull output only; never read or write the curated hashes.json
+hashes = {}  # loaded from PULL in __main__ only, so importing link_candidates() reads nothing
 
 
 def get(url, accept=None):
@@ -53,11 +53,16 @@ def hop_url(u):
     return u
 
 
-def one_hop(rec, text):
+def link_candidates(text):
+    """All links in a record's text, plus the ones worth one hop (also used by fetch_kip_raw.py)."""
     links = list(dict.fromkeys(re.findall(r"https?://[^\s<>\")\]]+", text)))
     jira = [f"https://issues.apache.org/jira/browse/{k}" for k in dict.fromkeys(re.findall(r"\b(KAFKA-\d+)\b", text))]
     cand = [u.rstrip(".,;") for u in links if hop_url(u)] + jira
-    cand = list(dict.fromkeys(cand))
+    return links, list(dict.fromkeys(cand))
+
+
+def one_hop(rec, text):
+    links, cand = link_candidates(text)
     (RAW / rec).mkdir(parents=True, exist_ok=True)
     (RAW / rec / "links.json").write_text(json.dumps({"all": links, "candidates": cand}, indent=1))
     for i, u in enumerate(cand[:HOPS_PER_RECORD]):
@@ -75,14 +80,6 @@ def kip(n):
     one_hop(rec, res["body"]["storage"]["value"])
 
 
-def pep(n):
-    rec = f"PEP-{n}"
-    url = f"https://raw.githubusercontent.com/python/peps/main/peps/pep-{n:04d}.rst"
-    txt = get(url)
-    save(rec, "pep.rst", txt, url)
-    one_hop(rec, txt.decode("utf-8", "replace"))
-
-
 def kip_titles():
     out = {}
     for n in KIPS:
@@ -94,14 +91,12 @@ def kip_titles():
 
 
 if __name__ == "__main__":
+    if PULL.exists():
+        hashes.update(json.loads(PULL.read_text()))
     tmap = kip_titles()
     ids = tmap
     print("KIPs found:", sorted(tmap), "missing:", sorted(set(KIPS) - set(tmap)))
     for n in sorted(tmap):
         print("KIP", n); kip(n)
-    for n in PEPS:
-        print("PEP", n)
-        try: pep(n)
-        except Exception as e: print(f"  FAIL {e}", file=sys.stderr)
-    (RAW / "hashes.json").write_text(json.dumps(hashes, indent=1))
+    PULL.write_text(json.dumps(hashes, indent=1))
     print("files:", len(hashes))

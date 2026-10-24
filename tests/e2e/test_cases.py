@@ -1,7 +1,10 @@
 """Demo workspace -> real Neo4j (test DB) -> agent with a REAL LLM provider (AC-6, AC-7, AC-8, AC-9, AC-15).
 
-Skipped per provider when its API key is not configured. Run: uv run pytest tests/e2e -q
-Select providers with HACKFRONT_E2E_PROVIDERS=azure,sarvam (default: every configured one).
+The provider comes from the environment (see .env.example):
+  generic OpenAI-compatible: LLM_PROVIDER=openai LLM_API_KEY=... LLM_MODEL=... [LLM_BASE_URL=...]
+  legacy presets:            AZURE_FOUNDRY_ENDPOINT + AZURE_FOUNDRY_API_KEY, or SARVAM_API_KEY
+Every configured provider runs each case; HACKFRONT_E2E_PROVIDERS=openai,sarvam pins the list. With nothing configured
+the cases skip with the reason. Run: uv run pytest tests/e2e -v -rs
 """
 
 import json
@@ -12,22 +15,35 @@ from pathlib import Path
 import pytest
 
 from hackfront import config
+from hackfront.agent import llm
 from hackfront.api.mapping import flat_scopes
 
 CASES = json.loads((Path(__file__).parent / "cases.json").read_text(encoding="utf-8"))
 config.load_env()
-KEYS = {"azure": "AZURE_FOUNDRY_API_KEY", "sarvam": "SARVAM_API_KEY"}
-PROVIDERS = [p for p in os.environ.get("HACKFRONT_E2E_PROVIDERS", ",".join(KEYS)).split(",") if p]
+_pinned = [p.strip() for p in os.environ.get("HACKFRONT_E2E_PROVIDERS", "").split(",") if p.strip()]
+PROVIDERS = _pinned or [p["name"] for p in llm.providers() if p["configured"]] or ["unconfigured"]
+NO_PROVIDER = ("no LLM provider configured: set LLM_PROVIDER=openai, LLM_API_KEY, LLM_MODEL (+ LLM_BASE_URL), "
+               "or AZURE_FOUNDRY_ENDPOINT + AZURE_FOUNDRY_API_KEY, or SARVAM_API_KEY")
+
+
+def require(provider: str) -> None:
+    """Skip (never fail) when the provider cannot run: no key, missing endpoint/model, or unknown name."""
+    if provider == "unconfigured":
+        pytest.skip(NO_PROVIDER)
+    if provider not in llm.PROVIDERS:
+        pytest.skip(f"unknown provider {provider!r} in HACKFRONT_E2E_PROVIDERS; choose from {sorted(llm.PROVIDERS)}")
+    problem = llm.missing_config(provider)
+    if problem:
+        pytest.skip(problem)
 
 
 @pytest.fixture(scope="module")
 def demo(neo4j_test_driver, tmp_path_factory):
     """A demo workspace synced through the real pipeline into the throwaway DB."""
-    from tests.conftest import TEST_AUTH, TEST_URI
-
     from hackfront.ingest.demo import DEMO_WORKSPACE
     from hackfront.ingest.storage.neo4j.schema import initialize_schema
     from hackfront.ingest.sync import start_sync, sync_status
+    from tests.conftest import TEST_AUTH, TEST_URI
 
     mp = pytest.MonkeyPatch()
     mp.setattr(config, "HOME", tmp_path_factory.mktemp("home"))
@@ -53,8 +69,7 @@ def demo(neo4j_test_driver, tmp_path_factory):
 def test_case(demo, neo4j_test_driver, provider, case):
     from hackfront import agent
 
-    if not os.environ.get(KEYS[provider]):
-        pytest.skip(f"{KEYS[provider]} not set")
+    require(provider)
     scopes = flat_scopes(config.scopes(demo))
     events = list(agent.run(case["question"], mode=case["mode"], provider=provider, driver=neo4j_test_driver,
                             scopes=scopes, workspace=demo))
@@ -79,7 +94,7 @@ def test_other_workspace_sees_nothing(demo, neo4j_test_driver):
     from hackfront import agent
 
     events = list(agent.run("Why are gateway retries capped at 3?", mode="why", driver=neo4j_test_driver,
-                            scopes=[], workspace=None, provider="azure"))
+                            scopes=[], workspace=None, provider=PROVIDERS[0]))
     last = events[-1]
     assert last["event"] in ("answer", "error")
     if last["event"] == "answer":

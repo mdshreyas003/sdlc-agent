@@ -24,7 +24,8 @@ class Out(BaseModel):
 @pytest.fixture(autouse=True)
 def fresh(monkeypatch):
     monkeypatch.setattr(llm, "_clients", {})
-    for k in ("LLM_PROVIDER", "LLM_MODEL", "AZURE_FOUNDRY_API_KEY", "SARVAM_API_KEY", "AZURE_FOUNDRY_ENDPOINT"):
+    for k in ("LLM_PROVIDER", "LLM_MODEL", "AZURE_FOUNDRY_API_KEY", "SARVAM_API_KEY", "AZURE_FOUNDRY_ENDPOINT",
+              "LLM_API_KEY", "LLM_BASE_URL", "LLM_TIMEOUT"):
         monkeypatch.delenv(k, raising=False)
 
 
@@ -47,12 +48,12 @@ def test_model_selection(monkeypatch):
 
 def test_client_headers_and_urls(monkeypatch):
     monkeypatch.setenv("SARVAM_API_KEY", "k1")
-    c = llm.client("sarvam")
+    c = llm.client("sarvam").sdk
     assert str(c.base_url) == "https://api.sarvam.ai/v1/" and c.default_headers["api-subscription-key"] == "k1"
     assert c.auth_headers["Authorization"] == "Bearer k1"
     monkeypatch.setenv("AZURE_FOUNDRY_API_KEY", "k2")
     monkeypatch.setenv("AZURE_FOUNDRY_ENDPOINT", "https://r.services.ai.azure.com/models")
-    a = llm.client("azure")
+    a = llm.client("azure").sdk
     assert str(a.base_url) == "https://r.services.ai.azure.com/openai/v1/" and a.default_headers["api-key"] == "k2"
     assert a.auth_headers["Authorization"] == "Bearer k2"
 

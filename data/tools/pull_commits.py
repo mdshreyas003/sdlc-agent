@@ -3,7 +3,8 @@
 For KIP-N: take the KEYS_PER_KIP most-mentioned KAFKA-* keys in its raw files, find PRs whose title
 carries the key, keep PRS_PER_KEY, fetch each PR and its merge commit (with patch).
 Writes data/raw/KIP-N/prs.json (key -> PR numbers) and pr<N>.json / commit-<sha7>.json,
-and merges sha256 entries into data/raw/hashes.json. Re-runnable: existing files are skipped.
+and merges sha256 entries into data/raw/hashes.pull.json. Re-runnable: existing files are skipped.
+Promote: copy reviewed entries from data/raw/hashes.pull.json into data/raw/hashes.json by hand (add kind/fetch), then verify with fetch_kip_raw.py.
 GitHub unauthenticated limit is 60 calls/hour; set GITHUB_TOKEN for more.
 Run: uv run --no-project python data/tools/pull_commits.py
 """
@@ -20,7 +21,8 @@ API = "https://api.github.com"
 H = {"User-Agent": "hackfront-research/0.1", "Accept": "application/vnd.github+json"}
 if os.environ.get("GITHUB_TOKEN"):
     H["Authorization"] = "Bearer " + os.environ["GITHUB_TOKEN"]
-hashes = json.loads((RAW / "hashes.json").read_text())
+PULL = RAW / "hashes.pull.json"  # pull output only; never read or write the curated hashes.json
+hashes = json.loads(PULL.read_text()) if PULL.exists() else {}
 
 
 def get(url):
@@ -37,7 +39,7 @@ def save(rec, name, data, url):
     (RAW / rec / name).write_bytes(data)
     hashes[f"{rec}/{name}"] = {"url": url, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
                                "retrieved": datetime.now(timezone.utc).isoformat()}
-    (RAW / "hashes.json").write_text(json.dumps(hashes, indent=1))
+    PULL.write_text(json.dumps(hashes, indent=1))
 
 
 def top_keys(rec):

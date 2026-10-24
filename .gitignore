@@ -6,3 +6,11 @@ __pycache__/
 .env
 workspace.json
 .hackfront/
+
+# Kafka benchmark corpus: fetched from the original public sources, not redistributed (data/tools/fetch_kip_raw.py)
+data/raw/KIP-*/
+
+# eval run outputs (written by hackfront eval; not committed)
+data/eval/results/
+# pull_*.py output; curated data/raw/hashes.json stays tracked
+data/raw/hashes.pull.json

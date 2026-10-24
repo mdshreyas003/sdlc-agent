@@ -16,7 +16,7 @@ def home(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "HOME", tmp_path)
     monkeypatch.setattr(llm, "_clients", {})
     monkeypatch.setattr(llm, "_creds", {})
-    for env, _ in config.SECRETS.values():
+    for env in [e for e, _ in config.SECRETS.values()] + ["LLM_API_KEY", "LLM_BASE_URL", "LLM_TIMEOUT"]:
         monkeypatch.delenv(env, raising=False)
     monkeypatch.setattr(config, "neo4j_driver", lambda: (_ for _ in ()).throw(RuntimeError(f"bolt://u:{SECRET}@h")))
 
@@ -116,7 +116,8 @@ def test_workbench_shape_and_secrets_never_leak(monkeypatch):
     assert jira["configured"] is False and jira["secrets"]["jira_email"]["value"] == "me@x.io"
     assert slack["configured"] is False and slack["secrets"]["slack_token"]["source"] == "workspace"  # no channels yet
     assert llm_["configured"] is True and "targets" not in llm_
-    assert {p["name"]: p["configured"] for p in body["providers"]} == {"azure": False, "sarvam": True}
+    assert {p["name"]: p["configured"] for p in body["providers"]} == {"azure": False, "sarvam": True,
+                                                                         "openai": False}
     assert body["names"] == {"channels": {}, "users": {}}
 
 
@@ -284,23 +285,28 @@ def test_llm_per_workspace_credentials_and_client_cache(monkeypatch):
     monkeypatch.setenv("SARVAM_API_KEY", "env-key-1")
     config.set_secrets(slug, {"sarvam_key": "ws-key-2", "llm_model": "sarvam-30b", "llm_provider": "sarvam"})
     assert llm.providers() == [{"name": "azure", "model": "Kimi-K2.5", "configured": False},
-                               {"name": "sarvam", "model": "sarvam-105b", "configured": True}]
+                               {"name": "sarvam", "model": "sarvam-105b", "configured": True},
+                               {"name": "openai", "model": "", "configured": False}]
     assert llm.providers(slug)[1] == {"name": "sarvam", "model": "sarvam-30b", "configured": True}
     assert llm._workspace.get() is None
     first = llm.client("sarvam")  # env only
     llm.set_workspace(slug)
     try:
         second = llm.client("sarvam")
-        assert second is not first and second.api_key == "ws-key-2" and llm.client("sarvam") is second
+        assert second is not first and second.sdk.api_key == "ws-key-2" and llm.client("sarvam") is second
         config.set_secrets(slug, {"sarvam_key": "ws-key-3"})
-        assert llm.client("sarvam").api_key == "ws-key-3"  # a changed key never reuses the old client
+        assert llm.client("sarvam").sdk.api_key == "ws-key-3"  # a changed key never reuses the old client
     finally:
         llm.set_workspace(None)
 
 
 def test_llm_ping_is_sanitized(monkeypatch):
-    class Boom(Exception):
-        status_code = 401
+    import httpx
+    import openai
+
+    def boom(secret):  # what the SDK raises on a 401; the body carries provider detail that must not leak
+        response = httpx.Response(401, request=httpx.Request("POST", "https://llm.test/v1/chat/completions"))
+        return openai.AuthenticationError(secret, response=response, body={"error": secret})
 
     def fake(exc):
         def create(**kw):
@@ -308,7 +314,7 @@ def test_llm_ping_is_sanitized(monkeypatch):
 
         return type("C", (), {"chat": type("X", (), {"completions": type("Y", (), {"create": staticmethod(create)})})})
 
-    monkeypatch.setattr(llm, "_clients", {"sarvam": fake(Boom(SECRET))})
+    monkeypatch.setattr(llm, "_clients", {"sarvam": fake(boom(SECRET))})
     with pytest.raises(RuntimeError) as e:
         llm.ping("sarvam")
     assert str(e.value) == "sarvam rejected the request (HTTP 401)" and SECRET not in str(e.value)
