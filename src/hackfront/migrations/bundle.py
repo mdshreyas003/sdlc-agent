@@ -159,7 +159,17 @@ def apply(doc: dict) -> dict:
     if invs:
         out["saved_investigations"] = len(invs)
     if doc.get("finalize"):
-        out.update(kw.finalize(driver), investigations=len(list_all(kw.SLUG)), migration=f"{kw.ID} v{kw.VERSION}")
+        from .. import state
+
+        counts = kw.finalize(driver)
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        n = counts["artifacts"]
+        state.backend().write_sync(kw.SLUG, {  # what the UI reads as "last sync" (an applied migration counts as one)
+            "state": "done", "mode": "deep", "started_at": now, "finished_at": now, "heartbeat": now, "complete": True,
+            "streams": [{"stream": f"bundle:{kw.ID}", "status": "done", "pages": 0, "fetched": n, "persisted": n,
+                         "errors": []}],
+            "graph": {k: counts[k] for k in ("artifacts", "edges", "stubs")}})
+        out.update(counts, investigations=len(list_all(kw.SLUG)), migration=f"{kw.ID} v{kw.VERSION}")
     return out
 
 

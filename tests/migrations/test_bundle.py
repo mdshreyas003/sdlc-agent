@@ -86,3 +86,6 @@ def test_push_over_http_matches_run_and_is_idempotent(env, tmp_path, monkeypatch
         got = bundle.push(tmp_path / "b.json.gz", "http://test", ADMIN, size=2, log=lambda *_: None)
         assert {k: got[k] for k in keys} == {k: expected[k] for k in keys}
         assert _all(env) == graph
+    from hackfront.ingest import sync
+
+    assert sync.sync_status("kafka")["state"] == "done"  # the workspace card shows a finished sync
