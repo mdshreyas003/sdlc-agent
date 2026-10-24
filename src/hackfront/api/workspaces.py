@@ -98,9 +98,10 @@ def list_workspaces():
     for row in config.list_workspaces():
         try:
             scopes = config.scopes(row["slug"])
+            pages = config.load_workspace(row["slug"]).get("docs", {}).get("pages", [])
         except (LookupError, ValueError):  # one corrupt workspace must not hide the others
-            scopes = {"repos": [], "jira": [], "slack": []}
-        row["connected"] = {"repos": len(scopes["repos"]), "jira": len(scopes["jira"]), "slack": len(scopes["slack"])}
+            scopes, pages = {"repos": [], "jira": [], "slack": []}, []
+        row["connected"] = {"repos": len(scopes["repos"]), "jira": len(scopes["jira"]), "slack": len(scopes["slack"]), "docs": len(pages)}
         sync = _last_sync(row["slug"])
         if sync:
             row["last_sync"] = sync

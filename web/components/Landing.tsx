@@ -77,7 +77,7 @@ export default function Landing() {
           <nav className="flex items-center gap-2">
             <a href="https://github.com/mdshreyas003/sdlc-agent" className={btnGhost}>GitHub</a>
             <Link href="/workspaces" className={btnGhost}>Workspaces</Link>
-            <Link href="/w/acme-demo" className={btnAccent}>Try the demo</Link>
+            <Link href="/w/kafka" className={btnAccent}>Try the demo</Link>
           </nav>
         </div>
       </header>
@@ -102,7 +102,7 @@ export default function Landing() {
               Ask <span className="text-accent">&ldquo;why is this code like this?&rdquo;</span> Get an answer from your team&rsquo;s GitHub, Jira and chat history, with a word-for-word quote for every claim, or an honest <span className="text-accent">&ldquo;Not established.&rdquo;</span>
             </p>
             <div className="flex gap-3 pt-2">
-              <Link href="/w/acme-demo" className={`${btnAccent} h-10 px-5 text-[13.5px]`}>Try the demo</Link>
+              <Link href="/w/kafka" className={`${btnAccent} h-10 px-5 text-[13.5px]`}>Try the demo</Link>
               <a href="#model" className={`${btnGhost} h-10 px-5 text-[13.5px]`}>Start the guide {"\u2193"}</a>
             </div>
           </Section>
@@ -238,7 +238,7 @@ export default function Landing() {
                 <div key={t} className="flex gap-3"><dt className="w-[96px] shrink-0 font-medium text-fg">{t}</dt><dd>{d}</dd></div>
               ))}
             </dl>
-            <div className="pt-4"><Link href="/w/acme-demo" className={`${btnAccent} h-10 px-5 text-[13.5px]`}>Try the demo {"\u2192"}</Link></div>
+            <div className="pt-4"><Link href="/w/kafka" className={`${btnAccent} h-10 px-5 text-[13.5px]`}>Try the demo {"\u2192"}</Link></div>
           </Section>
         </main>
       </div>

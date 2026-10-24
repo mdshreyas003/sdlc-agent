@@ -33,7 +33,7 @@ def test_create_list_delete_and_slug_rules():
     assert make("Acme Corp")  # slug is deduplicated, not an error
     rows = client.get("/api/workspaces").json()
     assert [x["slug"] for x in rows] == ["acme-corp", "acme-corp-2"]
-    assert rows[0]["connected"] == {"repos": 0, "jira": 0, "slack": 0} and "last_sync" not in rows[0]
+    assert rows[0]["connected"] == {"repos": 0, "jira": 0, "slack": 0, "docs": 0} and "last_sync" not in rows[0]
     assert client.post("/api/workspaces", json={"name": "   "}).status_code == 422
     assert client.post("/api/workspaces", json={}).status_code == 422
     assert client.delete("/api/workspaces/acme-corp").json() == {"ok": True}

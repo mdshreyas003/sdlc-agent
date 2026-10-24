@@ -28,6 +28,7 @@ function Card({ w, onDeleted }: { w: WorkspaceRow; onDeleted: () => void }) {
     { icon: "repo", n: w.connected.repos, label: w.connected.repos === 1 ? "repo" : "repos" },
     { icon: "issue", n: w.connected.jira, label: "Jira" },
     { icon: "discussion", n: w.connected.slack, label: "Slack" },
+    { icon: "file", n: w.connected.docs ?? 0, label: w.connected.docs === 1 ? "doc" : "docs" },
   ] as const;
   const empty = stats.every((s) => s.n === 0);
 

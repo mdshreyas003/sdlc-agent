@@ -132,7 +132,7 @@ export interface WorkspaceRow {
   slug: string;
   name: string;
   demo: boolean;
-  connected: { repos: number; jira: number; slack: number };
+  connected: { repos: number; jira: number; slack: number; docs?: number };
   last_sync?: { state: string; finished_at?: string | null } | null;
 }
 
