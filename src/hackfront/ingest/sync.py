@@ -30,7 +30,7 @@ from .sources.jira.mapper import ADAPTER_VERSION as JIRA_VERSION
 from .sources.slack.adapter import SlackAdapter
 from .sources.slack.client import SlackClient
 from .sources.slack.mapper import ADAPTER_VERSION as SLACK_VERSION
-from .storage.neo4j import Neo4jStore
+from .storage.neo4j import Neo4jNotConfigured, Neo4jStore
 
 PAGES = {"standard": 20, "deep": 100}  # pages per stream
 HEARTBEAT_SECONDS = 5
@@ -325,6 +325,8 @@ def _execute(job: _Job, ws: dict) -> None:
         except Exception:  # noqa: BLE001 - counts are informational
             graph = None
         job.end(graph=graph)
+    except Neo4jNotConfigured as error:  # message names only the missing settings: safe to show
+        job.end("failed", f"Sync failed: {error}")
     except Exception as error:  # noqa: BLE001 - status gets the exception type only (messages may carry URIs)
         job.end("failed", f"Sync failed ({type(error).__name__}); see server logs")
 

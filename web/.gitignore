@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# auto-written by `next dev` (ADR-002 move map: delete-cut)
+AGENTS.md

@@ -66,3 +66,14 @@ def test_not_established_and_legacy_shape():
     legacy = to_legacy(out, EV)
     assert legacy["citations"] == ["https://x/1", "https://x/2"] and legacy["confidence"] == "medium"
     assert "(inferred)" in legacy["answer"] and "u n" in legacy["uncertainty"]
+
+
+def test_legacy_citations_dedupe_within_a_claim_preserving_order():
+    # one claim citing the same node twice with different verbatim quotes keeps both cites but lists the URL once
+    out = run([claim("a", cites=[{"id": "i2"}, {"id": "i1", "quote": "Fixes PAY-412"},
+                                 {"id": "i1", "quote": "Retry cap stays at 3"}]),
+               claim("b", cites=[{"id": "i1"}])])
+    assert len(out["claims"][0]["cites"]) == 3
+    legacy = to_legacy(out, EV)
+    assert legacy["citations"] == ["https://x/2", "https://x/1"]
+    assert legacy["answer"].count("[https://x/1]") == 2  # once per claim line
