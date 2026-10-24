@@ -73,10 +73,10 @@ function Switcher({ onManage }: { onManage: (ws: string) => void }) {
               </button>
             </>
           )}
-          <Link href="/" onClick={() => setOpen(false)} role="menuitem" className="flex h-8 items-center gap-2 rounded-md px-2 text-mute hover:bg-hover hover:text-fg">
+          <Link href="/workspaces" onClick={() => setOpen(false)} role="menuitem" className="flex h-8 items-center gap-2 rounded-md px-2 text-mute hover:bg-hover hover:text-fg">
             <Icon name="plus" size={13} />New workspace
           </Link>
-          <Link href="/" onClick={() => setOpen(false)} role="menuitem" className="flex h-8 items-center gap-2 rounded-md px-2 text-mute hover:bg-hover hover:text-fg">
+          <Link href="/workspaces" onClick={() => setOpen(false)} role="menuitem" className="flex h-8 items-center gap-2 rounded-md px-2 text-mute hover:bg-hover hover:text-fg">
             <Icon name="home" size={13} />All workspaces
           </Link>
         </div>
@@ -91,7 +91,7 @@ function Topbar({ onPalette, onManage }: { onPalette: () => void; onManage: (ws:
   const parts = file?.split("/") ?? [];
   return (
     <header className="flex h-12 shrink-0 items-center gap-1.5 border-b border-line px-3">
-      <Link href="/" aria-label="All workspaces" className="grid h-8 w-8 place-items-center rounded-md hover:bg-hover">
+      <Link href="/workspaces" aria-label="All workspaces" className="grid h-8 w-8 place-items-center rounded-md hover:bg-hover">
         <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden>
           <path d="M5 14 10 5l5 9M5 14h10" stroke="var(--fg)" strokeWidth="1.3" fill="none" strokeLinejoin="round" opacity=".55" />
           <circle cx="10" cy="5" r="2.2" fill="#8b5cf6" /><circle cx="5" cy="14" r="2.2" fill="#f97316" /><circle cx="15" cy="14" r="2.2" fill="#3b82f6" />
@@ -204,6 +204,8 @@ export default function Shell({ children }: { children: ReactNode }) {
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
   }, []);
+  const landing = usePathname() === "/";
+  if (landing) return <div className="h-screen min-w-[1000px]">{children}</div>;
   return (
     <Manage.Provider value={setManage}>
       <div className="flex h-screen min-w-[1000px] flex-col">

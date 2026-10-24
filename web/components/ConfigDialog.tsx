@@ -25,7 +25,7 @@ function Settings({ onClose }: { onClose: () => void }) {
   };
   const remove = async () => {
     setBusy("delete"); setError("");
-    try { await wsApi.remove(info.workspace.slug); onClose(); router.push("/"); } catch (e) { setError(errText(e)); setBusy(""); }
+    try { await wsApi.remove(info.workspace.slug); onClose(); router.push("/workspaces"); } catch (e) { setError(errText(e)); setBusy(""); }
   };
 
   return (
