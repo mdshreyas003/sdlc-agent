@@ -75,8 +75,8 @@ def _totals(streams: list[dict]) -> dict:
 
 
 class _Job:
-    def __init__(self, slug: str, mode: str, budget: float | None = None):
-        self.slug, self.pages = slug, PAGES[mode]
+    def __init__(self, slug: str, mode: str, budget: float | None = None, persist: bool = True):
+        self.slug, self.pages, self.persist = slug, PAGES[mode], persist
         self.lock = threading.RLock()
         self.status = {"state": "running", "mode": mode, "started_at": _now(), "streams": [], "complete": False}
         self.by_name: dict[str, dict] = {}
@@ -114,6 +114,8 @@ class _Job:
 
     def save(self, force: bool = False) -> None:
         """Atomic write of sync.json, at most ~2/s unless forced."""
+        if not self.persist:  # in-memory replay (collect): no sync status is recorded
+            return
         with self.lock:
             if not force and time.monotonic() - self._saved < 0.5:
                 self._dirty = True  # dropped, not lost: keepalive flushes it
@@ -299,26 +301,51 @@ def _learn_slack_names(slug: str, client: SlackClient, channels: list[str]) -> N
                                                      "channel_names": {**slack["channel_names"], **found}}})
 
 
+def _ingest(job: _Job, ws: dict, clients, writer) -> None:
+    """Every configured stream through `writer` (anything with write_artifact)."""
+    (gh_client, jira_client, slack_client), gh, jira, slack = clients, ws["github"], ws["jira"], ws["slack"]
+    if gh_client:
+        for repo in gh["repos"]:
+            owner, _, name = repo.rpartition("/")
+            _github(job, gh_client, owner or gh["owner"], name, writer)
+    if jira_client:
+        for project in jira["projects"]:
+            _jira(job, jira_client, jira["site"], project, writer)
+    if slack_client:
+        for channel in slack["channels"]:
+            _slack(job, slack_client, slack["workspace"], channel, writer)
+
+
+def collect(slug: str, ws: dict) -> tuple[list, dict]:
+    """Replay a DEMO workspace's sources in memory (no Neo4j, no sync status): the linked artifacts the sync would
+    store, in write order, plus the job's final status. Used to export a workspace as a bundle (migrations/bundle.py)."""
+    if not ws["demo"]:
+        raise ValueError("only demo workspaces (replayed local data) can be collected")
+
+    class _Sink:
+        def __init__(self):
+            self.items = []
+
+        def write_artifact(self, artifact):
+            self.items.append(artifact)
+            return artifact.canonical_id
+
+    sink, job = _Sink(), _Job(slug, "deep", persist=False)
+    _ingest(job, ws, _clients(slug, ws, job), _LinkingWriter(sink, LinkConfig.from_workspace(ws)))
+    job.end()
+    return sink.items, job.snapshot()
+
+
 def _execute(job: _Job, ws: dict) -> None:
-    slug, gh, jira, slack = job.slug, ws["github"], ws["jira"], ws["slack"]
+    slug, slack = job.slug, ws["slack"]
     threading.Thread(target=job.keepalive, daemon=True, name=f"sync-heartbeat-{slug}").start()
     try:
         gh_client, jira_client, slack_client = _clients(slug, ws, job)
         with Neo4jStore.from_environment() as store:
             store.initialize_schema()
-            writer = _LinkingWriter(store, LinkConfig.from_workspace(ws))
-            if gh_client:
-                for repo in gh["repos"]:
-                    owner, _, name = repo.rpartition("/")
-                    _github(job, gh_client, owner or gh["owner"], name, writer)
-            if jira_client:
-                for project in jira["projects"]:
-                    _jira(job, jira_client, jira["site"], project, writer)
-            if slack_client:
-                for channel in slack["channels"]:
-                    _slack(job, slack_client, slack["workspace"], channel, writer)
-                if not ws["demo"] and not job.expired():
-                    _learn_slack_names(slug, slack_client, slack["channels"])
+            _ingest(job, ws, (gh_client, jira_client, slack_client), _LinkingWriter(store, LinkConfig.from_workspace(ws)))
+            if slack_client and not ws["demo"] and not job.expired():
+                _learn_slack_names(slug, slack_client, slack["channels"])
         try:
             scopes = config.scopes(slug)
             from ..api.mapping import flat_scopes

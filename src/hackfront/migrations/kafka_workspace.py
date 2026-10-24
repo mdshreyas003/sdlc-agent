@@ -87,7 +87,6 @@ RECORD = ("MERGE (m:HfMigration {id: $id}) SET m.version = $version, m.applied_a
 
 def run(raw: Path | None = None) -> dict:
     """Apply the migration (safe to repeat) and return the workspace's counts."""
-    from ..api.mapping import flat_scopes
     from ..ingest import sync
     from ..ingest.extraction.links import LinkConfig, add_text_references
     from ..ingest.storage.neo4j import Neo4jStore
@@ -96,10 +95,7 @@ def run(raw: Path | None = None) -> dict:
         corpus.RAW = Path(raw)
     if not any(corpus.RAW.glob("KIP-*/page.json")):
         raise ValueError(f"no Kafka corpus under {corpus.RAW}; run data/tools/fetch_kip_raw.py or set HACKFRONT_EVAL_RAW")
-    ws = workspace_config()
-    if not any(w["slug"] == SLUG for w in config.list_workspaces()):
-        config.create_workspace(NAME, demo=True, slug=SLUG)
-    config.save_workspace(SLUG, ws)
+    ensure_workspace(workspace_config())
 
     status = sync.run_sync_inline(SLUG, "deep", budget=float("inf"))
     if not status["complete"]:
@@ -110,14 +106,46 @@ def run(raw: Path | None = None) -> dict:
     links = LinkConfig.from_workspace(config.load_workspace(SLUG))
     pages = store.write_many(add_text_references(a, links) for a in kip_pages())
 
+    return {"migration": f"{ID} v{VERSION}", "workspace": SLUG, "raw": str(corpus.RAW),
+            "synced": status["totals"], "kip_pages": len(pages), **finalize(driver)}
+
+
+def finalize(driver) -> dict:
+    """Step 4: tag every node and edge in the workspace's scopes, record the migration, return the counts."""
+    from ..api.mapping import flat_scopes
+
     scopes, db = flat_scopes(config.scopes(SLUG)), config.neo4j_database()
     for query in (TAG_NODES, TAG_EDGES):
         driver.execute_query(query, scopes=scopes, slug=SLUG, database_=db)
     counts = _counts(driver, scopes)
     driver.execute_query(RECORD, id=ID, version=VERSION, counts=json.dumps(counts), database_=db,
                          now=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
-    return {"migration": f"{ID} v{VERSION}", "workspace": SLUG, "raw": str(corpus.RAW),
-            "synced": status["totals"], "kip_pages": len(pages), **counts}
+    return counts
+
+
+def ensure_workspace(ws: dict) -> None:
+    """Step 1 (create the workspace if missing, store its config)."""
+    if not any(w["slug"] == SLUG for w in config.list_workspaces()):
+        config.create_workspace(NAME, demo=True, slug=SLUG)
+    config.save_workspace(SLUG, ws)
+
+
+def collect(raw: Path | None = None) -> tuple[dict, list]:
+    """Steps 1-3 without Neo4j: (workspace config, every linked artifact in write order: corpus replay, then KIP pages).
+    Exactly what `run` stores; `migrations/bundle.py` ships it to a deployed API that writes it with the same store."""
+    from ..ingest import sync
+    from ..ingest.extraction.links import LinkConfig, add_text_references
+
+    if raw is not None:
+        corpus.RAW = Path(raw)
+    if not any(corpus.RAW.glob("KIP-*/page.json")):
+        raise ValueError(f"no Kafka corpus under {corpus.RAW}; run data/tools/fetch_kip_raw.py or set HACKFRONT_EVAL_RAW")
+    ws = config.validate_workspace(workspace_config())
+    artifacts, status = sync.collect(SLUG, ws)
+    if not status["complete"]:
+        raise RuntimeError(f"corpus replay incomplete: {status.get('error') or status['totals']}")
+    links = LinkConfig.from_workspace(ws)
+    return ws, artifacts + [add_text_references(a, links) for a in kip_pages()]
 
 
 # ------------------------------------------------------------- demo questions (stored agent investigations)
