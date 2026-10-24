@@ -1,94 +1,109 @@
 # Engineering Memory
 
-Connect GitHub, Jira and Slack into one **evidence graph**, then ask *why is this code like this?*, *debug this error*, or *is it safe to change this?* and get an answer where every claim links to its source — or an honest "not established".
+Ask *why is this code like this?*, *what broke here?* or *is it safe to change?* and get an answer built from your team's GitHub, Jira and Slack history.
+Every claim comes with a word-for-word quote from its source, or the answer is an honest **"Not established"**.
+
+Prototype. Live demo: https://sdlc-agent-five.vercel.app
+
+## Mental model
+
+A **librarian who only answers with exact quotes**. The shelves are your PRs, commits, tickets and threads. Strings between books exist only where someone wrote the link down. If no quote proves the point, the librarian says "Not established". The AI model proposes; plain code decides.
 
 ```mermaid
 flowchart LR
-  GH[GitHub] & JI[Jira] & SL[Slack] --> ING[Ingestion<br/>explicit links only]
-  ING --> NEO[(Neo4j)]
-  NEO <--> AG[Agent harness<br/>any OpenAI-compatible LLM]
-  AG --> UI[Web UI]
+  S["Sources<br/>GitHub · Jira · Slack"] --> G[("Evidence graph<br/>Neo4j, explicit links only")]
+  G --> M["Memory<br/>versioned decisions"]
+  G --> A["Agent<br/>read-only tools + quote checker"]
+  M -. hints .-> A
+  A --> P["App / API<br/>web workbench · FastAPI"]
 ```
 
-## What is different
+## How it works
 
-- **Edges are evidence, not guesses.** A link exists only if a source stated it (PR contains commit, reply-to, or an explicit `PAY-412` / PR URL / Slack permalink in text). Each edge records its `origin` and a source locator. No keyword or timing inference.
-- **The LLM does not get free rein over the database.** It picks from validated, read-only, capped graph tools; ids must come from evidence already seen; a guarded text2cypher path exists for complex questions and is only used to *find* ids, which are then re-read through trusted templates.
-- **Citations are verified in code.** A cited URL that was not retrieved is dropped and confidence is capped. "Not established" is a first-class answer.
-- **Demo and live share one path.** Demo data is native-shaped API payloads served to the real clients and mappers.
+1. **Link.** Each PR, commit, ticket, comment and message becomes one node. Edges come only from what a source states:
+   - `REPLIES_TO`: a reply belongs to its thread.
+   - `CONTAINS`: a PR contains a commit.
+   - `REFERENCES`: one item mentions another, either structurally (a comment belongs to its PR or ticket) or through an identifier in the text: a Jira key such as `PAY-412`, a PR or commit URL, `#123` inside GitHub, or a Slack permalink.
 
-More: [docs/architecture.md](docs/architecture.md) · scope and acceptance criteria: [SPEC.md](SPEC.md)
+   Each edge records its `origin` and an exact `locator`. Nothing is inferred from keywords or timing (`src/hackfront/ingest/extraction/links.py`).
+2. **Remember** *(planned)*. Repeated evidence becomes versioned decisions with a history. Memory will point the agent to evidence and is never cited itself.
+3. **Answer.** A LangGraph agent runs *understand → seed → plan → retrieve → evaluate → synthesize → verify* (evaluate can loop back to plan). It calls fixed, read-only graph tools (`find_text`, `file_history`, `neighbors`, `evidence_chain`, `get`, plus a guarded `cypher_query` escape hatch), it may only open IDs it has already seen, and every query is EXPLAIN-checked, write-blocked and time-limited.
+4. **Verify** (`src/hackfront/agent/verify.py`). Code keeps a citation only if its ID is in the retrieved evidence and its quote is word for word in that item's text. Made-up IDs and misquotes are dropped, URLs that are not evidence are removed, a "supported" claim with no surviving citation is downgraded to "inferred", and confidence drops to low when anything was dropped or the evidence was judged insufficient. With no evidence at all, the answer is "Not established".
 
-## Run it
+   *Not in main yet:* the unmerged `m1-retrieval` branch adds a one-hop expand step after retrieve, stricter quote checks (own text only, author match) and an explicit established / "Not established" decision. The landing page describes the prototype including that work.
+
+More: [docs/architecture.md](docs/architecture.md) · claim rules: [docs/workbench-api.md](docs/workbench-api.md) · scope: [SPEC.md](SPEC.md)
+
+## Results (early)
+
+One run each, on a gold set that hasn't been human-verified yet; no accuracy benchmark yet. Except for the main test suite, these were measured on unmerged branches (commit shown), not on main.
+
+| What | Result |
+|---|---|
+| Test suite on main (`dd6aac1`, with Neo4j) | 260 passed, 12 skipped |
+| Real corpus (`d567eec`, PR #2) | 1,191 Apache Kafka items, 1,786 explicit links, 10 KIPs |
+| Real-model gate (7 end-to-end cases on the demo data, `916922e`) | 5 / 7 pass |
+| Kafka questions (`916922e`) | Q030: 5/5 quotes kept · Q050: 26/27 kept · Q006 (no answer in the data): correctly "Not established" |
+| Evidence reachability, no LLM (raw question, before → after `916922e`) | gold sources 6/33 → 19/33 · questions 1/18 → 9/18 |
+| Test suite on `m1-retrieval` (`9574dae`) | 445 passed, 7 skipped |
+| 75-question benchmark (tiers A/B/C/T/N) | next |
+
+## Quickstart
 
 ```bash
 uv sync
-cp .env.example .env          # Neo4j settings only; everything else is entered in the UI
-docker compose up -d          # Neo4j on bolt://localhost:7688 (+ throwaway test DBs on 7689/7690)
-uv run hackfront serve        # API on http://127.0.0.1:8000 (no UI of its own)
-cd web && npm ci && npm run dev   # the workbench UI on http://localhost:3000 (proxies /api to :8000)
+cp .env.example .env              # Neo4j settings only; other keys are entered in the UI
+docker compose up -d              # Neo4j on bolt://localhost:7688 (+ test DBs on 7689/7690)
+uv run hackfront serve            # API on http://127.0.0.1:8000
+cd web && npm ci && npm run dev   # UI on http://localhost:3000 (proxies /api to :8000)
 ```
 
-If port 3000 is taken, run the UI on another port (`npm run dev -- --port 3100`); any localhost port works. To open the UI from another address (e.g. a LAN IP), start the API with `HACKFRONT_ORIGINS=http://<that-address>:<port>`.
+Open http://localhost:3000/workspaces and click **Try the demo workspace**. This ingests a small synthetic GitHub, Jira and Slack company through the real pipeline. Only an AI model key is needed. Then ask *Why are gateway retries capped at 3?*, or *Why did we choose Redis for the session cache?* (the right answer is "Not established").
 
-## Onboarding (all in the UI)
-
-Open http://localhost:3000. A **workspace** owns its connections, credentials, AI model and data view.
-
-- **Demo in one click:** *Try the demo workspace* creates "Acme Demo", ingests synthetic GitHub, Jira and Slack data through the real pipeline with live progress, then open a file and **click the `MAX_RETRIES = 3` line**. Each claim is marked supported / inferred / unknown with quotes verified against the sources. Only an AI model key is needed.
-- **Your own sources:** *Create workspace*, then on the setup page: enter credentials per source and **Save & test**, pick repos, Jira projects and Slack channels from the discovered lists, add the AI model key, **Start ingestion** and watch it live, then **Open workbench**.
-
-| Source | What to enter |
-|---|---|
-| GitHub | fine-grained read-only token (Contents, Pull requests, Issues, Metadata) + owner |
-| Jira Cloud | site `https://<you>.atlassian.net`, email, API token (id.atlassian.com) |
-| Slack | bot token with `channels:history`, `groups:history`, `channels:read`, `users:read`; invite the bot to the channels; your Slack subdomain |
-| AI model | Azure Foundry (endpoint + key) or Sarvam (key); optional model name. Any other OpenAI-compatible endpoint is configured through the environment (below). |
-
-Keys are stored per workspace in `.hackfront/workspaces/<id>/secrets.json` on this machine, are write-only (the UI and API show only `••••1234`), and environment variables (`GITHUB_TOKEN`, `SARVAM_API_KEY`, ...) work as a fallback. CLI equivalents: `uv run hackfront demo`, `sync --workspace <id> [--deep]`, `workspaces`, `ask "..." --workspace <id>`.
-
-### LLM provider
-
-The agent talks to models through one small interface (`hackfront.agent.llm.LLMClient`, one `complete()` call) implemented by an OpenAI-SDK client, so any OpenAI-compatible chat-completions endpoint works:
-
-| Variable | Meaning |
-|---|---|
-| `LLM_PROVIDER` | `openai` (generic), `azure` or `sarvam`; empty = first configured provider |
-| `LLM_API_KEY` | key for the generic `openai` provider (environment only) |
-| `LLM_MODEL` | model name; required for `openai`, overrides the preset default for `azure` / `sarvam` |
-| `LLM_BASE_URL` | generic provider base URL; empty = `https://api.openai.com/v1` (e.g. `https://openrouter.ai/api/v1`, `http://localhost:11434/v1`) |
-| `LLM_TIMEOUT` | request timeout in seconds (default 180) |
-| `LLM_MAX_TOKENS` | output-token limit per call (default 16000) |
-| `LLM_MAX_TOKENS_PARAM` | `max_tokens` (default) or `max_completion_tokens` (OpenAI reasoning models) |
-| `AZURE_FOUNDRY_ENDPOINT`, `AZURE_FOUNDRY_API_KEY` / `SARVAM_API_KEY` | legacy presets, unchanged |
+CLI:
 
 ```bash
-LLM_PROVIDER=openai LLM_API_KEY=sk-... LLM_MODEL=gpt-4o-mini uv run hackfront ask "Why are gateway retries capped at 3?" --workspace demo
+uv run hackfront demo                                   # create + sync the demo workspace
+uv run hackfront eval-load                              # load the Kafka benchmark corpus from data/raw
+uv run hackfront sync --workspace <id> [--deep]
+uv run hackfront ask "Why are gateway retries capped at 3?" --workspace demo
+uv run hackfront eval --include-unverified             # dev smoke run of b0,b1,s-,s (gold not yet human-verified)
 ```
 
-An unconfigured provider fails with a message naming the missing variable. Migration: existing Azure/Sarvam settings keep working; to use Azure through the generic path instead, set `LLM_BASE_URL=https://<resource>.openai.azure.com/openai/v1/`, `LLM_API_KEY` and `LLM_MODEL=<deployment>`.
+**AI model.** Azure Foundry or Sarvam (`hackfront.agent.llm`). Enter the key per workspace in the UI, or set the fallback in `.env`: `LLM_PROVIDER=azure|sarvam`, `LLM_MODEL`, `AZURE_FOUNDRY_ENDPOINT` + `AZURE_FOUNDRY_API_KEY`, or `SARVAM_API_KEY`.
 
-Demo questions: *Why are gateway retries capped at 3?* · *Why is the session TTL 15 minutes?*; and one it cannot answer (*Why did we choose Redis for the session cache?*), where the agent should say "not established".
-
-## Deploy
-
-Free hosting, two options, everything stateful in Neo4j Aura: **all on Vercel** (UI + API as a Python Function; sync runs inside the request with a 240 s budget): [docs/deploy-vercel.md](docs/deploy-vercel.md); or UI on Vercel with the API in a disk-less container (Render free plan blueprint included, no time cap): [docs/deploy.md](docs/deploy.md). Workspaces, saved keys (encrypted with `HACKFRONT_SECRET_KEY`), investigations and sync status live in Neo4j when `HACKFRONT_STATE=neo4j` (local default stays files); `uv run hackfront migrate-state` copies existing local workspaces across.
-
-## Test
+**Tests.**
 
 ```bash
 uv run pytest tests/ingest tests/agent tests/api -q   # needs `docker compose up -d` (test Neo4j on 7689)
-uv run pytest tests/e2e -v -rs                         # real LLM calls with every configured provider (HACKFRONT_E2E_PROVIDERS=openai,azure,sarvam pins the list); skips with the missing setting
+uv run pytest tests/e2e -q                            # real-LLM gate; skips providers without keys
 ```
 
-Neo4j tests wipe `Artifact` nodes in the **test** database only.
+**Deploy.** All on Vercel ([docs/deploy-vercel.md](docs/deploy-vercel.md)), or UI on Vercel with the API on Render ([docs/deploy.md](docs/deploy.md)). Hosted state lives in Neo4j Aura (`HACKFRONT_STATE=neo4j`).
 
-## Layout
+## Repo layout
 
-`src/hackfront/ingest` contracts, sources (github/jira/slack), extraction (deterministic + text links), Neo4j storage, sync, demo data · `src/hackfront/agent` providers, harness, flow, verification · `src/hackfront/api` FastAPI · `web/` Next.js workbench UI · `research/` background papers.
+```
+src/hackfront/ingest   sources (github, jira, slack), link extraction, Neo4j writer, sync, demo data
+src/hackfront/agent    LangGraph flow, read-only harness, verifier, LLM client
+src/hackfront/api      FastAPI (SSE investigation stream)
+src/hackfront/eval     Kafka corpus loader, benchmark systems, scoring
+web/                   Next.js landing page + workbench
+data/                  Kafka raw data (data/raw) and 75 gold questions (data/gold)
+tests/                 unit, integration (Neo4j) and e2e (real LLM)
+docs/                  architecture, API, deploy
+```
 
 ## Known limits
 
-- Local single-user tool: the API has no login, credentials sit in a local file (not encrypted), and it binds to 127.0.0.1; do not expose it. Run the agent with a read-only Neo4j user in any shared setup.
-- Sync is a bounded full backfill (20 pages per stream, 100 with Deep history) through idempotent writes, not an incremental cursor; the UI flags incomplete streams. Text-derived edges are rebuilt from current text on every write; deleted source records are not removed from the graph.
-- Real-LLM behaviour is covered by `tests/e2e` and needs a configured provider; unit tests use scripted models.
+- Local single-user tool: the API has no login and binds to 127.0.0.1. Use a read-only Neo4j user in any shared setup.
+- Sync is a bounded full backfill (20 pages per stream, 100 with `--deep`). Deleted source records are not removed.
+- Unit tests use scripted models. Real-model behaviour is covered only by `tests/e2e`.
+
+## Future scope
+
+- Memory engine (versioned decisions, `decides` / `supersedes` links)
+- Incremental sync from a saved cursor, then webhooks
+- Human-verified gold set, and a full benchmark against no-retrieval, BM25 RAG and an outside system (Graphiti)
+- More sources (wikis, CI logs, incidents) and one identity per person across tools
+- The same read-only, quote-checked access for other agents over the API

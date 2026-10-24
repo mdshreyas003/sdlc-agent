@@ -24,7 +24,7 @@ export function Ready({ children }: { children: ReactNode }) {
 }
 
 export function Unknown({ what }: { what: string }) {
-  return <Empty icon="alert" title={`Unknown ${what}`}><Link href="/" className="text-accent hover:underline">All workspaces</Link></Empty>;
+  return <Empty icon="alert" title={`Unknown ${what}`}><Link href="/workspaces" className="text-accent hover:underline">All workspaces</Link></Empty>;
 }
 
 /** Empty state that sends the user to the onboarding checklist. */
