@@ -1,13 +1,13 @@
 // Shapes of docs/workbench-api.md (the backend contract) plus pure helpers. No data lives here.
 
-export type Kind = "issue" | "discussion" | "pr" | "commit";
+export type Kind = "doc" | "issue" | "discussion" | "pr" | "commit";
 export type Status = "supported" | "inferred" | "unknown";
 
 export interface Node {
   id: string;
   cid: string; // canonical id as stored in Neo4j (== id)
   kind: Kind;
-  source: "jira" | "github" | "slack";
+  source: "jira" | "github" | "slack" | "confluence";
   ref: string; // short human label
   title: string;
   text: string;
@@ -91,7 +91,7 @@ export interface CodeFile {
   note?: string;
 }
 
-export interface Connected { repos: string[]; jira: string[]; slack: string[] }
+export interface Connected { repos: string[]; jira: string[]; slack: string[]; docs?: string[] }
 export interface Provider { name: string; model: string; configured: boolean }
 
 /** Write-only secret state: values of secret keys are never returned, only a masked hint. */
@@ -132,7 +132,7 @@ export interface WorkspaceRow {
   slug: string;
   name: string;
   demo: boolean;
-  connected: { repos: number; jira: number; slack: number };
+  connected: { repos: number; jira: number; slack: number; docs?: number };
   last_sync?: { state: string; finished_at?: string | null } | null;
 }
 
@@ -162,6 +162,7 @@ export interface Resource { id: string; name: string; private?: boolean; detail?
 export interface TestResult { ok: boolean; detail: string; account?: string }
 
 export const KINDS: { kind: Kind; label: string; color: string }[] = [
+  { kind: "doc", label: "Doc", color: "#34d399" },
   { kind: "issue", label: "Issue", color: "#fb923c" },
   { kind: "discussion", label: "Discussion", color: "#f472b6" },
   { kind: "pr", label: "Pull request", color: "#a78bfa" },

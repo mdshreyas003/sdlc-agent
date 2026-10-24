@@ -1,4 +1,4 @@
-"""hackfront CLI: demo | sync | workspaces | status | ask | serve."""
+"""hackfront CLI: demo | sync | workspaces | status | ask | migrate-kafka | push-bundle | serve."""
 
 from __future__ import annotations
 
@@ -66,6 +66,24 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("--provider", choices=provider_names)
     migrate = sub.add_parser("migrate-state", help="copy local workspaces, saved keys and investigations into Neo4j")
     migrate.add_argument("--overwrite", action="store_true", help="replace workspaces that already exist in Neo4j")
+    kafka = sub.add_parser("migrate-kafka", help="file all local Kafka data (mail, Jira, PRs, commits, KIPs) under the "
+                           "'kafka' workspace; idempotent")
+    kafka.add_argument("--raw", help="Kafka corpus directory (default HACKFRONT_EVAL_RAW or data/raw)")
+    kafka.add_argument("--ask", action="store_true", help="also run the agent on data/kafka_demo_questions.json "
+                       "(only questions without a stored answer; uses the LLM)")
+    kafka.add_argument("--provider", choices=provider_names)
+    kafka.add_argument("--export-investigations", metavar="DIR", help="write the stored kafka investigations to DIR")
+    kafka.add_argument("--import-investigations", metavar="DIR", help="store investigations exported to DIR")
+    kafka.add_argument("--export-bundle", metavar="FILE", help="write the migration as a gzip bundle for push-bundle "
+                       "instead of applying it (no Neo4j needed)")
+    kafka.add_argument("--investigations", metavar="DIR", help="with --export-bundle: include investigations exported "
+                       "to DIR")
+    push = sub.add_parser("push-bundle", help="send a bundle to a deployed API (POST /api/admin/import-bundle); tokens "
+                          "from HACKFRONT_ADMIN_TOKEN and HACKFRONT_ACCESS_TOKEN")
+    push.add_argument("bundle")
+    push.add_argument("--api", required=True, help="API base URL, e.g. https://<api>.vercel.app")
+    push.add_argument("--chunk", type=int, default=100, help="artifacts per request (default 100)")
+    push.add_argument("--max-bytes", type=int, default=3_500_000, help="max gzip bytes per request")
     serve = sub.add_parser("serve", help="start the API and web UI")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
@@ -100,6 +118,29 @@ def main(argv: list[str] | None = None) -> int:
             if result["secrets_skipped"]:
                 print("note: saved keys were NOT copied; set HACKFRONT_SECRET_KEY and run again with --overwrite", file=sys.stderr)
             return 0
+        if args.cmd == "migrate-kafka":
+            from pathlib import Path
+
+            from .migrations import kafka_workspace as m
+
+            if args.export_bundle:
+                from .migrations import bundle
+
+                _print(bundle.export(Path(args.export_bundle), Path(args.raw) if args.raw else None,
+                                     Path(args.investigations) if args.investigations else None))
+                return 0
+            _print(m.run(Path(args.raw) if args.raw else None))
+            if args.import_investigations:
+                _print({"imported_investigations": m.import_investigations(Path(args.import_investigations))})
+            if args.ask:
+                _print({"questions": m.ask(args.provider)})
+            if args.export_investigations:
+                _print({"exported_investigations": m.export_investigations(Path(args.export_investigations))})
+            return 0
+        if args.cmd == "push-bundle":
+            from .migrations import bundle
+
+            return bundle.main_push(args)
         if args.cmd == "workspaces":
             for w in config.list_workspaces():
                 print(f"{w['slug']}\t{w['name']}{'\t(demo)' if w['demo'] else ''}")

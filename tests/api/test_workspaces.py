@@ -33,7 +33,7 @@ def test_create_list_delete_and_slug_rules():
     assert make("Acme Corp")  # slug is deduplicated, not an error
     rows = client.get("/api/workspaces").json()
     assert [x["slug"] for x in rows] == ["acme-corp", "acme-corp-2"]
-    assert rows[0]["connected"] == {"repos": 0, "jira": 0, "slack": 0} and "last_sync" not in rows[0]
+    assert rows[0]["connected"] == {"repos": 0, "jira": 0, "slack": 0, "docs": 0} and "last_sync" not in rows[0]
     assert client.post("/api/workspaces", json={"name": "   "}).status_code == 422
     assert client.post("/api/workspaces", json={}).status_code == 422
     assert client.delete("/api/workspaces/acme-corp").json() == {"ok": True}
@@ -106,7 +106,7 @@ def test_workbench_shape_and_secrets_never_leak(monkeypatch):
     body = r.json()
     assert {k: body["workspace"][k] for k in ("slug", "name", "demo")} == {"slug": slug, "name": "Acme", "demo": False}
     assert set(body["workspace"]["targets"]) == {"github", "jira", "slack"}  # non-secret targets only
-    assert body["connected"] == body["catalog"] == {"repos": ["acme/api", "acme/web"], "jira": [], "slack": []}
+    assert body["connected"] == body["catalog"] == {"repos": ["acme/api", "acme/web"], "jira": [], "slack": [], "docs": []}
     assert body["indexed_repos"] == ["acme/api"]
     assert body["neo4j"] == {"ok": True, "counts": {"artifacts": 7, "edges": 5, "stubs": 2}}
     assert driver.queries[0][1] == {"repos": ["acme/api", "acme/web"]}

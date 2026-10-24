@@ -98,9 +98,10 @@ def list_workspaces():
     for row in config.list_workspaces():
         try:
             scopes = config.scopes(row["slug"])
+            pages = config.load_workspace(row["slug"]).get("docs", {}).get("pages", [])
         except (LookupError, ValueError):  # one corrupt workspace must not hide the others
-            scopes = {"repos": [], "jira": [], "slack": []}
-        row["connected"] = {"repos": len(scopes["repos"]), "jira": len(scopes["jira"]), "slack": len(scopes["slack"])}
+            scopes, pages = {"repos": [], "jira": [], "slack": []}, []
+        row["connected"] = {"repos": len(scopes["repos"]), "jira": len(scopes["jira"]), "slack": len(scopes["slack"]), "docs": len(pages)}
         sync = _last_sync(row["slug"])
         if sync:
             row["last_sync"] = sync
@@ -141,7 +142,7 @@ def _graph_facts(scopes: dict) -> tuple[list[str], dict]:
     except Exception:  # noqa: BLE001  any driver failure -> fixed safe status
         return [], {"ok": False}
     try:
-        flat = [*scopes["repos"], *scopes["jira"], *scopes["slack"]]
+        flat = [*scopes["repos"], *scopes["jira"], *scopes["slack"], *scopes.get("docs", [])]
         with driver.session(database=config.neo4j_database(), default_access_mode=READ_ACCESS) as session:
             try:
                 indexed = {r["scope"] for r in session.run(INDEXED_Q, repos=scopes["repos"]).data()}

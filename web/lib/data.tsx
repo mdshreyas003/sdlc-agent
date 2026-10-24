@@ -195,14 +195,14 @@ function Inner({ ws, children }: { ws: string | undefined; children: ReactNode }
       isIndexed: (r) => indexed.includes(r),
       explained: (id) => touching.has(id),
       prOf: (id) => parent.get(id),
-      isLocked: (n) => !(n.source === "jira" ? connected.jira : n.source === "slack" ? connected.slack : connected.repos).includes(n.scope),
+      isLocked: (n) => !(n.source === "jira" ? connected.jira : n.source === "slack" ? connected.slack : n.source === "confluence" ? connected.docs ?? [] : connected.repos).includes(n.scope),
     };
   }, [ws, status, error, warn, info, workspaces, workspacesError, byId, edges, investigations, derived, version, sync, syncLoaded, refresh, refreshWorkspaces, saveTargets, startSync, absorb, remember]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-export const lockedReason = (n: Node) => `${n.source === "jira" ? "Jira" : n.source === "slack" ? "Slack" : "Repository"} ${n.scope}`;
+export const lockedReason = (n: Node) => `${n.source === "jira" ? "Jira" : n.source === "slack" ? "Slack" : n.source === "confluence" ? "Wiki" : "Repository"} ${n.scope}`;
 
 /** GET a url once per (url, refresh); null skips. */
 export function useRemote<T>(url: string | null) {

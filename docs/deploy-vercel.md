@@ -48,3 +48,15 @@ the token guard returned 401 without a token, a demo workspace was created and s
 file was written. Tests cover the heartbeat across "instances", duplicate-start refusal, the time budget and the shared connection.
 **Not verified** (needs a real Vercel deploy): the function bundle size and install, the Python version Vercel picks, cold-start time,
 SSE streaming of investigations through Vercel's proxy, and how Vercel schedules concurrent requests across instances.
+
+## Loading a prepared workspace through the API (no direct Neo4j access needed)
+When the Aura database is not reachable from your machine (e.g. port 7687 blocked), ship the data through the deployed API:
+1. On the **API project** add `HACKFRONT_ADMIN_TOKEN` = a new long random string (not the access token) and redeploy. Without it
+   `POST /api/admin/import-bundle` answers 404. The UI proxy never forwards the admin header, so the browser cannot use the route.
+2. Locally (needs the Kafka corpus in `data/raw` or `HACKFRONT_EVAL_RAW`; no Neo4j):
+   `hackfront migrate-kafka --export-bundle kafka.bundle.json.gz --investigations <dir of exported investigations>`
+3. `HACKFRONT_ADMIN_TOKEN=… HACKFRONT_ACCESS_TOKEN=… hackfront push-bundle kafka.bundle.json.gz --api https://<api>.vercel.app`
+   Sends gzip chunks (≤100 artifacts, ≤3.5 MB each: under Vercel's 4.5 MB body limit and far below the 300 s function limit), one
+   request per investigation, then a finalize request that tags the workspace and prints the counts. Every write is a MERGE on
+   canonical ids: re-running resumes after a failure and changes nothing once complete.
+4. Remove `HACKFRONT_ADMIN_TOKEN` from the API project afterwards (redeploy) to turn the route off again.
