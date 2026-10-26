@@ -5,6 +5,8 @@ Every claim comes with a word-for-word quote from its source, or the answer is a
 
 Prototype. Live demo: https://sdlc-agent-five.vercel.app
 
+Demo video: [docs/engineering-memory.mp4](docs/engineering-memory.mp4)
+
 ## Mental model
 
 A **librarian who only answers with exact quotes**. The shelves are your PRs, commits, tickets and threads. Strings between books exist only where someone wrote the link down. If no quote proves the point, the librarian says "Not established". The AI model proposes; plain code decides.
