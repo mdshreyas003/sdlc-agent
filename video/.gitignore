@@ -1,0 +1,7 @@
+aud/
+seg/
+out/
+remotion/node_modules/
+venv/
+*.mp4
+__pycache__/
