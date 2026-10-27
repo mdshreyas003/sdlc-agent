@@ -16,7 +16,7 @@ Everything is per workspace: connections, credentials, AI model, sync job and gr
 
 ## Onboarding flow
 
-1. `/` lists workspaces. **Create workspace**, or **Try the demo workspace** (creates "Acme Demo" and starts ingesting automatically).
+1. `/` is the landing page. **Try the demo** / **Try the Kafka demo** open `/w/kafka` (Apache Kafka, when that workspace is seeded). `/workspaces` lists workspaces; **Try the Kafka demo** opens the same workspace. **Create workspace** starts an empty one. The synthetic Acme workspace is still `hackfront demo` from the CLI.
 2. `/w/[ws]/setup` is one checklist with live status per step:
    1. **Connect sources**: GitHub (token + owner), Jira (site, email, API token), Slack (bot token + workspace subdomain). *Save & test* stores the credentials and checks them; then pick what to ingest from the discovered list (or add by id) and *Save selection*.
    2. **AI model**: Azure (endpoint + key) or Sarvam (key), optional model; *Save & test* runs one tiny completion.
