@@ -171,4 +171,4 @@ Deploy: both pieces on Vercel ([docs/deploy-vercel.md](docs/deploy-vercel.md)), 
 
 ## Team
 
-**Edge Case** — Soha, Ayush, Saidharan. Repo owner: Shreyas ([github.com/mdshreyas003/sdlc-agent](https://github.com/mdshreyas003/sdlc-agent)).
+**Edge Case** — Shreyas, Soha, Ayush, Saidharan.
