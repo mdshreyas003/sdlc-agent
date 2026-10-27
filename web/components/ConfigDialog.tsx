@@ -31,10 +31,14 @@ function Settings({ onClose }: { onClose: () => void }) {
   return (
     <section aria-label="Workspace settings" className="space-y-2 rounded-lg border border-line p-4">
       <h3 className="label">Workspace</h3>
+      {info.workspace.demo ? (
+        <Notice tone="dim">Demo setup is locked.</Notice>
+      ) : (
       <form onSubmit={(e) => { e.preventDefault(); rename(); }} className="flex items-center gap-2">
         <input value={cur} onChange={(e) => setName(e.target.value)} aria-label="Workspace name" maxLength={80} className={field} />
         <button type="submit" disabled={!!busy || !cur.trim() || cur.trim() === info.workspace.name} className={btnGhost}>{busy === "rename" && <Spinner />}Rename</button>
       </form>
+      )}
       <div className="flex items-center gap-2">
         {confirm ? (
           <>

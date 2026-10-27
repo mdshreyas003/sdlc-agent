@@ -16,13 +16,15 @@ Everything is per workspace: connections, credentials, AI model, sync job and gr
 
 ## Onboarding flow
 
-1. `/` lists workspaces. **Create workspace**, or **Try the demo workspace** (creates "Acme Demo" and starts ingesting automatically).
+1. `/` is the landing page. **Try the demo** / **Try the Kafka demo** open `/w/kafka` (Apache Kafka, when that workspace is seeded). `/workspaces` lists workspaces; **Try the Kafka demo** opens the same workspace. **Create workspace** starts an empty one. The synthetic Acme workspace is still `hackfront demo` from the CLI.
 2. `/w/[ws]/setup` is one checklist with live status per step:
    1. **Connect sources**: GitHub (token + owner), Jira (site, email, API token), Slack (bot token + workspace subdomain). *Save & test* stores the credentials and checks them; then pick what to ingest from the discovered list (or add by id) and *Save selection*.
    2. **AI model**: Azure (endpoint + key) or Sarvam (key), optional model; *Save & test* runs one tiny completion.
    3. **Ingest**: Standard (20 pages per stream) or Deep history (100). Progress is polled every second from `GET /sync`; it is server-side, so a reload resumes. Incomplete streams offer *Sync deeper*.
    4. **Ask**: *Open workbench* once data and the AI model exist (demo workspaces add suggested questions).
 3. The same cards live in the workbench under **Connections** (top bar switcher), together with rename and delete.
+
+A demo workspace (`demo: true`, including Apache Kafka) is already connected. Its source pickers, source credentials, rename, and ingestion start are replaced by “Demo setup is locked.” The AI model key can still be saved. Ask and investigate are unchanged.
 
 Credential inputs are write-only: values are sent once and never read back or stored in the browser; saved ones show the API's masked hint with a Replace action.
 A banner under the top bar shows a running sync from any page.

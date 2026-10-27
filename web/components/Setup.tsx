@@ -15,6 +15,13 @@ import { Chip, Notice, Spinner, btnGhost, btnPrimary, errText } from "./ui";
 type StepState = "done" | "todo" | "blocked" | "running";
 const started = new Set<string>(); // module-level: survives StrictMode's double effect and remounts
 const DEMO_QUESTIONS = ["Why are gateway retries capped at 3?", "Why is the session TTL 15 minutes?"];
+// Same four questions as data/kafka_demo_questions.json. The kafka workspace is demo:true, so it must not reuse the Acme prompts.
+const KAFKA_QUESTIONS = [
+  "Why are compacted topics not supported with tiered storage in the first version?",
+  "Why does the metadata quorum implement its own Raft replication inside Kafka instead of using an existing library such as Apache Ratis?",
+  "Why is the epoch used for leader election limited to 31 bits instead of being widened to 63 bits?",
+  "Why did producers in 3.0 and 3.1 stay non-idempotent by default even though enable.idempotence defaults to true?",
+];
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 const STEPS = [
@@ -44,9 +51,9 @@ export default function Setup() {
     if (!auto || !ws || status !== "ready" || !syncLoaded || started.has(ws)) return;
     started.add(ws);
     router.replace(`/w/${encodeURIComponent(ws)}/setup`); // a reload must not start another run
-    if (sync?.state === "running") return;
+    if (info?.workspace.demo || sync?.state === "running") return;
     startSync("standard").catch((e) => setAutoError(errText(e)));
-  }, [auto, ws, status, syncLoaded, sync, startSync, router]);
+  }, [auto, ws, status, syncLoaded, sync, startSync, router, info]);
 
   if (!ws || !info) return null;
   const demo = info.workspace.demo;
@@ -60,6 +67,8 @@ export default function Setup() {
   const s2 = ints.llm.configured;
   const s3 = indexed.length > 0 && !running;
   const ready = s1 && s2 && indexed.length > 0;
+  const kafka = ws === "kafka";
+  const suggested = kafka ? KAFKA_QUESTIONS : DEMO_QUESTIONS;
 
   const state: StepState[] = [
     s1 ? "done" : "todo",
@@ -155,14 +164,14 @@ export default function Setup() {
                     <div>
                       <p className="label mb-2">Or start with a question</p>
                       <div className="flex flex-col items-start gap-2">
-                        {DEMO_QUESTIONS.map((q) => (
+                        {suggested.map((q) => (
                           <button key={q} type="button" onClick={() => open(q)} disabled={!!opening}
                             className="inline-flex h-8 items-center gap-2 rounded-full border border-line px-3 text-[12.5px] text-mute hover:border-line2 hover:text-fg disabled:opacity-40">
                             {opening === q ? <Spinner /> : <Icon name="help" size={12} />}{q}
                           </button>
                         ))}
                       </div>
-                      <p className="mt-3 text-[11.5px] text-dim">Or open <span className="font-mono">src/payments/gateway_client.py</span> and click the <span className="font-mono">MAX_RETRIES = 3</span> line.</p>
+                      {!kafka && <p className="mt-3 text-[11.5px] text-dim">Or open <span className="font-mono">src/payments/gateway_client.py</span> and click the <span className="font-mono">MAX_RETRIES = 3</span> line.</p>}
                     </div>
                   )}
                   {openError && <Notice tone="warn">{openError}</Notice>}

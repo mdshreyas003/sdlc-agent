@@ -74,17 +74,17 @@ export default function Home() {
   const router = useRouter();
   const { workspaces, workspacesError, refreshWorkspaces } = useData();
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState<"" | "create" | "demo">("");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const create = async (demo: boolean) => {
-    const n = demo ? "Acme Demo" : name.trim();
+  const create = async () => {
+    const n = name.trim();
     if (!n) return;
-    setBusy(demo ? "demo" : "create"); setError("");
+    setBusy(true); setError("");
     try {
-      const w = await wsApi.create(n, demo);
-      router.push(`/w/${w.slug}/setup${demo ? "?auto=1" : ""}`);
-    } catch (e) { setError(errText(e)); setBusy(""); }
+      const w = await wsApi.create(n);
+      router.push(`/w/${w.slug}/setup`);
+    } catch (e) { setError(errText(e)); setBusy(false); }
   };
 
   return (
@@ -94,11 +94,11 @@ export default function Home() {
         <p className="mt-1 text-dim">Each workspace has its own sources, credentials and AI model.</p>
 
         <div className="card mt-8 flex flex-wrap items-center gap-3 p-4">
-          <form onSubmit={(e) => { e.preventDefault(); create(false); }} className="flex min-w-[260px] flex-1 items-center gap-2">
+          <form onSubmit={(e) => { e.preventDefault(); create(); }} className="flex min-w-[260px] flex-1 items-center gap-2">
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New workspace name" aria-label="New workspace name" maxLength={80} className={field} />
-            <button type="submit" disabled={!!busy || !name.trim()} className={btnGhost}>{busy === "create" ? <Spinner /> : <Icon name="plus" size={13} />}Create workspace</button>
+            <button type="submit" disabled={busy || !name.trim()} className={btnGhost}>{busy ? <Spinner /> : <Icon name="plus" size={13} />}Create workspace</button>
           </form>
-          <button onClick={() => create(true)} disabled={!!busy} className={btnPrimary}>{busy === "demo" ? <Spinner /> : <Icon name="flask" size={13} />}Try the demo workspace</button>
+          <Link href="/w/kafka" className={btnPrimary}><Icon name="flask" size={13} />Try the Kafka demo</Link>
           {error && <div className="w-full"><Notice tone="warn">{error}</Notice></div>}
         </div>
 
@@ -112,7 +112,7 @@ export default function Home() {
           {!workspacesError && !workspaces && <p className="flex items-center gap-2 text-dim"><Spinner />Loading…</p>}
           {workspaces && workspaces.length === 0 && (
             <div className="py-10"><Empty icon="repo" title="No workspaces yet">
-              <p className="max-w-[360px] text-dim">Create one above, or try the demo workspace to see the product with sample data.</p>
+              <p className="max-w-[360px] text-dim">Create one above, or open the Kafka demo.</p>
             </Empty></div>
           )}
           {workspaces && workspaces.length > 0 && (

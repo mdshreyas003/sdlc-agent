@@ -150,8 +150,12 @@ def test_budget_hit_midway_keeps_what_was_stored(home, db, monkeypatch):
 
 
 def test_api_inline_mode_holds_the_request_and_returns_the_final_status(home, db, monkeypatch):
+    from hackfront.ingest.demo import demo_clients
+
     monkeypatch.setenv("HACKFRONT_SYNC", "inline")
     slug = demo_workspace()
+    config.save_workspace(slug, {**config.load_workspace(slug), "demo": False})
+    monkeypatch.setattr(sync, "_clients", lambda _slug, _ws, _job: demo_clients())
     client = TestClient(app)
     r = client.post(f"/api/w/{slug}/sync", json={"mode": "standard"})
     assert r.status_code == 200 and r.json()["state"] == "done" and r.json()["complete"]

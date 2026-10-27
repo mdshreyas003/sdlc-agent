@@ -140,13 +140,13 @@ def test_workbench_demo_is_configured():
 def test_put_workspace_merges_and_validates():
     slug = make()
     config.save_workspace(slug, {**config.load_workspace(slug), "slack": {
-        "workspace": "w", "channels": ["C1"], "channel_names": {"C1": "dev"}, "users": {"U1": "Ann"}}, "demo": True})
+        "workspace": "w", "channels": ["C1"], "channel_names": {"C1": "dev"}, "users": {"U1": "Ann"}}, "demo": False})
     r = client.put(f"/api/w/{slug}/workspace", json={
         "name": "Renamed", "github": {"owner": "o"},
-        "slack": {"channels": ["C1", "C2"], "channel_names": {"C9": "evil"}, "users": {}}, "demo": False})
+        "slack": {"channels": ["C1", "C2"], "channel_names": {"C9": "evil"}, "users": {}}, "demo": True})
     assert r.status_code == 200
     out = r.json()
-    assert out["name"] == "Renamed" and out["demo"] is True and out["github"] == {"owner": "o", "repos": []}
+    assert out["name"] == "Renamed" and out["demo"] is False and out["github"] == {"owner": "o", "repos": []}
     assert out["slack"] == {"workspace": "w", "channels": ["C1", "C2"], "channel_names": {"C1": "dev"}, "users": {"U1": "Ann"}}
     assert config.load_workspace(slug) == out
     bad = client.put(f"/api/w/{slug}/workspace", json={"jira": {"site": "http://x"}})
@@ -155,6 +155,26 @@ def test_put_workspace_merges_and_validates():
     assert client.put(f"/api/w/{slug}/workspace", json={"github": []}).status_code == 422
     assert client.put("/api/w/nope/workspace", json={}).status_code == 404
     assert config.load_workspace(slug) == out  # failures change nothing
+
+
+def test_demo_setup_is_locked():
+    slug = make("Kafka", demo=True)
+    before = config.load_workspace(slug)
+    locked = "Demo workspace setup is locked"
+    targets = client.put(f"/api/w/{slug}/workspace", json={"name": "Hacked", "github": {"owner": "evil", "repos": ["x"]}})
+    assert targets.status_code == 403 and targets.json()["detail"] == locked
+    assert config.load_workspace(slug) == before
+    source = client.put(f"/api/w/{slug}/secrets", json={"github_token": SECRET, "sarvam_key": SECRET})
+    assert source.status_code == 403 and source.json()["detail"] == locked
+    assert config.get_secret(slug, "github_token") is None and config.get_secret(slug, "sarvam_key") is None
+    model = client.put(f"/api/w/{slug}/secrets", json={"sarvam_key": SECRET, "llm_provider": "sarvam"})
+    assert model.status_code == 200 and SECRET not in model.text
+    assert config.get_secret(slug, "sarvam_key") == SECRET and config.get_secret(slug, "github_token") is None
+    sync = client.post(f"/api/w/{slug}/sync", json={"mode": "standard"})
+    assert sync.status_code == 403 and sync.json()["detail"] == locked
+    assert client.get(f"/api/w/{slug}/workbench").status_code == 200
+    assert client.put("/api/w/nope/workspace", json={}).status_code == 404
+    assert client.post("/api/w/nope/sync").status_code == 404
 
 
 def test_secrets_partial_update_and_clear():

@@ -291,7 +291,29 @@ function IntegrationCard({ kind }: { kind: Source }) {
 
 const SOURCES: Source[] = ["github", "jira", "slack"];
 
-/** Step 1: one tab per source (credentials | picker). Demo workspaces show only the demo catalog pickers. */
+/** Already-connected targets for a demo workspace. No credential fields and no save. */
+function LockedSource({ kind }: { kind: Source }) {
+  const { connected, info } = useData();
+  if (!info) return null;
+  const ids = kind === "github" ? connected.repos : kind === "jira" ? connected.jira : connected.slack;
+  const label = (id: string) => {
+    if (kind !== "slack") return id;
+    const name = info.names?.channels?.[id];
+    return name ? `#${name.replace(/^#/, "")}` : id;
+  };
+  return (
+    <div className="space-y-3">
+      <Notice tone="dim">Demo setup is locked.</Notice>
+      <p className="flex items-center gap-2 text-ok"><Icon name="check" size={14} />Already connected</p>
+      <ul aria-label={SPEC[kind].picker} className="max-h-[250px] overflow-auto rounded-lg border border-line bg-bg">
+        {ids.length === 0 && <li className="px-3 py-3 text-center text-dim">Nothing connected</li>}
+        {ids.map((id) => <li key={id} className="flex min-h-8 items-center px-2.5 font-mono text-[12.5px]">{label(id)}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+/** Step 1: one tab per source (credentials | picker). Demo workspaces list what is already connected. */
 export function Sources() {
   const { info } = useData();
   const [tab, setTab] = useState<Source>("github");
@@ -313,12 +335,7 @@ export function Sources() {
         })}
       </div>
       <div role="tabpanel" aria-label={SPEC[tab].title}>
-        {demo ? (
-          <div className="space-y-3">
-            <p className="flex items-center gap-2 text-ok"><Icon name="flask" size={14} />Demo data: no credentials needed</p>
-            <Picker key={tab} kind={tab} reloadKey={0} />
-          </div>
-        ) : <IntegrationCard key={tab} kind={tab} />}
+        {demo ? <LockedSource key={tab} kind={tab} /> : <IntegrationCard key={tab} kind={tab} />}
       </div>
     </div>
   );

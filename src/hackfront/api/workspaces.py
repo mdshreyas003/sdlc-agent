@@ -199,9 +199,15 @@ def workbench(ws: str):
     }
 
 
+def _lock_demo(stored: dict) -> None:
+    if stored.get("demo"):
+        raise HTTPException(403, config.DEMO_SETUP_LOCKED)
+
+
 @router.put("/api/w/{ws}/workspace")
 def put_workspace(ws: str, body: dict = Body(...)):  # noqa: B008  FastAPI idiom
     stored = _workspace(ws)
+    _lock_demo(stored)
     merged = dict(stored)
     if "name" in body:
         merged["name"] = body["name"] if isinstance(body["name"], str) else ""
@@ -223,7 +229,9 @@ def put_workspace(ws: str, body: dict = Body(...)):  # noqa: B008  FastAPI idiom
 
 @router.put("/api/w/{ws}/secrets")
 def put_secrets(ws: str, body: dict = Body(...)):  # noqa: B008  FastAPI idiom
-    _workspace(ws)
+    stored = _workspace(ws)
+    if stored.get("demo") and config.SOURCE_SECRET_KEYS.intersection(body):
+        raise HTTPException(403, config.DEMO_SETUP_LOCKED)
     try:
         config.set_secrets(ws, body)
     except ValueError as error:  # messages name only the key, never a value

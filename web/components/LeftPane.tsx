@@ -15,16 +15,16 @@ function Tree({ nodes, base, active, depth = 0 }: { nodes: TreeNode[]; base: str
           <Fragment key={n.path}>
             <button onClick={() => setClosed((c) => (c.includes(n.path) ? c.filter((x) => x !== n.path) : [...c, n.path]))}
               style={{ paddingLeft: 8 + depth * 14 }}
-              className="flex h-7 w-full items-center gap-1.5 rounded-md pr-2 text-left text-mute hover:bg-hover hover:text-fg">
-              <Icon name="chevron" size={11} className={`text-dim transition-transform ${closed.includes(n.path) ? "-rotate-90" : ""}`} />
-              <span className="truncate font-mono text-[12px]">{n.name}</span>
+              className="flex h-7 w-max min-w-full items-center gap-1.5 whitespace-nowrap rounded-md pr-2 text-left text-mute hover:bg-hover hover:text-fg">
+              <Icon name="chevron" size={11} className={`shrink-0 text-dim transition-transform ${closed.includes(n.path) ? "-rotate-90" : ""}`} />
+              <span className="font-mono text-[12px]">{n.name}</span>
             </button>
             {!closed.includes(n.path) && <Tree nodes={n.children} base={base} active={active} depth={depth + 1} />}
           </Fragment>
         ) : (
           <Link key={n.path} href={fileHref(base, n.path)} style={{ paddingLeft: 8 + depth * 14 + 15 }} aria-current={active === n.path ? "page" : undefined}
-            className={`flex h-7 items-center gap-2 rounded-md pr-2 ${active === n.path ? "bg-raised text-fg" : "text-mute hover:bg-hover hover:text-fg"}`}>
-            <span className="truncate font-mono text-[12px]">{n.name}</span>
+            className={`flex h-7 w-max min-w-full items-center gap-2 whitespace-nowrap rounded-md pr-2 ${active === n.path ? "bg-raised text-fg" : "text-mute hover:bg-hover hover:text-fg"}`}>
+            <span className="font-mono text-[12px]">{n.name}</span>
           </Link>
         ),
       )}
@@ -48,7 +48,7 @@ export default function LeftPane({ ws }: { ws: string }) {
   const repo = slug ? repoByslug(slug) : undefined;
 
   return (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-line bg-panel" aria-label="Repositories">
+    <aside className="flex h-full w-[240px] shrink-0 flex-col overflow-hidden border-r border-line bg-panel" aria-label="Repositories">
       {repo ? (
         <>
           <Link href={`/w/${ws}`} className="flex h-10 shrink-0 items-center gap-1.5 border-b border-line px-3 text-[12px] text-dim hover:text-fg">
@@ -58,7 +58,7 @@ export default function LeftPane({ ws }: { ws: string }) {
             <Icon name="repo" size={14} className="text-dim" />
             <Link href={`/w/${ws}/${slug}`} className="truncate font-medium hover:underline">{repo}</Link>
           </div>
-          <nav className="min-h-0 flex-1 overflow-auto px-2 pb-3">
+          <nav className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto px-2 pb-3">
             {!connected.repos.includes(repo) ? (
               <p className="px-2 py-3 text-dim">Not connected.</p>
             ) : !isIndexed(repo) ? (

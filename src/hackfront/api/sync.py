@@ -23,9 +23,10 @@ def start(ws: str, body: SyncBody | None = None):
 
     mode = body.mode if body else "standard"
     try:
-        config.check_slug(ws)
+        stored = config.load_workspace(ws)  # unknown workspace is 404 before the demo lock
+        if stored.get("demo"):
+            raise HTTPException(403, config.DEMO_SETUP_LOCKED)
         if not all(os.environ.get(k) for k in ("NEO4J_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD")):
-            config.load_workspace(ws)  # 404 first for an unknown workspace
             raise HTTPException(503, "Neo4j is not configured")
         if sync.sync_mode() == "inline":
             return JSONResponse(sync.run_sync_inline(ws, mode), status_code=200)

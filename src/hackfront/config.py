@@ -27,6 +27,11 @@ EMPTY_WORKSPACE = {
     "docs": {"site": "", "spaces": [], "pages": []},  # wiki spaces (document artifacts' scope) and their page keys
 }
 
+# Returned by the setup routes when a demo workspace refuses a change to targets, source credentials, or sync.
+DEMO_SETUP_LOCKED = "Demo workspace setup is locked"
+# Source credentials. A demo workspace rejects these; model keys stay writable so a private copy can set its own.
+SOURCE_SECRET_KEYS = frozenset({"github_token", "jira_email", "jira_token", "slack_token"})
+
 # secret key -> (environment fallback, is_secret). Non-secrets (endpoint, provider, model, jira email) may be shown.
 SECRETS = {
     "github_token": ("GITHUB_TOKEN", True),
