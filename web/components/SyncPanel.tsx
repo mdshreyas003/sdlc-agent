@@ -25,12 +25,15 @@ export default function SyncPanel() {
     try { await startSync(m); } catch (e) { setError(errText(e)); } finally { setStarting(false); }
   };
   if (!ws || !info) return null;
+  const demo = info.workspace.demo;
 
   const state = !sync ? "" : running ? "Running" : sync.state === "done" ? (sync.complete ? "Finished" : "Finished with incomplete streams") : sync.state === "failed" ? "Failed" : "";
   const when = sync?.finished_at ? `${fmtDate(sync.finished_at)} ${fmtTime(sync.finished_at)} UTC` : "";
 
   return (
     <div className="space-y-4">
+      {demo ? <Notice tone="dim">Demo setup is locked.</Notice> : (
+      <>
       <fieldset disabled={running || starting} className="flex flex-wrap items-center gap-x-5 gap-y-1">
         <legend className="sr-only">Ingestion mode</legend>
         {MODES.map((m) => (
@@ -48,6 +51,8 @@ export default function SyncPanel() {
         {!hasTargets && <span className="text-[11.5px] text-dim">Select at least one repository, project or channel first.</span>}
       </div>
       {error && <Notice tone="warn">{error}</Notice>}
+      </>
+      )}
 
       <div id="progress" aria-live="polite" className="space-y-2">
         {state && (
@@ -98,7 +103,7 @@ export default function SyncPanel() {
           <div className="rounded-md border border-line bg-panel p-3">
             <p className="flex items-center gap-1.5 text-warn"><Icon name="alert" size={13} />Finished with incomplete streams</p>
             <p className="mt-1 text-[11.5px] text-dim">Some streams hit the page limit or reported errors, so older history may be missing.</p>
-            {sync.mode !== "deep" && <button type="button" onClick={() => start("deep")} disabled={starting} className={`${btnGhost} mt-2`}>{starting && <Spinner />}Sync deeper</button>}
+            {!demo && sync.mode !== "deep" && <button type="button" onClick={() => start("deep")} disabled={starting} className={`${btnGhost} mt-2`}>{starting && <Spinner />}Sync deeper</button>}
           </div>
         )}
       </div>

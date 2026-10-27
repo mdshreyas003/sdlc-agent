@@ -24,6 +24,8 @@ Everything is per workspace: connections, credentials, AI model, sync job and gr
    4. **Ask**: *Open workbench* once data and the AI model exist (demo workspaces add suggested questions).
 3. The same cards live in the workbench under **Connections** (top bar switcher), together with rename and delete.
 
+A demo workspace (`demo: true`, including Apache Kafka) is already connected. Its source pickers, source credentials, rename, and ingestion start are replaced by “Demo setup is locked.” The AI model key can still be saved. Ask and investigate are unchanged.
+
 Credential inputs are write-only: values are sent once and never read back or stored in the browser; saved ones show the API's masked hint with a Replace action.
 A banner under the top bar shows a running sync from any page.
 

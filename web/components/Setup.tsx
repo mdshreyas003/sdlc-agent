@@ -51,9 +51,9 @@ export default function Setup() {
     if (!auto || !ws || status !== "ready" || !syncLoaded || started.has(ws)) return;
     started.add(ws);
     router.replace(`/w/${encodeURIComponent(ws)}/setup`); // a reload must not start another run
-    if (sync?.state === "running") return;
+    if (info?.workspace.demo || sync?.state === "running") return;
     startSync("standard").catch((e) => setAutoError(errText(e)));
-  }, [auto, ws, status, syncLoaded, sync, startSync, router]);
+  }, [auto, ws, status, syncLoaded, sync, startSync, router, info]);
 
   if (!ws || !info) return null;
   const demo = info.workspace.demo;

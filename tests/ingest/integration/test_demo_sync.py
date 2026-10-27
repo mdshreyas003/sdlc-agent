@@ -201,7 +201,10 @@ def test_api_sync_endpoints(home, monkeypatch):
     assert http.post(f"/api/w/{empty}/sync", json={"mode": "huge"}).status_code == 422
     slug = demo_workspace()
     monkeypatch.delenv("NEO4J_URI")
-    assert http.post(f"/api/w/{slug}/sync").status_code == 503
+    assert http.post(f"/api/w/{slug}/sync").status_code == 403
+    plain = config.create_workspace("Plain")
+    config.save_workspace(plain, {**config.load_workspace(plain), "github": {"owner": "acme", "repos": ["api"]}})
+    assert http.post(f"/api/w/{plain}/sync").status_code == 503
 
 
 def test_api_sync_runs_and_conflicts(home, db, monkeypatch):
@@ -209,6 +212,8 @@ def test_api_sync_runs_and_conflicts(home, db, monkeypatch):
 
     http = TestClient(app)
     slug = demo_workspace()
+    config.save_workspace(slug, {**config.load_workspace(slug), "demo": False})
+    monkeypatch.setattr(sync, "_clients", lambda _slug, _ws, _job: demo_clients())
     release, entered, original = threading.Event(), threading.Event(), Neo4jStore.write_artifact
 
     def slow(self, artifact):
