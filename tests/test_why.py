@@ -20,7 +20,11 @@ from mcp import Client, StdioServerParameters
 from whycode.answer.engine import AnswerEngine
 from whycode.answer.patterns import GraphReader
 from whycode.contract import Answer
+from whycode.eval.corpus import MemoryCorpus
+from whycode.eval.gold import Case
+from whycode.eval.scoring import check_citations
 from whycode.fixtures import fixture_graph
+from whycode.graph.corpus import corpus_records
 from whycode.graph.store import GraphStore
 from whycode.mcp_server import build_server
 
@@ -191,6 +195,17 @@ async def test_every_node_id_in_an_answer_resolves_to_a_real_record(reader, fixt
         assert ids, anchor
         for node_id in ids:
             assert node_id in graph.nodes and not graph.nodes[node_id].is_stub, (anchor, node_id)
+
+
+async def test_the_scoreboard_finds_every_citation_valid_against_the_corpus_exported_from_the_graph(reader):
+    """Ids and quotes line up with ticket 03's corpus and its own citation check."""
+    corpus = MemoryCorpus(corpus_records(fixture_graph()))
+    for anchor in (EXEC, "pkg/sql/schema_changer.go", "sql.defaults.use_declarative_schema_changer", "scbuild.Build"):
+        answer = await ask(reader, anchor)
+        case = Case(id="c", question_id="q", type="lookup", question=anchor, anchor=None, as_of=None,
+                    exclude=frozenset(), answerable=True, gold_facts=["x"], superseded_facts=[])
+        cites, valid = check_citations(answer, case, corpus)
+        assert cites and valid == cites, anchor
 
 
 async def test_the_why_mcp_entry_point_answers_over_stdio(fixture_store, neo4j_uri_auth):

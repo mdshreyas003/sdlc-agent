@@ -54,7 +54,7 @@ class Edge:
     def id(self) -> str:
         """Identity is (source, type, target, locator): the same pair linked from two places is two edges."""
         locator = str(self.props.get("locator", ""))
-        return hashlib.sha256("\0".join((self.source, self.type, self.target, locator)).encode()).hexdigest()[:32]
+        return hashlib.sha256(f"{self.source}\0{self.type}\0{self.target}\0{locator}".encode()).hexdigest()[:32]
 
 
 class Graph:

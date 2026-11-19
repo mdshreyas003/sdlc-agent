@@ -72,7 +72,7 @@ def extract_decisions(discussion: Discussion, proposer: DecisionProposer, code: 
         decision_id = ids.decision_id(discussion.id, quote)
         if decision_id in out:
             continue
-        named = code.mentions(" ".join((quote, candidate.choice, candidate.rationale)))
+        named = code.mentions(f"{quote} {candidate.choice} {candidate.rationale}")
         out[decision_id] = ExtractedDecision(
             id=decision_id,
             discussion_id=discussion.id,

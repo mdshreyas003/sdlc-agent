@@ -154,9 +154,7 @@ class CodeIndex:
 
     def _mentionable(self, entity: CodeEntity) -> Iterable[str]:
         yield entity.key
-        if entity.kind == "file":
-            yield from entity.aliases
-        elif entity.kind == "function":
+        if entity.kind in ("file", "function"):
             yield from entity.aliases
         elif entity.kind == "setting" and entity.go_var and re.search(r"[a-z][A-Z]", entity.go_var):
             yield entity.go_var

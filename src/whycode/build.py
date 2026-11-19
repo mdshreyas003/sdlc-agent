@@ -70,8 +70,10 @@ class _Builder:
     def _add_code(self) -> None:
         for e in self.code.entities:
             self.graph.add_node(Node(e.id, frozenset({"CodeEntity", e.kind.capitalize()}), {
-                "kind": e.kind, "key": e.key, "name": e.name, "aliases": list(e.aliases), "package": e.package,
-                "file": e.file, "receiver": e.receiver, "go_var": e.go_var, "origin": STATED,
+                # Every CodeEntity field, so a CodeIndex can be rebuilt from the graph (e.g. for check_change).
+                "kind": e.kind, "key": e.key, "name": e.name, "aliases": list(e.aliases), "parent": e.parent,
+                "package": e.package, "package_name": e.package_name, "file": e.file, "receiver": e.receiver,
+                "pointer_receiver": e.pointer_receiver, "go_var": e.go_var, "origin": STATED,
             }))
             if e.parent and (parent := self.code.get(e.parent)):
                 self._edge(parent.id, "CONTAINS", e.id, "code", self.history.cutoff)
@@ -144,7 +146,8 @@ class _Builder:
             self._edge(link.source, link.type, link.target, link.locator, link.observed_at)
         issues = {ids.issue_id(i.number): i for i in self.history.issues}
         for edge in self.graph.edges("CLOSES"):
-            if edge.target in issues and "Change" in self.graph.nodes.get(edge.source, Node("", frozenset())).labels:
+            closer = self.graph.nodes.get(edge.source)
+            if edge.target in issues and closer is not None and "Change" in closer.labels:
                 self.implemented_by[edge.target].add(edge.source)
                 if incident_labels(issues[edge.target].labels):
                     self.graph.add_label(edge.target, "Incident")

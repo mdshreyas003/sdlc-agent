@@ -110,7 +110,7 @@ class GraphReader:
             params = {k: v for k, v in _SAMPLE.items() if re.search(rf"\${k}\b", cypher)}
             try:
                 summary = self._run(name, explain=True, **params).summary
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 raise RuntimeError(f"query pattern {name} failed EXPLAIN: {exc}") from exc
             if summary.query_type != "r":
                 raise RuntimeError(f"query pattern {name} is not read-only ({summary.query_type})")

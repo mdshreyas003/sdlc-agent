@@ -26,7 +26,7 @@ def is_bot(login: str | None) -> bool:
 def parse_time(value: str | None) -> dt.datetime | None:
     if not value:
         return None
-    parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    parsed = dt.datetime.fromisoformat(value)
     if parsed.tzinfo is None:
         raise ValueError(f"timestamp without an offset: {value!r}")
     return parsed.astimezone(dt.UTC)

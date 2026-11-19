@@ -16,7 +16,7 @@ import datetime as dt
 import re
 from typing import Any
 
-from whycode.answer.compose import ComposeRequest, Composer, EvidenceNode
+from whycode.answer.compose import Composer, ComposeRequest, EvidenceNode
 from whycode.answer.confidence import ConfidenceInputs, DecisionGrounding, score_confidence
 from whycode.answer.patterns import GraphReader
 from whycode.answer.verify import verify
