@@ -34,7 +34,7 @@
       "quote": "`scrun.RunStatementPhase` executes the statement phase inside the user's transaction so that later statements in the same transaction observe the change."
     }
   ],
-  "github:cockroachdb/cockroach#98100": [
+  "pr:98100": [
     {
       "choice": "Retry schema change jobs with exponential backoff capped by schemachanger.job.max_retry_backoff instead of retrying immediately",
       "rationale": "A fixed retry interval either retries too aggressively during long outages or too slowly after short ones, and immediate retries hot-looped when a descriptor was offline.",
@@ -54,7 +54,7 @@
       "quote": "We picked exponential backoff since fixed intervals are bad."
     }
   ],
-  "github:cockroachdb/cockroach#101200": [
+  "pr:101200": [
     {
       "choice": "Treat descriptor validation errors as permanent schema change errors",
       "rationale": "Validation errors cannot be fixed by retrying, so the job should fail instead of spinning until the backoff cap.",
@@ -62,7 +62,7 @@
       "quote": "Descriptor validation errors cannot be fixed by retrying, so the schema changer should stop retrying and fail the job instead of spinning until the backoff cap."
     }
   ],
-  "github:cockroachdb/cockroach#101450": [
+  "pr:101450": [
     {
       "choice": "Keep retrying schema change jobs on descriptor validation errors instead of treating them as permanent",
       "rationale": "Descriptors can fail validation transiently while the cluster version gate is crossed during upgrades.",
@@ -76,7 +76,7 @@
       "quote": "Descriptor validation errors cannot be fixed by retrying, so the schema changer should stop retrying and fail the job instead of spinning until the backoff cap."
     }
   ],
-  "github:cockroachdb/cockroach#110500": [
+  "pr:110500": [
     {
       "choice": "Run the strict planning sanity check only when sql.schemachanger.strict_planning_sanity_check.enabled is set, off by default in production",
       "rationale": "The check walks every stage of the plan and is too expensive to run on every statement in production.",
@@ -84,8 +84,8 @@
       "quote": "The schema changer plan sanity check walks every stage of the plan and is too expensive to run on every statement in production."
     }
   ],
-  "github:cockroachdb/cockroach#122400": [],
-  "github:cockroachdb/cockroach#98001": [
+  "pr:122400": [],
+  "issue:98001": [
     {
       "choice": "Back off exponentially between schema change job retries instead of retrying immediately",
       "rationale": "A constant delay would still hammer the cluster during a long outage.",
@@ -93,5 +93,5 @@
       "quote": "We should back off exponentially between retries instead of retrying immediately; a constant delay would still hammer the cluster during a long outage."
     }
   ],
-  "github:cockroachdb/cockroach#101400": []
+  "issue:101400": []
 }

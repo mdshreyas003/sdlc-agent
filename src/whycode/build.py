@@ -91,7 +91,7 @@ class _Builder:
                 self._edge(ids.person_id(author), "AUTHORED", d.id, "authors", rfc.date)
 
         for pr in self.history.pull_requests:
-            d = disc.from_pull_request(repo, pr)
+            d = disc.from_pull_request(pr)
             self.graph.add_node(_discussion_node(d, {"Change", "Discussion", "PullRequest"}, number=pr.number,
                                                  merged_at=pr.merged_at.isoformat(), base_ref=pr.base_ref))
             self.discussions.append(d)
@@ -103,10 +103,10 @@ class _Builder:
                     self.touches[d.id].add(entity)
                     self._edge(d.id, "TOUCHES", entity.id, f"files[{change.path}]", d.date)
             for commit in pr.commits:
-                cid, at = ids.commit_id(repo, commit.sha), (commit.at or pr.merged_at).date()
+                cid, at = ids.commit_id(commit.sha), (commit.at or pr.merged_at).date()
                 self.graph.add_node(Node(cid, frozenset({"Change", "Commit"}), {
                     "kind": "commit", "sha": commit.sha, "title": commit.message.split("\n", 1)[0],
-                    "text": commit.message, "url": ids.url_for(cid), "date": at.isoformat(), "origin": STATED,
+                    "text": commit.message, "url": ids.url_for(cid, repo), "date": at.isoformat(), "origin": STATED,
                 }))
                 self._edge(d.id, "CONTAINS", cid, f"commits[{commit.sha}]", d.date)
                 if commit.author:
@@ -115,7 +115,7 @@ class _Builder:
             self._add_reviews(d.id, pr.posts)
 
         for issue in self.history.issues:
-            d = disc.from_issue(repo, issue)
+            d = disc.from_issue(issue)
             self.graph.add_node(_discussion_node(
                 d, {"Discussion", "Issue"}, number=issue.number, github_labels=list(issue.labels),
                 closed_at=issue.closed_at.isoformat() if issue.closed_at else None,
@@ -142,7 +142,7 @@ class _Builder:
     def _add_links(self) -> None:
         for link in stated_links(self.history):
             self._edge(link.source, link.type, link.target, link.locator, link.observed_at)
-        issues = {ids.number_id(self.history.repo, i.number): i for i in self.history.issues}
+        issues = {ids.issue_id(i.number): i for i in self.history.issues}
         for edge in self.graph.edges("CLOSES"):
             if edge.target in issues and "Change" in self.graph.nodes.get(edge.source, Node("", frozenset())).labels:
                 self.implemented_by[edge.target].add(edge.source)
@@ -153,7 +153,7 @@ class _Builder:
         for login, last in sorted(self.last_active.items()):
             pid = ids.person_id(login)
             self.graph.add_node(Node(pid, frozenset({"Person"}), {
-                "kind": "person", "handle": login, "url": ids.url_for(pid), "last_active_at": last.isoformat(),
+                "kind": "person", "handle": login, "url": ids.url_for(pid, self.history.repo), "last_active_at": last.isoformat(),
                 "active": self.history.cutoff - last < DEPARTED_AFTER, "origin": STATED,
             }))
 
@@ -185,5 +185,5 @@ class _Builder:
             for node_id in (edge.source, edge.target):
                 if node_id not in self.graph.nodes:
                     self.graph.add_node(Node(node_id, frozenset({"Stub"}), {
-                        "kind": "stub", "stub": True, "url": ids.url_for(node_id), "origin": STATED,
+                        "kind": "stub", "stub": True, "url": ids.url_for(node_id, self.history.repo), "origin": STATED,
                     }))

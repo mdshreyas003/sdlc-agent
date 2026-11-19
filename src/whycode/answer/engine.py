@@ -105,11 +105,11 @@ class AnswerEngine:
         closers = self.reader.closers(issues) if issues else []
         for change in closers:
             evidence.add(_node(change))
-        changes = [i for i, s in discussions.items() if s["kind"] == "pull_request"] + [c["id"] for c in closers]
+        changes = [i for i, s in discussions.items() if s["kind"] == "pr"] + [c["id"] for c in closers]
         incident_rows = self.reader.incidents(changes + list(discussions))
         for incident in incident_rows:
             evidence.add(_node(incident, kind="incident"))
-        reviewed = [i for i, s in discussions.items() if s["kind"] in ("pull_request", "rfc")]
+        reviewed = [i for i, s in discussions.items() if s["kind"] in ("pr", "rfc")]
         people = self._people(reviewed, speakers)
 
         request = ComposeRequest(anchor=target, decisions=decisions, evidence=list(evidence.nodes.values()),
@@ -166,6 +166,6 @@ class AnswerEngine:
                                       date=d["date"], text=d["quote"]), quote=d["quote"])
             evidence.add(_node(s, text=""), quote=d["quote"])
         records = [c["id"] for c in changes] + [r["discussion"]["id"] for r in nearby
-                                                 if r["discussion"]["kind"] in ("pull_request", "rfc")]
+                                                 if r["discussion"]["kind"] in ("pr", "rfc")]
         return Answer(anchor=target, refused=True, confidence="Low", evidence_chain=list(evidence.items.values()),
                       people=self._people(list(dict.fromkeys(records)), []))

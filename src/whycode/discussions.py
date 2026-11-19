@@ -17,7 +17,7 @@ from whycode import ids
 from whycode.history.records import Issue, PullRequest, Rfc
 from whycode.history.rfc import parse_header
 
-DiscussionKind = Literal["pull_request", "issue", "rfc"]
+DiscussionKind = Literal["pr", "issue", "rfc"]  # the corpus kinds
 SEPARATOR = "\n\n"
 
 
@@ -48,24 +48,24 @@ class Discussion:
         return segment.at if self.kind == "issue" else self.date
 
 
-def from_pull_request(repo: str, pr: PullRequest) -> Discussion:
+def from_pull_request(pr: PullRequest) -> Discussion:
     assert pr.merged_at is not None, "only merged pull requests are Discussions"
     segments = [
         Segment("title", pr.title, pr.author, pr.created_at.date()),
         Segment("body", pr.body, pr.author, pr.created_at.date()),
         *(Segment(f"post[{i}]", p.body, p.author, p.at.date()) for i, p in enumerate(pr.posts)),
     ]
-    return Discussion(ids.number_id(repo, pr.number), "pull_request", pr.title, pr.url, pr.merged_at.date(),
+    return Discussion(ids.pr_id(pr.number), "pr", pr.title, pr.url, pr.merged_at.date(),
                       (pr.author,), tuple(s for s in segments if s.text.strip()))
 
 
-def from_issue(repo: str, issue: Issue) -> Discussion:
+def from_issue(issue: Issue) -> Discussion:
     segments = [
         Segment("title", issue.title, issue.author, issue.created_at.date()),
         Segment("body", issue.body, issue.author, issue.created_at.date()),
         *(Segment(f"post[{i}]", p.body, p.author, p.at.date()) for i, p in enumerate(issue.posts)),
     ]
-    return Discussion(ids.number_id(repo, issue.number), "issue", issue.title, issue.url,
+    return Discussion(ids.issue_id(issue.number), "issue", issue.title, issue.url,
                       issue.created_at.date(), (issue.author,), tuple(s for s in segments if s.text.strip()))
 
 

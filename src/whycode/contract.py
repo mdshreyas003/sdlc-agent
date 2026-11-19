@@ -7,10 +7,11 @@ Vocabulary follows `GLOSSARY.md`.
 
 Semantics every producer and consumer can rely on:
 
-- Node ids are graph ids and always resolve to an ingested (non-stub) record:
-  `github:<owner>/<repo>#<N>` (pull request or issue), `github:<owner>/<repo>@<sha>` (commit),
-  `rfc:<file stem>`, `decision:<hash>`, `person:<login>`, and Code Entities
-  `package:<path>`, `file:<path>`, `function:<pkg path>.<Func | (*Recv).Method>`, `setting:<key>`.
+- Node ids are graph ids and always resolve to an ingested (non-stub) record. History records use the
+  scoreboard's corpus ids: `pr:<N>`, `issue:<N>`, `commit:<full sha>`, `rfc:<file stem>`. Also
+  `decision:<hash>` (Derived; grounded by its quote), `person:<login>`, and Code Entities
+  `package:<path>`, `file:<path>`, `function:<pkg path>.<Func | (*Recv).Method>`, `setting:<key>`
+  (`whycode.ids`, `whycode.codeindex.entity_id`).
 - `Anchor.id` is the Code Entity's key without the kind prefix: `pkg/sql/schema_changer.go`,
   `pkg/sql.(*SchemaChanger).exec`, `schemachanger.job.max_retry_backoff`, `pkg/sql/schemachanger/scrun`.
 - Decisions are the ones governing the Anchor or a Code Entity it contains (a file's functions and settings,
@@ -72,7 +73,7 @@ class EvidenceItem(_Contract):
 
     node_id: str
     kind: str
-    """decision | pull_request | issue | rfc | commit | incident"""
+    """decision | pr | issue | rfc | commit | incident"""
     url: str | None = None
     quote: str | None = None
     title: str | None = None

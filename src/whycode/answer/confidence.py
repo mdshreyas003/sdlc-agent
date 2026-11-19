@@ -19,13 +19,13 @@ from dataclasses import dataclass
 from whycode.contract import Confidence
 
 _LEVELS: tuple[Confidence, ...] = ("Low", "Medium", "High")
-_REVIEWED_SOURCES = frozenset({"pull_request", "rfc"})
+_REVIEWED_SOURCES = frozenset({"pr", "rfc"})
 
 
 @dataclass(frozen=True, slots=True)
 class DecisionGrounding:
     link: str  # hard | soft
-    source: str  # kind of the Discussion: pull_request | rfc | issue
+    source: str  # kind of the Discussion: pr | rfc | issue
     has_rationale: bool
 
 

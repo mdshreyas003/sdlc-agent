@@ -1,23 +1,40 @@
 """Stable canonical node ids, built only from native identifiers so re-runs and machines agree.
 
-GitHub issues and pull requests share one number space, so both are keyed by repo + number and never by a
-guessed kind: `github:cockroachdb/cockroach#98100`. Code Entity ids live in `whycode.codeindex.entity_id`.
+The convention is shared with the scoreboard's corpus (eval/README.md, "Corpus format"):
+`rfc:<file stem>`, `pr:<n>`, `issue:<n>`, `commit:<full sha>`; plus `person:<login>` and
+`decision:<hash>`. Records of another repository (only ever stubs) carry it: `issue:<owner>/<repo>#<n>`.
+Code Entity ids live in `whycode.codeindex.entity_id`.
+
+GitHub issues and pull requests share one number space. The linker uses the ingested kind when the number
+was ingested; otherwise the kind its context implies (`Fixes #N` -> issue, `PR #N` -> pr). Only stubs, which
+are never cited, can carry a guessed kind.
 """
 
 from __future__ import annotations
 
 import hashlib
 import re
+from typing import Literal
 
 from whycode.quotes import normalize
 
-
-def number_id(repo: str, number: int | str) -> str:
-    return f"github:{repo}#{int(number)}"
+NumberKind = Literal["pr", "issue"]
 
 
-def commit_id(repo: str, sha: str) -> str:
-    return f"github:{repo}@{sha.lower()}"
+def number_id(kind: NumberKind, number: int | str, repo: str | None = None) -> str:
+    return f"{kind}:{repo}#{int(number)}" if repo else f"{kind}:{int(number)}"
+
+
+def pr_id(number: int | str) -> str:
+    return number_id("pr", number)
+
+
+def issue_id(number: int | str) -> str:
+    return number_id("issue", number)
+
+
+def commit_id(sha: str) -> str:
+    return f"commit:{sha.lower()}"
 
 
 def rfc_id(stem: str) -> str:
@@ -34,12 +51,12 @@ def decision_id(discussion_id: str, quote: str) -> str:
     return f"decision:{digest[:16]}"
 
 
-def url_for(node_id: str) -> str | None:
-    """The public URL of a GitHub-keyed id (also for stubs); GitHub redirects /issues/N to /pull/N."""
-    if m := re.fullmatch(r"github:([\w.-]+/[\w.-]+)#(\d+)", node_id):
-        return f"https://github.com/{m.group(1)}/issues/{m.group(2)}"
-    if m := re.fullmatch(r"github:([\w.-]+/[\w.-]+)@([0-9a-f]{40})", node_id):
-        return f"https://github.com/{m.group(1)}/commit/{m.group(2)}"
+def url_for(node_id: str, repo: str) -> str | None:
+    """The public URL of a GitHub-keyed id (stubs included), for `repo` unless the id names another."""
+    if m := re.fullmatch(r"(pr|issue):(?:([\w.-]+/[\w.-]+)#)?(\d+)", node_id):
+        return f"https://github.com/{m.group(2) or repo}/{'pull' if m.group(1) == 'pr' else 'issues'}/{m.group(3)}"
+    if m := re.fullmatch(r"commit:([0-9a-f]{40})", node_id):
+        return f"https://github.com/{repo}/commit/{m.group(1)}"
     if m := re.fullmatch(r"person:(.+)", node_id):
         return f"https://github.com/{m.group(1)}"
     return None

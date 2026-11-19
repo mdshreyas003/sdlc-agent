@@ -34,8 +34,12 @@ SANITY_QUOTE = (
 )
 
 
-def gh(number):
-    return f"github:cockroachdb/cockroach#{number}"
+def pr(number):
+    return f"pr:{number}"
+
+
+def issue(number):
+    return f"issue:{number}"
 
 
 @pytest.fixture
@@ -86,13 +90,13 @@ async def test_a_governed_function_returns_its_decisions_with_the_full_evidence_
     assert backoff.link == "hard"
     assert backoff.status == "live"
     assert backoff.date.isoformat() == "2023-03-20"  # #98100 merged
-    assert backoff.discussion_id == gh(98100)
+    assert backoff.discussion_id == pr(98100)
     evidence = {e.node_id: e for e in answer.evidence_chain}
     assert evidence[backoff.id].quote == BACKOFF_QUOTE
-    assert evidence[gh(98100)].url == "https://github.com/cockroachdb/cockroach/pull/98100"
+    assert evidence[pr(98100)].url == "https://github.com/cockroachdb/cockroach/pull/98100"
     assert {(p.handle, p.role, p.active) for p in answer.people} >= {("fqazi", "author", True),
                                                                     ("rafiss", "approver", True)}
-    assert [i.id for i in answer.incidents] == [gh(98001)]  # the regression #98100 fixed
+    assert [i.id for i in answer.incidents] == [issue(98001)]  # the regression #98100 fixed
     assert answer.sentences and cited(answer) <= set(evidence)
     assert answer.confidence == "High"
 
@@ -104,9 +108,9 @@ async def test_a_governed_file_returns_decisions_governing_it_or_code_inside_it(
     assert answer.anchor.kind == "file"
     sources = {d.discussion_id for d in answer.decisions}
     # #98100, #101200, #101450 touch the file; the online schema change RFC names runBackfill inside it.
-    assert {gh(98100), gh(101200), gh(101450), "rfc:20151014_online_schema_change"} <= sources
+    assert {pr(98100), pr(101200), pr(101450), "rfc:20151014_online_schema_change"} <= sources
     assert all(d.quote and d.date for d in answer.decisions)
-    assert {gh(98001), gh(101400)} == {i.id for i in answer.incidents}
+    assert {issue(98001), issue(101400)} == {i.id for i in answer.incidents}
 
 
 async def test_a_governed_setting_returns_its_decision_and_flags_departed_people(reader):
@@ -115,7 +119,7 @@ async def test_a_governed_setting_returns_its_decision_and_flags_departed_people
     assert answer.refused is False
     assert answer.anchor.kind == "setting"
     assert [d.quote for d in answer.decisions] == [SANITY_QUOTE]
-    assert answer.decisions[0].discussion_id == gh(110500)
+    assert answer.decisions[0].discussion_id == pr(110500)
     # The author and the approver have been inactive for over a year at the cutoff.
     assert {(p.handle, p.role, p.active) for p in answer.people} == {("postamar", "author", False),
                                                                     ("ajwerner", "approver", False)}
@@ -138,7 +142,7 @@ async def test_an_ungoverned_anchor_is_refused_with_the_nearest_evidence_and_per
     assert answer.refused is True
     assert answer.decisions == []
     assert answer.sentences == []
-    assert gh(122400) in {e.node_id for e in answer.evidence_chain}  # the Change that touched it
+    assert pr(122400) in {e.node_id for e in answer.evidence_chain}  # the Change that touched it
     assert ("annrpom", "author", True) in {(p.handle, p.role, p.active) for p in answer.people}
     assert answer.confidence == "Low"
 

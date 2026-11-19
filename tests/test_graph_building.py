@@ -25,7 +25,7 @@ def test_decisions_exist_only_when_their_quote_is_verbatim_in_their_source(empty
 
     # A real quote proposed for the wrong Discussion is rejected: only #101200 yields it.
     yielders = {e.source for e in graph.edges("YIELDS") if graph.nodes[e.target].props["quote"] == VALIDATION_QUOTE}
-    assert yielders == {"github:cockroachdb/cockroach#101200"}
+    assert yielders == {"pr:101200"}
 
 
 BACKFILL_QUOTE = (
@@ -122,8 +122,8 @@ def test_a_rebuild_leaves_node_and_edge_counts_unchanged(empty_store):
 
 
 AFTER_CUTOFF = {
-    "github:cockroachdb/cockroach#127200",  # PR merged 2024-07-15
-    "github:cockroachdb/cockroach#127000",  # issue opened 2024-07-02
+    "pr:127200",  # PR merged 2024-07-15
+    "issue:127000",  # issue opened 2024-07-02
     "rfc:20240715_schema_change_retry_policy",
 }
 
@@ -137,7 +137,7 @@ def test_nothing_after_the_cutoff_date_is_ingested(empty_store):
     assert "must never be ingested" not in texts
     assert "Seeing the tight retry loop again" not in texts  # a 2024-08-01 comment on a pre-cutoff issue
     assert all(e.props["observed_at"] <= "2024-06-30" for e in graph.edges())
-    assert graph.nodes["github:cockroachdb/cockroach#98001"].props.get("closed_at")  # closed before the cutoff
+    assert graph.nodes["issue:98001"].props.get("closed_at")  # closed before the cutoff
 
 
 def test_rebuilding_with_an_earlier_cutoff_removes_what_is_now_after_it(empty_store):
@@ -147,14 +147,18 @@ def test_rebuilding_with_an_earlier_cutoff_removes_what_is_now_after_it(empty_st
     empty_store.replace(fixture_graph(cutoff=dt.date(2023, 4, 30)))
     graph = empty_store.snapshot()
 
-    assert "github:cockroachdb/cockroach#98100" in graph.nodes  # merged 2023-03-20
-    assert "github:cockroachdb/cockroach#101200" not in graph.nodes  # merged 2023-05-02
+    assert "pr:98100" in graph.nodes  # merged 2023-03-20
+    assert "pr:101200" not in graph.nodes  # merged 2023-05-02
     assert BACKOFF_QUOTE in {d.props["quote"] for d in graph.labelled("Decision")}
     assert SANITY_QUOTE not in {d.props["quote"] for d in graph.labelled("Decision")}
 
 
-def gh(number):
-    return f"github:cockroachdb/cockroach#{number}"
+def pr(number):
+    return f"pr:{number}"
+
+
+def issue(number):
+    return f"issue:{number}"
 
 
 def links(graph, edge_type):
@@ -166,22 +170,22 @@ def test_stated_links_come_from_structure_and_identifiers_written_in_text(empty_
     graph = empty_store.snapshot()
 
     # "Fixes #N" in a pull request closes the issue.
-    assert (gh(98100), gh(98001)) in links(graph, "CLOSES")
-    assert (gh(101450), gh(101400)) in links(graph, "CLOSES")
+    assert (pr(98100), issue(98001)) in links(graph, "CLOSES")
+    assert (pr(101450), issue(101400)) in links(graph, "CLOSES")
 
     # A revert names the reverted commit by full SHA (a commit #101200 contains) and repeats its title exactly.
-    reverted = "github:cockroachdb/cockroach@3f6c1e2a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e"
-    assert (gh(101450), reverted) in links(graph, "REVERTS")
-    assert (gh(101200), reverted) in links(graph, "CONTAINS")
-    assert (gh(101450), gh(101200)) in links(graph, "REVERTS")
+    reverted = "commit:3f6c1e2a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e"
+    assert (pr(101450), reverted) in links(graph, "REVERTS")
+    assert (pr(101200), reverted) in links(graph, "CONTAINS")
+    assert (pr(101450), pr(101200)) in links(graph, "REVERTS")
 
     # Other written identifiers are references; targets never ingested are stubs.
-    assert (gh(98100), gh(97000)) in links(graph, "REFERENCES")  # "Informs #97000"
-    assert graph.nodes[gh(97000)].is_stub
-    assert (gh(101400), gh(101200)) in links(graph, "REFERENCES")  # "See #101200" in an issue comment
-    assert ("rfc:20151014_online_schema_change", gh(2842)) in links(graph, "REFERENCES")  # RFC PR header
-    assert ("rfc:20151014_online_schema_change", gh(2036)) in links(graph, "REFERENCES")  # Cockroach Issue header
-    assert (gh(110500), "rfc:20210115_new_schema_changer") in links(graph, "REFERENCES")  # path to an RFC file
+    assert (pr(98100), issue(97000)) in links(graph, "REFERENCES")  # "Informs #97000"
+    assert graph.nodes[issue(97000)].is_stub
+    assert (issue(101400), pr(101200)) in links(graph, "REFERENCES")  # "See #101200" in an issue comment
+    assert ("rfc:20151014_online_schema_change", pr(2842)) in links(graph, "REFERENCES")  # RFC PR header
+    assert ("rfc:20151014_online_schema_change", issue(2036)) in links(graph, "REFERENCES")  # Cockroach Issue header
+    assert (pr(110500), "rfc:20210115_new_schema_changer") in links(graph, "REFERENCES")  # path to an RFC file
     assert not [e for e in graph.edges() if "CRDB" in e.target]  # "Epic: CRDB-12345" is a Jira key
 
     # Code structure.
@@ -190,18 +194,18 @@ def test_stated_links_come_from_structure_and_identifiers_written_in_text(empty_
     assert ("file:pkg/sql/schema_changer.go", "setting:schemachanger.job.max_retry_backoff") in links(graph, "CONTAINS")
 
     # Incidents: bug, regression or release-blocker issues that a Change closes.
-    assert {n.id for n in graph.labelled("Incident")} == {gh(98001), gh(101400)}
+    assert {n.id for n in graph.labelled("Incident")} == {issue(98001), issue(101400)}
 
 
 def test_people_link_to_what_they_authored_and_approved_and_are_flagged_when_departed(empty_store):
     empty_store.replace(fixture_graph())
     graph = empty_store.snapshot()
 
-    assert ("person:fqazi", gh(98100)) in links(graph, "AUTHORED")
+    assert ("person:fqazi", pr(98100)) in links(graph, "AUTHORED")
     assert ("person:vivekmenezes", "rfc:20151014_online_schema_change") in links(graph, "AUTHORED")
     approved = {(e.source, e.target) for e in graph.edges("REVIEWED") if e.props["state"] == "APPROVED"}
-    assert ("person:rafiss", gh(98100)) in approved
-    assert ("person:spilchen", gh(98100)) not in approved  # commented, never approved
+    assert ("person:rafiss", pr(98100)) in approved
+    assert ("person:spilchen", pr(98100)) not in approved  # commented, never approved
 
     # Inactive for 12 months or more at the cutoff means departed.
     active = {n.id: n.props["active"] for n in graph.labelled("Person")}

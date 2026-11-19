@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from whycode.answer.compose import ComposeRequest, DraftCite, DraftSentence
 
-FABRICATED_ID = "github:cockroachdb/cockroach#99999"
+FABRICATED_ID = "pr:99999"
 INVENTED_URL = "https://example.com/made-up-design-doc"
 
 # Sentences the verifier must drop, each for one reason.
