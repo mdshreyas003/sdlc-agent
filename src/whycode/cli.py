@@ -15,7 +15,7 @@ import json
 import logging
 import sys
 
-from whycode.config import Settings
+from whycode.config import ConfigError, Settings
 
 
 def _build(settings: Settings, args: argparse.Namespace) -> int:
@@ -62,8 +62,11 @@ def main(argv: list[str] | None = None) -> int:
     why = sub.add_parser("why", help="print the Answer for an Anchor (function, file, package or setting)")
     why.add_argument("anchor")
     args = parser.parse_args(argv)
-    settings = Settings.from_env()
-    return {"build": _build, "why": _why}[args.command](settings, args)
+    try:
+        return {"build": _build, "why": _why}[args.command](Settings.from_env(), args)
+    except ConfigError as exc:
+        print(f"whycode: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
