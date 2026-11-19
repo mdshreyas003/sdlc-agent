@@ -1,0 +1,25 @@
+{
+  "issue": {
+    "number": 101400,
+    "title": "sql: schema change jobs fail permanently with validation errors during upgrade",
+    "body": "During the 23.1 upgrade roachtest, ALTER TABLE jobs fail with a descriptor validation error and are not retried. Before last week they retried and succeeded once the version gate finished.\n\nJira issue: CRDB-27711",
+    "user": {"login": "spilchen"},
+    "html_url": "https://github.com/cockroachdb/cockroach/issues/101400",
+    "state": "closed",
+    "created_at": "2023-05-08T08:00:00Z",
+    "closed_at": "2023-05-10T18:30:01Z",
+    "labels": [{"name": "C-bug"}, {"name": "release-blocker"}, {"name": "A-schema-changes"}]
+  },
+  "comments": [
+    {
+      "user": {"login": "rafiss"},
+      "body": "See #101200, which made validation errors permanent. I'll revert it.",
+      "created_at": "2023-05-08T15:00:00Z"
+    },
+    {
+      "user": {"login": "spilchen"},
+      "body": "Still not seeing this since the revert.",
+      "created_at": "2024-02-20T10:00:00Z"
+    }
+  ]
+}

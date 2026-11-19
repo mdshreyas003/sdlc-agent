@@ -1,0 +1,90 @@
+{
+  "_comment": "Recorded Decision candidates per Discussion id, standing in for the extraction model. Candidates marked 'not verbatim' must be rejected by the quote check.",
+  "rfc:20151014_online_schema_change": [
+    {
+      "choice": "Run schema changes online by stepping the descriptor through delete-only and write-only states, one lease-guarded version at a time",
+      "rationale": "Waiting for every node to hold a lease on the new descriptor version means at most two versions are in use at once.",
+      "alternatives_rejected": ["Run schema changes synchronously inside the issuing transaction"],
+      "quote": "Each state transition waits for all nodes to hold a lease on the new descriptor version, so at most two versions of a descriptor are in use at any time."
+    },
+    {
+      "choice": "Start the backfill in SchemaChanger.runBackfill only after every node has seen the write-only state",
+      "rationale": "Otherwise a node could write a row that the backfill misses.",
+      "alternatives_rejected": [],
+      "quote": "The backfill is run by `SchemaChanger.runBackfill` once all nodes have seen the write-only state, so that no node can write a row the backfill misses."
+    },
+    {
+      "choice": "Run schema changes synchronously in the issuing transaction",
+      "rationale": "not verbatim: the RFC says the opposite.",
+      "alternatives_rejected": [],
+      "quote": "Schema changes always run synchronously inside the issuing transaction."
+    }
+  ],
+  "rfc:20210115_new_schema_changer": [
+    {
+      "choice": "Gate the declarative schema changer behind the sql.defaults.use_declarative_schema_changer cluster setting during rollout",
+      "rationale": "It can then be enabled statement by statement and disabled in production without a binary change if a bug is found.",
+      "alternatives_rejected": [],
+      "quote": "The declarative schema changer is gated by the `sql.defaults.use_declarative_schema_changer` cluster setting so that it can be enabled statement by statement and disabled in production if a bug is found, without a binary change."
+    },
+    {
+      "choice": "Execute the statement phase of a declarative schema change inside the user's transaction, in scrun.RunStatementPhase",
+      "rationale": "Later statements in the same transaction must observe the change.",
+      "alternatives_rejected": [],
+      "quote": "`scrun.RunStatementPhase` executes the statement phase inside the user's transaction so that later statements in the same transaction observe the change."
+    }
+  ],
+  "github:cockroachdb/cockroach#98100": [
+    {
+      "choice": "Retry schema change jobs with exponential backoff capped by schemachanger.job.max_retry_backoff instead of retrying immediately",
+      "rationale": "A fixed retry interval either retries too aggressively during long outages or too slowly after short ones, and immediate retries hot-looped when a descriptor was offline.",
+      "alternatives_rejected": ["A fixed retry interval", "Retrying immediately"],
+      "quote": "We chose a capped exponential backoff rather than a fixed retry interval because a fixed interval either retries too aggressively during long outages or too slowly after short ones."
+    },
+    {
+      "choice": "Default the schema change retry backoff cap to 20 seconds",
+      "rationale": "A 20 second cap keeps a stuck job visible without hammering the cluster.",
+      "alternatives_rejected": [],
+      "quote": "Capping the backoff at 20 seconds keeps a stuck job visible in SHOW JOBS without hammering the cluster."
+    },
+    {
+      "choice": "Use exponential backoff",
+      "rationale": "not verbatim: a paraphrase of the description.",
+      "alternatives_rejected": [],
+      "quote": "We picked exponential backoff since fixed intervals are bad."
+    }
+  ],
+  "github:cockroachdb/cockroach#101200": [
+    {
+      "choice": "Treat descriptor validation errors as permanent schema change errors",
+      "rationale": "Validation errors cannot be fixed by retrying, so the job should fail instead of spinning until the backoff cap.",
+      "alternatives_rejected": [],
+      "quote": "Descriptor validation errors cannot be fixed by retrying, so the schema changer should stop retrying and fail the job instead of spinning until the backoff cap."
+    }
+  ],
+  "github:cockroachdb/cockroach#101450": [
+    {
+      "choice": "Keep retrying schema change jobs on descriptor validation errors instead of treating them as permanent",
+      "rationale": "Descriptors can fail validation transiently while the cluster version gate is crossed during upgrades.",
+      "alternatives_rejected": ["Treat validation errors as permanent"],
+      "quote": "During upgrades, descriptors can fail validation transiently while the cluster version gate is being crossed, so treating validation errors as permanent failed jobs that would have succeeded on retry."
+    },
+    {
+      "choice": "Treat descriptor validation errors as permanent",
+      "rationale": "not verbatim here: the quote is real but comes from a different Discussion (#101200).",
+      "alternatives_rejected": [],
+      "quote": "Descriptor validation errors cannot be fixed by retrying, so the schema changer should stop retrying and fail the job instead of spinning until the backoff cap."
+    }
+  ],
+  "github:cockroachdb/cockroach#110500": [
+    {
+      "choice": "Run the strict planning sanity check only when sql.schemachanger.strict_planning_sanity_check.enabled is set, off by default in production",
+      "rationale": "The check walks every stage of the plan and is too expensive to run on every statement in production.",
+      "alternatives_rejected": ["Always run the sanity check"],
+      "quote": "The schema changer plan sanity check walks every stage of the plan and is too expensive to run on every statement in production."
+    }
+  ],
+  "github:cockroachdb/cockroach#122400": [],
+  "github:cockroachdb/cockroach#98001": [],
+  "github:cockroachdb/cockroach#101400": []
+}

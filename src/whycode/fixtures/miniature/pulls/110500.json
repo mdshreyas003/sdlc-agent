@@ -1,0 +1,43 @@
+{
+  "pull": {
+    "number": 110500,
+    "title": "scrun: gate the strict planning sanity check behind a cluster setting",
+    "body": "The schema changer plan sanity check walks every stage of the plan and is too expensive to run on every statement in production. This PR registers `sql.schemachanger.strict_planning_sanity_check.enabled`, which defaults to false, and only runs the check when it is enabled. Test builds turn it on.\n\nThe declarative schema changer design is described in docs/RFCS/20210115_new_schema_changer.md.\n\nEpic: CRDB-12345\nRelease note: None",
+    "user": {"login": "postamar"},
+    "html_url": "https://github.com/cockroachdb/cockroach/pull/110500",
+    "created_at": "2023-05-25T10:00:00Z",
+    "merged_at": "2023-06-01T09:00:00Z",
+    "merge_commit_sha": "3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f",
+    "base": {"ref": "master"},
+    "labels": []
+  },
+  "files": [
+    {
+      "filename": "pkg/sql/schemachanger/scrun/scrun.go",
+      "status": "modified",
+      "additions": 9,
+      "deletions": 1,
+      "patch": "@@ -15,6 +15,13 @@ import (\n \t\"github.com/cockroachdb/cockroach/pkg/sql/schemachanger/scplan\"\n )\n \n+var enforcePlannerSanityCheck = settings.RegisterBoolSetting(\n+\tsettings.ApplicationLevel,\n+\t\"sql.schemachanger.strict_planning_sanity_check.enabled\",\n+\t\"enforce strict sanity checks on the schema changer plan\",\n+\tfalse,\n+)\n+\n@@ -48,7 +55,7 @@ func makeState(ctx context.Context, sv *settings.Values, state scplan.State) (scplan.State, error) {\n \tplan, err := scplan.MakePlan(ctx, state, scplan.Params{\n-\t\tEnforcePlannerSanityCheck: true,\n+\t\tEnforcePlannerSanityCheck: enforcePlannerSanityCheck.Get(sv),\n \t})"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091",
+      "author": {"login": "postamar"},
+      "commit": {
+        "message": "scrun: gate the strict planning sanity check behind a cluster setting\n\nRelease note: None",
+        "author": {"name": "Marius Posta", "date": "2023-05-25T09:58:00Z"}
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "user": {"login": "ajwerner"},
+      "state": "APPROVED",
+      "body": "Off by default in production is the right call; the check has caught real planner bugs in tests, so keep it on in test builds.",
+      "submitted_at": "2023-05-30T17:00:00Z"
+    }
+  ],
+  "review_comments": [],
+  "issue_comments": []
+}

@@ -1,0 +1,69 @@
+{
+  "pull": {
+    "number": 98100,
+    "title": "sql: add exponential backoff to schema change job retries",
+    "body": "Previously, the schema changer job retried failed steps immediately and indefinitely, which hot-looped and burned CPU when a descriptor was offline.\n\nThis change retries schema change jobs with exponential backoff, capped by a new cluster setting `schemachanger.job.max_retry_backoff` (default 20s). We chose a capped exponential backoff rather than a fixed retry interval because a fixed interval either retries too aggressively during long outages or too slowly after short ones.\n\nFixes #98001\nInforms #97000\n\nRelease note (bug fix): Schema change jobs no longer retry in a tight loop when a descriptor is offline.",
+    "user": {"login": "fqazi"},
+    "html_url": "https://github.com/cockroachdb/cockroach/pull/98100",
+    "created_at": "2023-03-14T09:12:00Z",
+    "merged_at": "2023-03-20T15:02:11Z",
+    "merge_commit_sha": "7e3b1c9d0a2f4e6b8c1d3e5f7a9b0c2d4e6f8a1b",
+    "base": {"ref": "master"},
+    "labels": [{"name": "backport-23.1.x"}]
+  },
+  "files": [
+    {
+      "filename": "pkg/sql/schema_changer.go",
+      "status": "modified",
+      "additions": 17,
+      "deletions": 2,
+      "patch": "@@ -48,6 +48,17 @@ import (\n \t\"github.com/cockroachdb/errors\"\n )\n \n+// schemaChangeJobMaxRetryBackoff caps the exponential backoff between\n+// retries of a schema change job.\n+var schemaChangeJobMaxRetryBackoff = settings.RegisterDurationSetting(\n+\tsettings.ApplicationLevel,\n+\t\"schemachanger.job.max_retry_backoff\",\n+\t\"the exponential back-off when retrying jobs for schema changes\",\n+\t20*time.Second,\n+\tsettings.PositiveDuration,\n+)\n+\n // SchemaChanger is used to change the schema on a table.\n@@ -310,7 +321,12 @@ func (sc *SchemaChanger) exec(ctx context.Context) error {\n \tfor r := retry.Start(opts); r.Next(); {\n-\t\tif err := sc.step(ctx); err != nil && !isPermanentSchemaChangeError(err) {\n-\t\t\tcontinue\n+\t\topts.MaxBackoff = schemaChangeJobMaxRetryBackoff.Get(sc.settings)\n+\t\terr := sc.step(ctx)\n+\t\tif err == nil || isPermanentSchemaChangeError(err) {\n+\t\t\treturn err\n \t\t}\n+\t\tlog.Warningf(ctx, \"schema change job will retry with backoff: %v\", err)\n \t}"
+    },
+    {
+      "filename": "pkg/sql/schema_changer_test.go",
+      "status": "modified",
+      "additions": 30,
+      "deletions": 0,
+      "patch": "@@ -900,3 +900,33 @@ func TestSchemaChangeRetry(t *testing.T) {\n+\t// The job must back off instead of hot-looping.\n+\trequire.Greater(t, backoffs, 1)"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "9c1e4b7a2f3d5e6c8b0a1d2e3f4a5b6c7d8e9f01",
+      "author": {"login": "fqazi"},
+      "commit": {
+        "message": "sql: add exponential backoff to schema change job retries\n\nFixes #98001\n\nRelease note (bug fix): Schema change jobs no longer retry in a tight loop when a descriptor is offline.",
+        "author": {"name": "Faizan Qazi", "date": "2023-03-14T09:10:00Z"}
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "user": {"login": "spilchen"},
+      "state": "COMMENTED",
+      "body": "Should the cap be a cluster setting rather than a constant? Operators may need to tune it during an incident.",
+      "submitted_at": "2023-03-17T11:00:00Z"
+    },
+    {
+      "user": {"login": "rafiss"},
+      "state": "APPROVED",
+      "body": "LGTM. Capping the backoff at 20 seconds keeps a stuck job visible in SHOW JOBS without hammering the cluster.",
+      "submitted_at": "2023-03-18T16:45:00Z"
+    }
+  ],
+  "review_comments": [
+    {
+      "user": {"login": "spilchen"},
+      "path": "pkg/sql/schema_changer.go",
+      "body": "nit: log the error at warning level so it shows up in the job's trace.",
+      "created_at": "2023-03-17T11:05:00Z"
+    }
+  ],
+  "issue_comments": [
+    {
+      "user": {"login": "craig[bot]"},
+      "body": "Build succeeded.",
+      "created_at": "2023-03-20T15:02:12Z"
+    }
+  ]
+}
