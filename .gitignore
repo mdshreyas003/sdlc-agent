@@ -1,0 +1,15 @@
+# Legacy prototype: reference only, has its own git history
+/legacy/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local data, caches and secrets
+.env
+.cache/
+data/cache/
