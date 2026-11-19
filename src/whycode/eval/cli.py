@@ -30,9 +30,22 @@ from typing import Any
 from whycode.eval import assets
 from whycode.eval.corpus import Corpus, LayeredCorpus, MemoryCorpus
 from whycode.eval.gold import check_gold, load_gold, save_gold
-from whycode.eval.judge import FactJudge, LabelledAnswer, agreement, load_labels, render_answer, save_labels
+from whycode.eval.judge import (
+    FactJudge,
+    LabelledAnswer,
+    agreement,
+    load_labels,
+    render_answer,
+    save_labels,
+)
 from whycode.eval.labels import generate_labels
-from whycode.eval.models import ANSWER_MODEL, EMBEDDING_MODEL, JUDGE_MODEL, StructuredModel, ToolLoopModel
+from whycode.eval.models import (
+    ANSWER_MODEL,
+    EMBEDDING_MODEL,
+    JUDGE_MODEL,
+    StructuredModel,
+    ToolLoopModel,
+)
 from whycode.eval.runner import AnswerRecord, System, read_records
 from whycode.eval.scoreboard import CUTOFF, ScoreboardError, run_eval
 

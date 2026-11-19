@@ -124,11 +124,12 @@ def test_the_test_split_is_scored_once(tmp_path):
     assert run(root, split="test", resume=first.run_dir).run_dir == first.run_dir  # finishing a stopped run is fine
 
 
-def test_the_test_split_needs_committed_prompts(tmp_path):
+def test_the_test_split_needs_committed_prompts_and_gold(tmp_path):
     root = lay_out(tmp_path)
     (root / "prompts" / "judge.md").write_text("Grade the answer, but tuned.\n")
+    (root / "gold" / "late.yaml").write_text("[]\n")
 
-    with pytest.raises(ScoreboardError, match="prompts have uncommitted changes: prompts/judge.md"):
+    with pytest.raises(ScoreboardError, match="uncommitted changes in prompts or gold: gold/late.yaml, prompts/judge.md"):
         run(root, split="test")
 
 

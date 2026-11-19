@@ -36,7 +36,7 @@ def uncommitted(eval_dir: Path, *paths: str) -> list[str]:
     root = subprocess.run(["git", "-C", str(eval_dir), "rev-parse", "--show-toplevel"],
                           capture_output=True, text=True, check=True).stdout.strip()
     changed = [line[3:].strip().strip('"') for line in proc.stdout.splitlines() if line.strip()]
-    return [str((Path(root) / c).resolve().relative_to(eval_dir.resolve())) for c in changed]
+    return sorted(str((Path(root) / c).resolve().relative_to(eval_dir.resolve())) for c in changed)
 
 
 def git_commit(eval_dir: Path) -> str | None:

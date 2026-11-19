@@ -3,7 +3,14 @@
 import re
 
 import pytest
-from eval_support import CUTOFF, FIXTURE_RECORDS, ScriptedToolLoop, anthropic_client, text_reply, tool_use_reply
+from eval_support import (
+    CUTOFF,
+    FIXTURE_RECORDS,
+    ScriptedToolLoop,
+    anthropic_client,
+    text_reply,
+    tool_use_reply,
+)
 
 from whycode.eval.baselines import BaselineAnswer, CitedSentence, EvidenceQuote
 from whycode.eval.corpus import CorpusRecord, LayeredCorpus, MemoryCorpus
@@ -22,6 +29,7 @@ from whycode.eval.gold import Case
 from whycode.eval.models import AnthropicToolLoop
 from whycode.eval.runner import Query
 from whycode.eval.scoring import check_citations
+
 
 @pytest.fixture
 def checkouts(repo):
@@ -101,7 +109,10 @@ def cite_the_setting_commit(outputs):
                           sentences=[CitedSentence(text="The setting forces declarative DDL.", cites=[f"commit:{sha}"])])
 
 
-def agent(checkouts, model, corpus=MemoryCorpus(FIXTURE_RECORDS)):
+CORPUS = MemoryCorpus(FIXTURE_RECORDS)
+
+
+def agent(checkouts, model, corpus=CORPUS):
     cutoff, window = checkouts
     return GitAgent({CUTOFF: cutoff, None: window}, corpus, model, prompt="GIT PROMPT", answer_model="claude-opus-5-5")
 

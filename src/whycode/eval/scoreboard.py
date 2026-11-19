@@ -5,7 +5,7 @@ Output: `eval/results/<split>-<YYYYmmdd-HHMMSS>/` with `manifest.json`, `answers
 
 - only human-verified questions that pass the gold check count (unverified ones only in a dev smoke run);
 - the test split is scored once: a second test run is refused while any `results/test-*` exists,
-  and a test run needs the prompts committed;
+  and a test run needs the prompts and gold set committed;
 - `resume` finishes a stopped run (same prompts) without asking any system twice.
 """
 
@@ -20,7 +20,14 @@ from pathlib import Path
 
 from whycode.eval import assets
 from whycode.eval.corpus import Corpus
-from whycode.eval.gold import GoldSetError, Split, build_cases, check_gold, load_gold, select
+from whycode.eval.gold import (
+    GoldSetError,
+    Split,
+    build_cases,
+    check_gold,
+    load_gold,
+    select,
+)
 from whycode.eval.judge import Judge, JudgeInput, Verdict
 from whycode.eval.runner import AnswerRecord, System, collect, to_jsonl, write_json
 from whycode.eval.scoring import report, score
@@ -60,8 +67,8 @@ def run_eval(split: Split, *, eval_dir: Path, corpus: Corpus, systems: Sequence[
         if split == "test":
             if done := sorted(p.name for p in results.glob("test-*")):
                 raise ScoreboardError(f"the test split was already scored ({', '.join(done)}); it is scored once")
-            if dirty := assets.uncommitted(eval_dir, "prompts"):
-                raise ScoreboardError(f"prompts have uncommitted changes: {', '.join(dirty)}; commit them first")
+            if dirty := assets.uncommitted(eval_dir, "prompts", "gold"):
+                raise ScoreboardError(f"uncommitted changes in prompts or gold: {', '.join(dirty)}; commit them first")
         run_dir = results / f"{split}-{now().strftime('%Y%m%d-%H%M%S')}"
         run_dir.mkdir(parents=True)
         cases = build_cases(chosen, every, cutoff=cutoff)

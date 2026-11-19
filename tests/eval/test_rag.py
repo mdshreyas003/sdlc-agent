@@ -2,10 +2,22 @@
 
 import re
 
-from eval_support import CUTOFF, FIXTURE_RECORDS, HashEmbedder, ScriptedModel, anthropic_client, text_reply
+from eval_support import (
+    CUTOFF,
+    FIXTURE_RECORDS,
+    HashEmbedder,
+    ScriptedModel,
+    anthropic_client,
+    text_reply,
+)
 
 from whycode.contract import Anchor
-from whycode.eval.baselines import BaselineAnswer, CitedSentence, EvidenceQuote, FoundDecision
+from whycode.eval.baselines import (
+    BaselineAnswer,
+    CitedSentence,
+    EvidenceQuote,
+    FoundDecision,
+)
 from whycode.eval.corpus import CorpusRecord, MemoryCorpus
 from whycode.eval.gold import Case
 from whycode.eval.models import AnthropicStructured
@@ -74,7 +86,7 @@ def test_nothing_visible_means_a_refusal_without_a_model_call():
 
     result = rag(model)(Query(question=ZONE, as_of=CUTOFF, exclude=everything))
 
-    assert result.answer.refused and model.calls == []
+    assert result.answer.refused and model.calls == [] and result.usage.cost_usd() == 0.0
 
 
 def test_long_records_are_chunked_with_overlap_and_nothing_is_lost():

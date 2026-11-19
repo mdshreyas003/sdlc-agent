@@ -18,7 +18,13 @@ from eval_support import (
 from whycode.eval.baselines import BaselineAnswer, CitedSentence, EvidenceQuote
 from whycode.eval.cli import Deps, main
 from whycode.eval.corpus import write_jsonl
-from whycode.eval.gold import GoldEvidence, GoldQuestion, WindowAfter, load_gold, save_gold
+from whycode.eval.gold import (
+    GoldEvidence,
+    GoldQuestion,
+    WindowAfter,
+    load_gold,
+    save_gold,
+)
 from whycode.eval.judge import HandLabels, Verdict, load_labels, save_labels
 
 ZONE_QUOTE = "because their descriptors may already be gone"

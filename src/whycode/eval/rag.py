@@ -18,7 +18,7 @@ import numpy as np
 
 from whycode.eval.baselines import BaselineAnswer, refusal, render_query, to_answer
 from whycode.eval.corpus import Corpus, CorpusRecord
-from whycode.eval.models import EMBEDDING_MODEL, StructuredModel
+from whycode.eval.models import EMBEDDING_MODEL, StructuredModel, Usage
 from whycode.eval.runner import Answered, Query, System
 
 TOP_K = 8
@@ -121,7 +121,7 @@ class VectorRag:
         search_text = query.question + (f" {query.anchor.id}" if query.anchor else "")
         chunks = self.index.search(search_text, self.top_k, query)
         if not chunks:
-            return Answered(refusal(query, "No passage matched the question."))
+            return Answered(refusal(query, "No passage matched the question."), Usage())
         passages = "\n\n".join(self._passage(c) for c in chunks)
         parsed = self.model.parse(system=self.prompt, user=f"{passages}\n\n{render_query(query)}",
                                   output=BaselineAnswer)

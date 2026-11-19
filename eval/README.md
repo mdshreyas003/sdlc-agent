@@ -26,7 +26,7 @@ uv run whycode-eval agreement                                                   
 ```
 
 - `run --split dev --include-unverified` is a smoke run over drafts (dev only). Without it, only `human_verified` questions count, and a verified question that fails the gold check stops the run.
-- `run --split test` is allowed once: it is refused while any `results/test-*` exists and while `prompts/` has uncommitted changes. `--resume results/test-<time>` finishes a stopped run with the same prompts, without asking any system twice.
+- `run --split test` is allowed once: it is refused while any `results/test-*` exists and while `prompts/` or `gold/` has uncommitted changes. `--resume results/test-<time>` finishes a stopped run with the same prompts, without asking any system twice.
 - `--limit N` runs the first N questions.
 
 ## Plugging in a system
