@@ -85,6 +85,13 @@
     }
   ],
   "github:cockroachdb/cockroach#122400": [],
-  "github:cockroachdb/cockroach#98001": [],
+  "github:cockroachdb/cockroach#98001": [
+    {
+      "choice": "Back off exponentially between schema change job retries instead of retrying immediately",
+      "rationale": "A constant delay would still hammer the cluster during a long outage.",
+      "alternatives_rejected": ["A constant retry delay"],
+      "quote": "We should back off exponentially between retries instead of retrying immediately; a constant delay would still hammer the cluster during a long outage."
+    }
+  ],
   "github:cockroachdb/cockroach#101400": []
 }

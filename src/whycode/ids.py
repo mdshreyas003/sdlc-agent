@@ -7,6 +7,7 @@ guessed kind: `github:cockroachdb/cockroach#98100`. Code Entity ids live in `why
 from __future__ import annotations
 
 import hashlib
+import re
 
 from whycode.quotes import normalize
 
@@ -33,6 +34,12 @@ def decision_id(discussion_id: str, quote: str) -> str:
     return f"decision:{digest[:16]}"
 
 
-def number_url(repo: str, number: int | str) -> str:
-    """GitHub redirects /issues/N to /pull/N when N is a pull request."""
-    return f"https://github.com/{repo}/issues/{int(number)}"
+def url_for(node_id: str) -> str | None:
+    """The public URL of a GitHub-keyed id (also for stubs); GitHub redirects /issues/N to /pull/N."""
+    if m := re.fullmatch(r"github:([\w.-]+/[\w.-]+)#(\d+)", node_id):
+        return f"https://github.com/{m.group(1)}/issues/{m.group(2)}"
+    if m := re.fullmatch(r"github:([\w.-]+/[\w.-]+)@([0-9a-f]{40})", node_id):
+        return f"https://github.com/{m.group(1)}/commit/{m.group(2)}"
+    if m := re.fullmatch(r"person:(.+)", node_id):
+        return f"https://github.com/{m.group(1)}"
+    return None

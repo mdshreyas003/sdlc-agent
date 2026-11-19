@@ -17,6 +17,11 @@
       "created_at": "2023-03-02T09:30:00Z"
     },
     {
+      "user": {"login": "rafiss"},
+      "body": "We should back off exponentially between retries instead of retrying immediately; a constant delay would still hammer the cluster during a long outage.",
+      "created_at": "2023-03-03T14:10:00Z"
+    },
+    {
       "user": {"login": "blathers-crl[bot]"},
       "body": "Hi @dt, please add branch-* labels to identify which branch(es) this release-blocker affects.",
       "created_at": "2023-03-01T10:00:05Z"
