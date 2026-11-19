@@ -145,7 +145,7 @@ def test_report_prints_each_metric_per_question_type_with_intervals():
     assert "| all | 75% [50-100] n=2 | 0% [0-0] n=2 |" in text  # correctness over L and S
     assert "| trap | 100% [100-100] n=1 | 0% [0-0] n=1 |" in text  # invented-answer rate
     assert "| all | 75% [25-100] n=4 | 50% [0-100] n=4 |" in text  # refusal accuracy
-    assert "| all | 1.5 [1.5-1.5] n=4 | 1.5 [1.5-1.5] n=4 |" in text  # seconds
+    assert "| all | 1.50 [1.50-1.50] n=4 | 1.50 [1.50-1.50] n=4 |" in text  # seconds
     assert "| all | $0.0060 [0.0060-0.0060] n=4 | - |" in text  # cost (unknown for vector-rag)
     for title in ("Answer correctness", "Citation precision", "Supersession catch rate", "Refusal accuracy",
                   "Invented-answer rate", "Latency", "Cost", "Paired differences"):

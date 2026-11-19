@@ -45,4 +45,4 @@ def fmt(interval: Interval, kind: Literal["pct", "diff", "num", "usd"] = "pct") 
         return f"{mean * 100:.0f}% [{lo * 100:.0f}-{hi * 100:.0f}]"
     if kind == "usd":
         return f"${mean:.4f} [{lo:.4f}-{hi:.4f}]"
-    return f"{mean:.1f} [{lo:.1f}-{hi:.1f}]"
+    return f"{mean:.2f} [{lo:.2f}-{hi:.2f}]"

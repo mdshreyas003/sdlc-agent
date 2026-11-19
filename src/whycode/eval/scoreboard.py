@@ -128,10 +128,11 @@ def _header(run_dir: Path, manifest: dict, systems: Sequence[System], eval_dir: 
              f"human-verified), {manifest['cases']} cases; cutoff {manifest['cutoff']}; judge "
              f"`{manifest['judge_model']}`; prompts `{manifest['prompts_version']}`.", "",
              "Systems: " + "; ".join(f"`{s.name}` ({models(s)})" for s in systems) + "."]
-    answer_models = {s.models.get("answer") for s in systems if s.models.get("answer")}
-    if len(answer_models) > 1:
-        lines += ["", f"WARNING: systems answer with different models ({', '.join(sorted(answer_models))}); "
-                      "differences then mix method and model."]
+    for role, verb in (("answer", "answer with"), ("embedding", "embed with")):
+        used = {s.models[role] for s in systems if s.models.get(role)}
+        if len(used) > 1:
+            lines += ["", f"WARNING: systems {verb} different models ({', '.join(sorted(used))}); "
+                          "differences then mix method and model."]
     agreement = eval_dir / "judge_agreement" / "agreement.md"
     lines += ["", agreement.read_text(encoding="utf-8").strip().splitlines()[0] if agreement.exists()
               else "Judge agreement: not measured yet (see eval/README.md)."]

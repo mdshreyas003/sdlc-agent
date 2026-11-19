@@ -34,7 +34,7 @@ def test_paired_difference_uses_only_shared_questions():
 
 def test_formatting():
     assert fmt((0.625, 0.5, 0.75)) == "62% [50-75]"
-    assert fmt((1.25, 1.0, 1.5), kind="num") == "1.2 [1.0-1.5]"
+    assert fmt((1.25, 1.0, 1.5), kind="num") == "1.25 [1.00-1.50]"
     assert fmt((0.0123, 0.01, 0.015), kind="usd") == "$0.0123 [0.0100-0.0150]"
     assert fmt((-0.25, -0.5, 0.0), kind="diff") == "-25 pts [-50, +0]"
     assert fmt((math.nan, math.nan, math.nan)) == "-"

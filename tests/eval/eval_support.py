@@ -17,8 +17,10 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel
 
+from whycode.contract import Answer, EvidenceItem, Sentence
 from whycode.eval.corpus import CorpusRecord
 from whycode.eval.models import ModelCall, Parsed, Tool, Usage
+from whycode.eval.runner import Query, System
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CUTOFF = dt.date(2024, 6, 30)
@@ -130,7 +132,8 @@ class ScriptedToolLoop:
 class HashEmbedder:
     """Deterministic bag-of-words vectors: shared words give a high cosine, nothing else matters."""
 
-    name = "hash-bow-1024"
+    def __init__(self, name: str = "hash-bow-1024"):
+        self.name = name
 
     def _vec(self, text: str) -> np.ndarray:
         v = np.zeros(1024, dtype=np.float32)
@@ -144,6 +147,17 @@ class HashEmbedder:
 
     def embed_query(self, text: str) -> np.ndarray:
         return self._vec(text)
+
+
+def ours_factory(ctx) -> System:
+    """Stands in for our `why` system, plugged in through `--systems ours=eval_support:ours_factory`."""
+    def why(query: Query) -> Answer:
+        return Answer(anchor=query.anchor, refused=False, confidence="High",
+                      evidence_chain=[EvidenceItem(node_id="pr:121026", kind="pr",
+                                                   quote="because their descriptors may already be gone")],
+                      sentences=[Sentence(text="Dropped indexes may have lost their descriptors.", cites=["pr:121026"])])
+
+    return System("ours", why, {"answer": ctx.answer_model, "embedding": ctx.embedding_model})
 
 
 # --- the real Anthropic SDK over a fake transport (never the network) -------------------------

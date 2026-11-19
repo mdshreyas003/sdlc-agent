@@ -1,0 +1,151 @@
+# Human-written gold questions. Format and rules: eval/README.md.
+#
+# Every question below is a DRAFT (human_verified: false): its quotes were copied from the RFC
+# texts at the cutoff commit, but a human must still confirm the facts, the type, the split and
+# (where noted) the anchor before flipping human_verified to true. Node ids follow the corpus id
+# convention in eval/README.md (rfc:<file stem>, pr:<n>, issue:<n>, commit:<sha>).
+#
+# Still to write (ticket 03 targets): at least 30 questions in total, at least 5 unanswerable
+# (built by ablation), at least 5 reversed or refined Decisions, and some time-adjacency traps.
+
+- id: H-001
+  type: lookup
+  origin: human
+  question: Why does the declarative schema changer plan a schema change separately from executing it?
+  anchor:
+    kind: package
+    id: pkg/sql/schemachanger
+  gold_facts:
+  - The old schema changer had hard-coded states and transitions that suit a single column or index change
+  - Decoupling planning from execution is a prerequisite for fully transactional schema changes
+  gold_evidence:
+  - node_id: rfc:20210115_new_schema_changer
+    quote: The current schema changer has hard-coded states and transitions that best accomodate a single
+      column or index change
+  - node_id: rfc:20210115_new_schema_changer
+    quote: Its flexibility with regards to both execution context and specifying rules for planning schema
+      changes is a prerequisite for transitioning from today's async schema change jobs to fully transactional
+      schema changes.
+  split: dev
+  human_verified: false
+  note: Draft. Confirm the anchor id matches the code index's package id.
+
+- id: H-002
+  type: lookup
+  origin: human
+  question: Why do SQL statements use leased table descriptors instead of the descriptors gossiped to every node?
+  anchor:
+    kind: package
+    id: pkg/sql/catalog/lease
+  gold_facts:
+  - Gossiped table descriptors are not safe to use
+  - Leases allow cached table descriptors to be used safely
+  gold_evidence:
+  - node_id: rfc:20151009_table_descriptor_lease
+    quote: it is not safe to use these gossipped table descriptors in almost any circumstance
+  - node_id: rfc:20151009_table_descriptor_lease
+    quote: Implement a table descriptor lease mechanism to allow safe usage of cached table descriptors.
+  split: test
+  human_verified: false
+  note: Draft. Ablated by H-007.
+
+- id: H-003
+  type: supersession
+  origin: human
+  question: Do SQL nodes still rely on the schema gossiped to every node when executing statements?
+  gold_facts:
+  - The table descriptor lease mechanism replaced using gossiped descriptors, because they are unsafe
+  superseded_facts:
+  - SQL statements execute against the table descriptors gossiped to every node
+  gold_evidence:
+  - node_id: rfc:20150720_schema_gossip
+    quote: This RFC suggests implementing eventually-consistent replication of the SQL schema to all Cockroach
+      nodes in a cluster using gossip.
+  - node_id: rfc:20151009_table_descriptor_lease
+    quote: it is not safe to use these gossipped table descriptors in almost any circumstance
+  split: test
+  human_verified: false
+  note: Draft, inferred Supersession (no stated link). Confirm from PR history that gossip-based descriptor use
+    was actually replaced, and pick the Code Entity to anchor on.
+
+- id: H-004
+  type: supersession
+  origin: human
+  question: How are user-defined schemas stored, and is the 2018 schemas RFC still the design to follow?
+  anchor:
+    kind: package
+    id: pkg/sql/catalog/schemadesc
+  gold_facts:
+  - The 2018 "User-defined SQL logical schemas" RFC was superseded by the 2020 user-defined schemas RFC
+  - Schemas get their own schema descriptors
+  superseded_facts:
+  - The 2018 "User-defined SQL logical schemas" RFC is the live design
+  gold_evidence:
+  - node_id: rfc:20181003_schemas
+    quote: 'Status: superseded by #48276'
+  - node_id: rfc:20200501_user_defined_schemas
+    quote: we'll introduce a `SchemaDescriptor` to the `sqlbase.Descriptor` union to store schema metadata
+  split: dev
+  human_verified: false
+  note: Draft, explicit Supersession (RFC Status header). Confirm the anchor package exists at the cutoff.
+
+- id: H-005
+  type: supersession
+  origin: human
+  question: How does ALTER COLUMN TYPE change a column when the conversion needs a cast?
+  gold_facts:
+  - It creates a new computed column by applying the cast to the original column and swaps it in
+  - The 2020 RFC narrows the earlier 2018 alter column type RFC to conversions that rewrite data
+  superseded_facts:
+  - Column type changes follow only the 2018 RFC's staged conversion classes
+  gold_evidence:
+  - node_id: rfc:20200401_alter_column_type
+    quote: The idea for a column conversion requiring a cast is to create a new computed column by applying
+      the cast/function to the original column.
+  - node_id: rfc:20180411_alter_column_type
+    quote: This RFC describes a staged approach to enabling column-type changes by grouping type conversions
+      by implementation complexity.
+  split: test
+  human_verified: false
+  note: Draft Refinement (the 2020 RFC links the 2018 one "more generally"). A human must decide which part of
+    the 2018 design is no longer live and rewrite superseded_facts accordingly.
+
+- id: H-006
+  type: trap
+  origin: human
+  answerable: false
+  question: Were user-defined schemas introduced because of the partial indexes work?
+  gold_evidence:
+  - node_id: rfc:20200501_user_defined_schemas
+    quote: This RFC proposes support for user-defined schemas
+  - node_id: rfc:20200507_partial_indexes
+    quote: This RFC proposes the addition of partial indexes to CockroachDB.
+  split: dev
+  human_verified: false
+  note: Draft time-adjacency trap. The RFCs started six days apart (2020-05-01, 2020-05-07) and neither names
+    the other (checked by grep for each other's name, RFC PR number and file name). Correct answer is a refusal.
+
+- id: H-007
+  type: unanswerable
+  origin: human
+  answerable: false
+  question: Why do SQL statements use leased table descriptors instead of the descriptors gossiped to every node?
+  ablates: H-002
+  split: test
+  human_verified: false
+  note: Draft ablation of H-002 (its evidence is hidden from every system). Confirm no other record in the
+    corpus states the reason once the lease RFC is hidden.
+
+- id: H-008
+  type: unanswerable
+  origin: human
+  answerable: false
+  question: Why is the declarative schema changer's rule set for release 24.1 kept as a separate copy instead of
+    being generated from the current rules?
+  anchor:
+    kind: package
+    id: pkg/sql/schemachanger/scplan/internal/rules/release_24_1
+  split: dev
+  human_verified: false
+  note: Draft no-evidence question. A human must grep the ingested corpus to confirm no record states the reason;
+    if one does, turn this into a lookup question instead.
