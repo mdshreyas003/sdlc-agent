@@ -5,9 +5,13 @@ from __future__ import annotations
 from whycode.answer.compose import ComposeRequest, DraftCite, DraftSentence
 
 FABRICATED_ID = "github:cockroachdb/cockroach#99999"
-PARAPHRASED_QUOTE = "The team decided exponential backoff is always better."
-INVENTED_INLINE = "never retry a schema change at all"
 INVENTED_URL = "https://example.com/made-up-design-doc"
+
+# Sentences the verifier must drop, each for one reason.
+CITES_FABRICATED_ID = "A later design review confirmed this choice."
+RESTS_ON_PARAPHRASE = "The team settled on backoff after a long debate."
+QUOTES_INVENTED_TEXT = 'A reviewer insisted to "never retry a schema change at all".'
+DROPPED_SENTENCES = (CITES_FABRICATED_ID, RESTS_ON_PARAPHRASE, QUOTES_INVENTED_TEXT)
 
 
 class FaithfulComposer:
@@ -28,11 +32,11 @@ class FabricatingComposer(FaithfulComposer):
         first = request.decisions[0]
         return [
             *super().compose(request),
-            DraftSentence(text="A later design review confirmed this choice.", cites=[DraftCite(node_id=FABRICATED_ID)]),
-            DraftSentence(text="The team settled on backoff after a long debate.",
-                          cites=[DraftCite(node_id=first.discussion_id, quote=PARAPHRASED_QUOTE)]),
-            DraftSentence(text=f'A reviewer insisted to "{INVENTED_INLINE}".',
-                          cites=[DraftCite(node_id=first.discussion_id)]),
+            DraftSentence(text=CITES_FABRICATED_ID, cites=[DraftCite(node_id=FABRICATED_ID)]),
+            DraftSentence(text=RESTS_ON_PARAPHRASE, cites=[
+                DraftCite(node_id=first.discussion_id, quote="The team decided exponential backoff is always better."),
+            ]),
+            DraftSentence(text=QUOTES_INVENTED_TEXT, cites=[DraftCite(node_id=first.discussion_id)]),
             DraftSentence(text=f"See {INVENTED_URL} for the full design.", cites=[DraftCite(node_id=first.id)]),
         ]
 
@@ -41,4 +45,4 @@ class OnlyFabricationsComposer:
     """Nothing it writes can be verified."""
 
     def compose(self, request: ComposeRequest) -> list[DraftSentence]:
-        return [DraftSentence(text="This was decided in a design review.", cites=[DraftCite(node_id=FABRICATED_ID)])]
+        return [DraftSentence(text=CITES_FABRICATED_ID, cites=[DraftCite(node_id=FABRICATED_ID)])]

@@ -5,10 +5,9 @@ from __future__ import annotations
 
 import pytest
 from doubles import (
+    DROPPED_SENTENCES,
     FABRICATED_ID,
-    INVENTED_INLINE,
     INVENTED_URL,
-    PARAPHRASED_QUOTE,
     FabricatingComposer,
     FaithfulComposer,
     OnlyFabricationsComposer,
@@ -157,8 +156,11 @@ async def test_fabricated_citations_and_quotes_never_reach_the_output_and_confid
     answer = await ask(reader, EXEC, FabricatingComposer())
 
     dumped = answer.model_dump_json()
-    for invented in (FABRICATED_ID, PARAPHRASED_QUOTE, INVENTED_INLINE, INVENTED_URL):
-        assert invented not in dumped
+    assert FABRICATED_ID not in dumped and INVENTED_URL not in dumped
+    texts = [s.text for s in answer.sentences]
+    for sentence in DROPPED_SENTENCES:  # a fabricated id, a paraphrased quote, an invented inline quote
+        assert sentence not in texts
+    assert len(texts) == len(honest.sentences) + 1  # the URL sentence survives, minus its URL
     assert cited(answer) <= {e.node_id for e in answer.evidence_chain}
     assert answer.decisions == honest.decisions  # Decisions come from the graph, not the composer
     assert (honest.confidence, answer.confidence) == ("High", "Medium")
