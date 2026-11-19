@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
+import json
 import re
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -129,17 +130,48 @@ class ScriptedToolLoop:
 class HashEmbedder:
     """Deterministic bag-of-words vectors: shared words give a high cosine, nothing else matters."""
 
-    name = "hash-bow-64"
+    name = "hash-bow-1024"
 
     def _vec(self, text: str) -> np.ndarray:
-        v = np.zeros(64, dtype=np.float32)
+        v = np.zeros(1024, dtype=np.float32)
         for word in re.findall(r"[a-z0-9_.]+", text.lower()):
-            v[int(hashlib.sha256(word.encode()).hexdigest(), 16) % 64] += 1.0
+            v[int(hashlib.sha256(word.encode()).hexdigest(), 16) % 1024] += 1.0
         norm = np.linalg.norm(v)
         return v / norm if norm else v
 
     def embed_documents(self, texts: Sequence[str]) -> np.ndarray:
-        return np.stack([self._vec(t) for t in texts]) if texts else np.zeros((0, 64), dtype=np.float32)
+        return np.stack([self._vec(t) for t in texts]) if texts else np.zeros((0, 1024), dtype=np.float32)
 
     def embed_query(self, text: str) -> np.ndarray:
         return self._vec(text)
+
+
+# --- the real Anthropic SDK over a fake transport (never the network) -------------------------
+
+def anthropic_client(replies: Sequence[dict[str, Any]], requests: list[dict[str, Any]]):
+    """An `anthropic.Anthropic` whose HTTP transport returns `replies` in order and records request bodies."""
+    import httpx2
+    from anthropic import Anthropic, DefaultHttpxClient
+
+    queue = list(replies)
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        body = json.loads(request.content)
+        requests.append(body)
+        reply = queue.pop(0)
+        return httpx2.Response(200, json={
+            "id": f"msg_{len(requests)}", "type": "message", "role": "assistant", "model": body["model"],
+            "content": reply["content"], "stop_reason": reply.get("stop_reason", "end_turn"), "stop_sequence": None,
+            "usage": {"input_tokens": 1000, "output_tokens": 100}})
+
+    return Anthropic(api_key="test", max_retries=0,
+                     http_client=DefaultHttpxClient(transport=httpx2.MockTransport(handler)))
+
+
+def text_reply(value: BaseModel | dict[str, Any], stop_reason: str = "end_turn") -> dict[str, Any]:
+    data = value.model_dump() if isinstance(value, BaseModel) else value
+    return {"content": [{"type": "text", "text": json.dumps(data)}], "stop_reason": stop_reason}
+
+
+def tool_use_reply(name: str, args: dict[str, Any], id: str = "toolu_1") -> dict[str, Any]:
+    return {"content": [{"type": "tool_use", "id": id, "name": name, "input": args}], "stop_reason": "tool_use"}
