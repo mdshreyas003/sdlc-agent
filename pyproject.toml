@@ -12,6 +12,10 @@ dependencies = [
     "tree-sitter-go>=0.25,<0.26",
 ]
 
+[project.scripts]
+whycode = "whycode.cli:main"
+why-mcp = "whycode.mcp_server:main"
+
 [dependency-groups]
 dev = [
     "anyio>=4",

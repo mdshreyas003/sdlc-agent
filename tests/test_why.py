@@ -3,6 +3,9 @@ contract only."""
 
 from __future__ import annotations
 
+import os
+import sys
+
 import pytest
 from doubles import (
     DROPPED_SENTENCES,
@@ -12,7 +15,7 @@ from doubles import (
     FaithfulComposer,
     OnlyFabricationsComposer,
 )
-from mcp import Client
+from mcp import Client, StdioServerParameters
 
 from whycode.answer.engine import AnswerEngine
 from whycode.answer.patterns import GraphReader
@@ -188,6 +191,21 @@ async def test_every_node_id_in_an_answer_resolves_to_a_real_record(reader, fixt
         assert ids, anchor
         for node_id in ids:
             assert node_id in graph.nodes and not graph.nodes[node_id].is_stub, (anchor, node_id)
+
+
+async def test_the_why_mcp_entry_point_answers_over_stdio(fixture_store, neo4j_uri_auth):
+    """The command Claude Code launches (`.mcp.json`), configured from the environment, offline composer."""
+    uri, (user, password) = neo4j_uri_auth
+    env = {**os.environ, "NEO4J_URI": uri, "NEO4J_USERNAME": user, "NEO4J_PASSWORD": password,
+           "WHY_COMPOSER": "template"}
+    params = StdioServerParameters(command=sys.executable, args=["-m", "whycode.mcp_server"], env=env)
+    async with Client(params) as client:
+        result = await client.call_tool("why", {"anchor": "schemachanger.job.max_retry_backoff"})
+    answer = Answer.model_validate(result.structured_content)
+
+    assert answer.refused is False
+    assert pr(98100) in {d.discussion_id for d in answer.decisions}
+    assert answer.sentences and cited(answer) <= {e.node_id for e in answer.evidence_chain}
 
 
 async def test_a_free_form_question_naming_one_code_entity_is_resolved_and_a_vague_one_is_refused(reader):
