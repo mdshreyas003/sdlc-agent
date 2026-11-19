@@ -1,0 +1,21 @@
+# Held-out Window questions written by hand: a question whose answer changed after the cutoff
+# (2024-06-30). `gold_facts`/`gold_evidence` hold the answer as of the cutoff; `after` holds the
+# answer once the window is visible, with `superseded_facts` naming what stopped being true.
+# Reverts inside the window are also generated automatically (`whycode-eval labels`).
+#
+# Template (copy, fill from real post-cutoff history, then set human_verified: true):
+#
+# - id: W-001
+#   type: window
+#   origin: human
+#   question: <a why/what question about one Code Entity>
+#   anchor: {kind: setting, id: <cluster setting name>}
+#   gold_facts: [<the answer as of 2024-06-30>]
+#   gold_evidence: [{node_id: pr:<n>, quote: <verbatim, merged before the cutoff>}]
+#   after:
+#     gold_facts: [<the answer after the window>]
+#     gold_evidence: [{node_id: pr:<n>, quote: <verbatim, merged inside the window>}]
+#     superseded_facts: [<the cutoff answer that is no longer live>]
+#   split: test
+#   human_verified: false
+[]
