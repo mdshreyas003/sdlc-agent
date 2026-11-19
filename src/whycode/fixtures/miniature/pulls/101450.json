@@ -1,0 +1,43 @@
+{
+  "pull": {
+    "number": 101450,
+    "title": "Revert \"sql: treat descriptor validation errors as permanent schema change errors\"",
+    "body": "This reverts commit 3f6c1e2a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e.\n\nDuring upgrades, descriptors can fail validation transiently while the cluster version gate is being crossed, so treating validation errors as permanent failed jobs that would have succeeded on retry.\n\nFixes #101400\n\nRelease note (bug fix): Schema change jobs no longer fail permanently on transient descriptor validation errors during upgrades.",
+    "user": {"login": "rafiss"},
+    "html_url": "https://github.com/cockroachdb/cockroach/pull/101450",
+    "created_at": "2023-05-09T13:00:00Z",
+    "merged_at": "2023-05-10T18:30:00Z",
+    "merge_commit_sha": "2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e",
+    "base": {"ref": "master"},
+    "labels": []
+  },
+  "files": [
+    {
+      "filename": "pkg/sql/schema_changer.go",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 3,
+      "patch": "@@ -120,9 +120,6 @@ func isPermanentSchemaChangeError(err error) bool {\n \tif errors.Is(err, catalog.ErrDescriptorNotFound) {\n \t\treturn true\n \t}\n-\tif catalog.HasValidationError(err) {\n-\t\treturn true\n-\t}\n \treturn false\n }"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "5d2a8e1f0c9b7a6d4e3f2a1b0c9d8e7f6a5b4c3d",
+      "author": {"login": "rafiss"},
+      "commit": {
+        "message": "Revert \"sql: treat descriptor validation errors as permanent schema change errors\"\n\nThis reverts commit 3f6c1e2a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e.",
+        "author": {"name": "Rafi Shamim", "date": "2023-05-09T12:55:00Z"}
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "user": {"login": "fqazi"},
+      "state": "APPROVED",
+      "body": "Agreed, let's revert until we can tell transient validation failures apart from real corruption.",
+      "submitted_at": "2023-05-10T09:20:00Z"
+    }
+  ],
+  "review_comments": [],
+  "issue_comments": []
+}

@@ -1,0 +1,35 @@
+{
+  "issue": {
+    "number": 98001,
+    "title": "sql: schema change job retries in a tight loop when the descriptor is offline",
+    "body": "**Describe the problem**\n\nAfter upgrading to v23.1.0-alpha, a schema change job on an offline table retries its failed step thousands of times per second and pins a CPU.\n\n**Expected behavior**\n\nThe job should back off between retries.\n\nJira issue: CRDB-24990",
+    "user": {"login": "dt"},
+    "html_url": "https://github.com/cockroachdb/cockroach/issues/98001",
+    "state": "closed",
+    "created_at": "2023-03-01T10:00:00Z",
+    "closed_at": "2023-03-20T15:02:12Z",
+    "labels": [{"name": "C-bug"}, {"name": "regression"}, {"name": "A-schema-changes"}]
+  },
+  "comments": [
+    {
+      "user": {"login": "fqazi"},
+      "body": "Confirmed: the job retries without any backoff and spins at 100% CPU while the descriptor is offline.",
+      "created_at": "2023-03-02T09:30:00Z"
+    },
+    {
+      "user": {"login": "rafiss"},
+      "body": "We should back off exponentially between retries instead of retrying immediately; a constant delay would still hammer the cluster during a long outage.",
+      "created_at": "2023-03-03T14:10:00Z"
+    },
+    {
+      "user": {"login": "blathers-crl[bot]"},
+      "body": "Hi @dt, please add branch-* labels to identify which branch(es) this release-blocker affects.",
+      "created_at": "2023-03-01T10:00:05Z"
+    },
+    {
+      "user": {"login": "spilchen"},
+      "body": "Seeing the tight retry loop again on 24.2 after the backoff default changed; see #127000.",
+      "created_at": "2024-08-01T12:00:00Z"
+    }
+  ]
+}

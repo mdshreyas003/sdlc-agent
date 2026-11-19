@@ -18,21 +18,10 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict
 
+# The one verbatim rule, shared with the Decision extractor and the answer verifier.
+from whycode.quotes import is_verbatim, squash
 
-def squash(text: str) -> str:
-    """Collapse every whitespace run to one space and casefold."""
-    return " ".join(text.split()).casefold()
-
-
-def is_verbatim(quote: str, text: str) -> bool:
-    """True when `quote` appears word for word in `text`.
-
-    The rule (shared by the gold check and citation precision): whitespace runs collapse to one
-    space and case is ignored, nothing else is forgiven: no elision, no typography folding, no
-    fuzzy matching. An empty quote never matches.
-    """
-    q = squash(quote)
-    return bool(q) and q in squash(text)
+__all__ = ["Corpus", "CorpusRecord", "LayeredCorpus", "MemoryCorpus", "is_verbatim", "squash", "write_jsonl"]
 
 
 class CorpusRecord(BaseModel):

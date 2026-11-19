@@ -1,0 +1,14 @@
+{
+  "issue": {
+    "number": 127000,
+    "title": "sql: schema change jobs wait too long between retries after short outages",
+    "body": "This issue is created after the cutoff and must never be ingested. With the 20s backoff cap, jobs sit idle long after a short outage ends.",
+    "user": {"login": "spilchen"},
+    "html_url": "https://github.com/cockroachdb/cockroach/issues/127000",
+    "state": "closed",
+    "created_at": "2024-07-02T08:00:00Z",
+    "closed_at": "2024-07-15T10:00:01Z",
+    "labels": [{"name": "C-bug"}, {"name": "regression"}, {"name": "A-schema-changes"}]
+  },
+  "comments": []
+}
