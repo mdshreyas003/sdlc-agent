@@ -73,7 +73,8 @@ class _Builder:
                 # Every CodeEntity field, so a CodeIndex can be rebuilt from the graph (e.g. for check_change).
                 "kind": e.kind, "key": e.key, "name": e.name, "aliases": list(e.aliases), "parent": e.parent,
                 "package": e.package, "package_name": e.package_name, "file": e.file, "receiver": e.receiver,
-                "pointer_receiver": e.pointer_receiver, "go_var": e.go_var, "origin": STATED,
+                "pointer_receiver": e.pointer_receiver, "go_var": e.go_var, "names": list(e.names),
+                "origin": STATED,
             }))
             if e.parent and (parent := self.code.get(e.parent)):
                 self._edge(parent.id, "CONTAINS", e.id, "code", self.history.cutoff)
