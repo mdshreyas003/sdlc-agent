@@ -13,7 +13,7 @@ schema-change code. Two tools:
 | `why(anchor)` | "Why is this function / file / package / cluster setting the way it is?" | The Decisions that govern it, each with a **verbatim quote**, its Discussion, date, Incidents, and a **Person to Ask**. Or an explicit refusal. |
 | `check_change(diff)` | "I'm about to make this edit." | A **Fence Warning** for each live Decision the diff reverses or may contradict, with the quote and the incident it prevented. No model involved. |
 
-Pitch and demo: [`docs/whycode.html`](docs/whycode.html). This page covers how it works and how to run it.
+Pitch and demo: [`docs/whycode.html`](https://mdshreyas003.github.io/sdlc-agent/whycode.html). This page covers how it works and how to run it.
 
 ## Try it (offline, 60 seconds)
 
