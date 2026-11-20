@@ -25,7 +25,8 @@ Semantics every producer and consumer can rely on:
 - Person to Ask (ticket 06): `people` lists the authors and approvers of the Decisions' records, active first. A
   departed person's `ask_instead` names the next-best active person: an active person already in `people`, else
   the author or approver of the latest Change touching the nearest enclosing area of the code (the Anchor's
-  file, then its directories up to two levels deep, e.g. `pkg/sql/`), who is then added to `people` with `via` set to that Change.
+  file, then its directories up to two levels deep, e.g. `pkg/sql/`), who is then added to `people` with `via`
+  set to that Change.
 - Anchor resolution (ticket 06): an exact key or alias, else exactly one Code Entity named in a free-form question;
   otherwise one entity-matching model step over a shortlist of Code Entities. A match the step is unsure of, or
   one outside the shortlist, is refused (`anchor` None); a confident match sets `anchor_matched` and caps

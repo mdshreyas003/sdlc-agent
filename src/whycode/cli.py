@@ -7,6 +7,7 @@
     uv run whycode why pkg/sql/schema_changer.go  # prints the Answer contract as JSON
     uv run whycode check-citations --sample 20    # every node id in 20 answers resolves (exit 1 if not)
     uv run whycode supersession-report            # the supersession judge (Opus 5.5) vs explicit Supersession
+    uv run whycode serve [--port 8765]            # the human view: one page per Answer, and /why as JSON
 
 Configuration comes from the environment (`whycode.config`); the real slice's scope from `whycode.history.scope`.
 """
@@ -152,6 +153,24 @@ def _check_citations(settings: Settings, args: argparse.Namespace, transport=Non
     return 0 if audit.ok else 1
 
 
+def _serve(settings: Settings, args: argparse.Namespace, transport=None) -> int:
+    from whycode.answer.patterns import GraphReader
+    from whycode.view import make_server
+
+    reader = GraphReader(settings.driver(), settings.neo4j_database)
+    reader.selfcheck()
+    server = make_server(settings.answer_engine(reader).why, args.host, args.port)
+    host, port = server.server_address[:2]
+    print(f"serving http://{host}:{port}/", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
+
+
 def main(argv: list[str] | None = None, *, github_transport=None) -> int:
     """`github_transport` replaces the network transport under the cache (tests serve a fake GitHub)."""
     logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -185,9 +204,12 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
                                                         "in the built graph (precision, recall, disagreements)")
     report.add_argument("--judge", choices=["recorded", "anthropic"], default="anthropic")
     report.add_argument("--out", type=Path, help="also write the report (markdown) here")
+    serve = sub.add_parser("serve", help="serve the human view: one page per Answer, and /why?anchor= as JSON")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8765, help="0 picks a free port (default: %(default)s)")
     args = parser.parse_args(argv)
     commands = {"build": _build, "fetch": _fetch, "why": _why, "check-citations": _check_citations,
-                "supersession-report": _supersession_report}
+                "supersession-report": _supersession_report, "serve": _serve}
 
     from whycode.history.checkout import CheckoutError
     from whycode.history.github import GitHubError
