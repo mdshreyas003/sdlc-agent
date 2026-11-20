@@ -188,7 +188,8 @@ always scripted in tests.
   `removed` (the lines their diff wrote there), which is how `reverses` is decided; `CodeIndex.changed_lines` maps
   each changed line to its enclosing function or setting registration (so `touched_by`, and hard GOVERNS links, no
   longer credit the function a hunk header names when the change is in the next one). `supersession_statuses` in
-  `answer/engine.py` is the shared Live Decision rule. The human view (06) can render a `ChangeCheck` as it is.
+  `answer/engine.py` is the shared Live Decision rule. The human view (`whycode serve`) does not show Fence
+  Warnings yet.
   Agent comparison: `eval/agent-comparison/README.md`.
 - **06 (demo polish), done.** Scoreboard: `llm-alone` baseline and `whycode-eval calibration` (`eval/README.md`).
   Answer contract additions (all optional): `Answer.anchor_matched`, `Answer.refusal_reason`,
