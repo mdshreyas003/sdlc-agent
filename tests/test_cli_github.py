@@ -53,7 +53,7 @@ def test_fetch_fills_the_cache_and_a_build_from_it_makes_no_github_calls(env, ne
     fetched = json.loads(capsys.readouterr().out)
     calls = len(fake.calls)
     assert fetched["github_calls"] == calls > 0
-    assert fetched["pull_requests"] == 5 and fetched["rfcs"] == 2
+    assert fetched["pull_requests"] == 6 and fetched["rfcs"] == 3
 
     counts_file = env / "graph-counts.json"
     assert main(["build", "--history", "github", "--extractor", "none", "--counts-file", str(counts_file)],

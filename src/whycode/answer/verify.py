@@ -6,6 +6,8 @@ Rules (ported in spirit from the legacy verifier, see notes: legacy-verifier.md)
 - a quoted passage inside a sentence ("...", at least three words) must be verbatim in one of the
   sentence's surviving citations, or the sentence is dropped;
 - URLs that are not evidence URLs are removed from the text;
+- a sentence that cites a superseded Decision, or quotes it (three words or more), must also cite what
+  superseded it (one of its `witnesses`), so a dead Decision is never presented as live;
 - a sentence left with no citation, or with no text, is dropped.
 
 Every removal is counted in `dropped`; the confidence scorer lowers confidence for any of them.
@@ -14,15 +16,25 @@ Every removal is counted in `dropped`; the confidence scorer lowers confidence f
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from whycode.answer.compose import DraftSentence, EvidenceNode
 from whycode.contract import Sentence
-from whycode.quotes import is_verbatim
+from whycode.quotes import is_verbatim, word_count
 
 _INLINE_QUOTE = re.compile(r'"([^"]+)"|“([^”]+)”')
 _URL = re.compile(r"https?://[^\s\]\)>,\"']+")
 MIN_INLINE_QUOTE_WORDS = 3
+
+
+@dataclass(frozen=True, slots=True)
+class Superseded:
+    """A superseded Decision, as the verifier needs it: its quote, and the node ids that show it was superseded
+    (what superseded it, and the record stating so)."""
+
+    quote: str
+    witnesses: frozenset[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,8 +47,10 @@ def _norm_url(url: str) -> str:
     return url.split("#", 1)[0].split("?", 1)[0].rstrip(".;:")
 
 
-def verify(drafts: list[DraftSentence], evidence: list[EvidenceNode]) -> Verified:
+def verify(drafts: list[DraftSentence], evidence: list[EvidenceNode],
+           superseded: Mapping[str, Superseded] | None = None) -> Verified:
     by_id = {node.id: node for node in evidence}
+    superseded = superseded or {}
     allowed_urls = {_norm_url(node.url) for node in evidence if node.url}
     dropped = 0
     sentences: list[Sentence] = []
@@ -60,7 +74,11 @@ def verify(drafts: list[DraftSentence], evidence: list[EvidenceNode]) -> Verifie
         text = " ".join(_URL.sub(scrub, draft.text).split())
         inline = [q for pair in _INLINE_QUOTE.findall(text) for q in pair if len(q.split()) >= MIN_INLINE_QUOTE_WORDS]
         quoted_ok = all(any(is_verbatim(q, by_id[c].text) for c in cites) for q in inline)
-        if not cites or not text or not quoted_ok:
+        quotes = inline + [c.quote for c in draft.cites
+                           if c.node_id in cites and word_count(c.quote) >= MIN_INLINE_QUOTE_WORDS]
+        dead = [d for d_id, d in superseded.items() if d_id in cites or any(is_verbatim(q, d.quote) for q in quotes)]
+        shown_dead = all(d.witnesses & set(cites) for d in dead)
+        if not cites or not text or not quoted_ok or not shown_dead:
             dropped += 1
             continue
         sentences.append(Sentence(text=text, cites=cites))

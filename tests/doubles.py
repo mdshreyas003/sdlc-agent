@@ -15,14 +15,19 @@ DROPPED_SENTENCES = (CITES_FABRICATED_ID, RESTS_ON_PARAPHRASE, QUOTES_INVENTED_T
 
 
 class FaithfulComposer:
-    """Writes one sentence per Decision, citing the Decision and its Discussion with the real quote."""
+    """Writes one sentence per Decision, citing the Decision and its Discussion with the real quote, and for a
+    superseded or refined Decision also what superseded or refined it."""
 
     def compose(self, request: ComposeRequest) -> list[DraftSentence]:
-        return [
-            DraftSentence(text=f"{d.choice} ({d.date.isoformat()}).",
-                          cites=[DraftCite(node_id=d.id), DraftCite(node_id=d.discussion_id, quote=d.quote)])
-            for d in request.decisions
-        ]
+        out = []
+        for d in request.decisions:
+            cites = [DraftCite(node_id=d.id), DraftCite(node_id=d.discussion_id, quote=d.quote)]
+            text = f"{d.choice} ({d.date.isoformat()})."
+            if d.status != "live" and d.superseded_by:
+                cites.append(DraftCite(node_id=d.superseded_by))
+                text = f"{d.choice} ({d.date.isoformat()}), {d.status} on {d.superseded_at.isoformat()}."
+            out.append(DraftSentence(text=text, cites=cites))
+        return out
 
 
 class FabricatingComposer(FaithfulComposer):
@@ -41,8 +46,36 @@ class FabricatingComposer(FaithfulComposer):
         ]
 
 
+class StaleComposer(FaithfulComposer):
+    """The faithful sentences plus one that states every superseded Decision as if it still held."""
+
+    PRESENTS_AS_LIVE = "The schema changer currently follows this Decision."
+
+    def compose(self, request: ComposeRequest) -> list[DraftSentence]:
+        stale = [DraftSentence(text=self.PRESENTS_AS_LIVE,
+                               cites=[DraftCite(node_id=d.id), DraftCite(node_id=d.discussion_id, quote=d.quote)])
+                 for d in request.decisions if d.status == "superseded"]
+        return [*super().compose(request), *stale]
+
+
 class OnlyFabricationsComposer:
     """Nothing it writes can be verified."""
 
     def compose(self, request: ComposeRequest) -> list[DraftSentence]:
         return [DraftSentence(text=CITES_FABRICATED_ID, cites=[DraftCite(node_id=FABRICATED_ID)])]
+
+
+class ScriptedJudge:
+    """Stands in for the supersession judge: labels pairs by (earlier quote, later quote); everything else is
+    unrelated. Records which pairs it was asked about."""
+
+    def __init__(self, labels=None):
+        self.labels = labels or {}
+        self.pairs = []
+
+    def judge(self, pair):
+        from whycode.supersession import Judgment
+
+        self.pairs.append(pair)
+        label, quote = self.labels.get((pair.earlier.quote, pair.later.quote), ("unrelated", ""))
+        return Judgment(label=label, quote=quote, reason=f"scripted {label}")

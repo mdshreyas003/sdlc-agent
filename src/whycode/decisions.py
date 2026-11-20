@@ -106,10 +106,12 @@ class RecordedDecisionProposer:
 
     name = "recorded"
 
-    def __init__(self, path: Path):
-        data = json.loads(Path(path).read_text())
-        self._recorded = {k: [DecisionCandidate.model_validate(c) for c in v] for k, v in data.items()
-                          if not k.startswith("_")}
+    def __init__(self, *paths: Path):
+        self._recorded = {}
+        for path in paths:
+            data = json.loads(Path(path).read_text())
+            self._recorded |= {k: [DecisionCandidate.model_validate(c) for c in v] for k, v in data.items()
+                               if not k.startswith("_")}
 
     def propose(self, discussion: Discussion) -> list[DecisionCandidate]:
         if discussion.id not in self._recorded:

@@ -19,8 +19,8 @@ Every command takes `--corpus <file.jsonl>` (or `WHYCODE_EVAL_CORPUS`) except `j
 uv run whycode-eval labels --corpus data/corpus.jsonl --window-end 2025-06-30   # writes gold/automatic.yaml
 uv run whycode-eval check  --corpus data/corpus.jsonl                           # every gold quote vs the corpus
 uv run whycode-eval run --split dev --corpus data/corpus.jsonl \
-    --systems ours=whycode.<module>:<factory>,vector-rag,git-agent --reference ours \
-    --git-repo ~/src/cockroach --cutoff-rev d13253527955eaa2da09394b8a2729627ab25c48 --window-rev <sha>
+    --systems ours=whycode.answer.systems:ours,ours-without-supersession=whycode.answer.systems:ours_without_supersession,vector-rag,git-agent \
+    --reference ours --git-repo ~/src/cockroach --cutoff-rev d13253527955eaa2da09394b8a2729627ab25c48 --window-rev <sha>
 uv run whycode-eval judge-sheet --run results/dev-<time> --n 20                  # answers to hand-label
 uv run whycode-eval agreement                                                    # judge vs hand labels
 ```
@@ -36,6 +36,14 @@ uv run whycode-eval agreement                                                   
 - `as_of`: answer from history up to that date; `None` means all history including the Held-out Window (the `@after` half of a window question).
 - `exclude`: node ids to treat as absent (ablation and hidden answer keys).
 - Return `Answered(answer, usage)` instead of a bare `Answer` to get a cost column; usage is a list of `ModelCall`s.
+
+Our system (ticket 04): `ours=whycode.answer.systems:ours` and the ablation
+`ours-without-supersession=whycode.answer.systems:ours_without_supersession` (same graph and composer, every
+Decision treated as live). Both read Neo4j and the composer from the environment (`src/whycode/config.py`; set
+`ANTHROPIC_API_KEY` so the composer is Opus 5.5, the baselines' answering model). The graph must hold the Held-out
+Window: build it with `whycode build --cutoff <window end>` and write the corpus from that same graph
+(`whycode.graph.corpus`); `as_of` and `exclude` are applied in every query pattern. The supersession catch rate of
+the two systems on `supersession` and `window-after` cases is the "with and without supersession" difference.
 
 Both baselines use the same answering model (`claude-opus-5-5`) and, for vector RAG, the same embedding model (`BAAI/bge-small-en-v1.5`) as our system; the report warns when declared models differ.
 
@@ -73,3 +81,6 @@ Answer correctness (fact-level judge), citation precision (cited node ids that r
 2. Finish and verify the drafts in `gold/human.yaml`, and write more until there are at least 30 human questions: at least 5 unanswerable (by ablation), at least 5 reversed or refined Decisions, and some time-adjacency traps (two records close in time where neither names the other; check by grep). Add Held-out Window questions to `gold/window.yaml`. Run `check` until it prints `gold ok`.
 3. Run the dev split with every system, then `judge-sheet --n 20`, label the answers in `judge_agreement/labels.yaml` (one bool per fact; set `human_labelled: true`), and run `agreement` until it reports at least 15 labelled answers. Commit the labels and `agreement.md`.
 4. Commit everything, run the test split once, and commit `results/test-*`.
+5. Ticket 04: on the real graph (built through the window end), run `uv run whycode supersession-report --out
+   eval/results/supersession-judge.md` and check its false positives by hand; include both `ours` systems in the
+   runs above so the results table shows the score with and without Supersession.

@@ -2,24 +2,31 @@
 
 1. Resolve the Anchor to one Code Entity: exact key or alias first; otherwise one entity-matching step over
    the code-like tokens of a free-form question. Zero or several candidates: refuse, never guess.
-2. Traverse fixed read-only patterns: Anchor -> governing Decisions -> Discussions -> closing Changes ->
-   People and Incidents. No planning, no model-written queries.
+2. Traverse fixed read-only patterns: Anchor -> governing Decisions -> Supersession -> Discussions -> closing
+   Changes -> People and Incidents. No planning, no model-written queries.
 3. Compose sentences from the retrieved nodes only (the `Composer` seam).
 4. Verify in code, then score confidence from graph properties and what verification dropped.
 
-Every Decision is treated as live until ticket 04 adds Supersession to the traversal.
+Supersession sets each Decision's status. A Decision with a SUPERSEDES edge into it is superseded. Otherwise,
+one with a REFINES edge from a Decision that is not itself superseded is refined (a refinement that was later
+reverted no longer narrows anything). Among several edges the strongest names the superseder: explicit before
+inferred, a Decision before a record, then the earliest. `supersession=False` builds the scoreboard's
+"without supersession" system: every Decision is treated as live.
 """
 
 from __future__ import annotations
 
 import datetime as dt
 import re
+from collections import defaultdict
+from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any
 
 from whycode.answer.compose import Composer, ComposeRequest, EvidenceNode
 from whycode.answer.confidence import ConfidenceInputs, DecisionGrounding, score_confidence
-from whycode.answer.patterns import GraphReader
-from whycode.answer.verify import verify
+from whycode.answer.patterns import ALL_HISTORY, GraphReader
+from whycode.answer.verify import Superseded, verify
 from whycode.contract import Anchor, Answer, DecisionView, EvidenceItem, IncidentRef, PersonView
 
 MAX_ANCHOR_CHARS = 2000
@@ -65,48 +72,80 @@ class _Evidence:
                                            title=node.title, date=_date(node.date))
 
 
+@dataclass(frozen=True, slots=True)
+class _Status:
+    status: str  # superseded | refined
+    edge: dict[str, Any]  # a `supersession` pattern row
+    by: str | None  # superseding node, None when the Decision's own record declares it dead
+
+
+def _rank(row: dict[str, Any], own_record: str) -> tuple:
+    by = row["by"]
+    return (row["basis"] != "explicit", by.get("choice") is None, by["id"] == own_record, row["at"], by["id"])
+
+
 class AnswerEngine:
-    def __init__(self, reader: GraphReader, composer: Composer):
+    def __init__(self, reader: GraphReader, composer: Composer, supersession: bool = True):
         self.reader = reader
         self.composer = composer
+        self.supersession = supersession
 
-    def why(self, anchor: str) -> Answer:
+    def why(self, anchor: str, as_of: dt.date | None = None, exclude: Iterable[str] = ()) -> Answer:
+        """The Answer for an Anchor. `as_of` and `exclude` are the scoreboard's view of history: nothing dated
+        after `as_of` (None: all of it) and none of the `exclude`d records, nor what rests on them, is seen."""
+        scope = {"as_of": as_of.isoformat() if as_of else ALL_HISTORY, "exclude": sorted(set(exclude))}
         entity = self._resolve(anchor)
         if entity is None:
             return Answer(anchor=None, refused=True, confidence="Low")
         target = Anchor(kind=entity["kind"], id=entity["key"])
-        rows = self.reader.governing(entity["id"])
+        rows = self.reader.governing(entity["id"], **scope)
         if not rows:
-            return self._refusal(target, entity["id"])
+            return self._refusal(target, entity["id"], scope)
 
         evidence = _Evidence()
         decisions: list[DecisionView] = []
         grounding: list[DecisionGrounding] = []
         discussions: dict[str, dict[str, Any]] = {}
         speakers: list[str] = []
+        statuses = self._statuses({r["decision"]["id"]: r["discussion"]["id"] for r in rows}, scope)
+        superseded: dict[str, Superseded] = {}
         for row in rows:
             d, s = row["decision"], row["discussion"]
             link = "hard" if any(g["link"] == "hard" for g in row["governs"]) else "soft"
+            st = statuses.get(d["id"])
+            history = {}
+            if st is not None:
+                history = dict(status=st.status, superseded_by=st.by, superseded_at=_date(st.edge["at"]),
+                               explicit_or_inferred=st.edge["basis"], supersession_quote=st.edge["quote"],
+                               supersession_source=st.edge["source"]["id"])
             decisions.append(DecisionView(
                 id=d["id"], choice=d["choice"], rationale=d["rationale"], quote=d["quote"],
                 date=_date(d["date"]), link=link, discussion_id=s["id"],
                 alternatives_rejected=list(d.get("alternatives_rejected") or []),
-                governs=sorted({g["entity"] for g in row["governs"]}),
+                governs=sorted({g["entity"] for g in row["governs"]}), **history,
             ))
-            grounding.append(DecisionGrounding(link=link, source=s["kind"], has_rationale=bool(d["rationale"])))
+            grounding.append(DecisionGrounding(link=link, source=s["kind"], has_rationale=bool(d["rationale"]),
+                                               status=st.status if st else "live",
+                                               supersession=st.edge["basis"] if st else None))
             discussions[s["id"]] = s
             if d.get("speaker"):
                 speakers.append(d["speaker"])
             evidence.add(EvidenceNode(id=d["id"], kind="decision", title=d["choice"], url=s.get("url"),
                                       date=d["date"], text=d["quote"]), quote=d["quote"])
             evidence.add(_node(s), quote=d["quote"])
+        for decision_id, st in statuses.items():
+            self._add_superseder(evidence, st)
+            if st.status == "superseded":
+                witnesses = {st.by, st.edge["source"]["id"]} - {None}
+                superseded[decision_id] = Superseded(quote=next(d.quote for d in decisions if d.id == decision_id),
+                                                     witnesses=frozenset(witnesses))
 
         issues = [i for i, s in discussions.items() if s["kind"] == "issue"]
-        closers = self.reader.closers(issues) if issues else []
+        closers = self.reader.closers(issues, **scope) if issues else []
         for change in closers:
             evidence.add(_node(change))
         changes = [i for i, s in discussions.items() if s["kind"] == "pr"] + [c["id"] for c in closers]
-        incident_rows = self.reader.incidents(changes + list(discussions))
+        incident_rows = self.reader.incidents(changes + list(discussions), **scope)
         for incident in incident_rows:
             evidence.add(_node(incident, kind="incident"))
         reviewed = [i for i, s in discussions.items() if s["kind"] in ("pr", "rfc")]
@@ -114,7 +153,7 @@ class AnswerEngine:
 
         request = ComposeRequest(anchor=target, decisions=decisions, evidence=list(evidence.nodes.values()),
                                  people=people)
-        verified = verify(self.composer.compose(request), list(evidence.nodes.values()))
+        verified = verify(self.composer.compose(request), list(evidence.nodes.values()), superseded)
         incidents = [IncidentRef(id=i["id"], url=i.get("url")) for i in incident_rows]
         if not verified.sentences:
             return Answer(anchor=target, refused=True, confidence="Low",
@@ -129,6 +168,41 @@ class AnswerEngine:
             incidents=incidents,
             sentences=verified.sentences,
         )
+
+    def _statuses(self, own_record: dict[str, str], scope: dict[str, Any]) -> dict[str, _Status]:
+        """Decision id -> its Supersession status, for the Decisions that are not live."""
+        if not self.supersession or not own_record:
+            return {}
+        rows = self.reader.supersession(sorted(own_record), **scope)
+        refiners = sorted({r["by"]["id"] for r in rows if r["type"] == "REFINES"})
+        dead_refiners = {r["decision"] for r in (self.reader.supersession(refiners, **scope) if refiners else [])
+                         if r["type"] == "SUPERSEDES"}
+        edges: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for r in rows:
+            edges[r["decision"]].append(r)
+        out = {}
+        for decision_id, found in edges.items():
+            for status, type_ in (("superseded", "SUPERSEDES"), ("refined", "REFINES")):
+                candidates = [r for r in found if r["type"] == type_ and r["by"]["id"] not in
+                              (dead_refiners if type_ == "REFINES" else ())]
+                if candidates:
+                    best = min(candidates, key=lambda r: _rank(r, own_record[decision_id]))
+                    by = best["by"]["id"]
+                    out[decision_id] = _Status(status, best, None if by == own_record[decision_id] else by)
+                    break
+        return out
+
+    @staticmethod
+    def _add_superseder(evidence: _Evidence, st: _Status) -> None:
+        by, source, quote = st.edge["by"], st.edge["source"], st.edge["quote"]
+        if by.get("choice") is not None:  # a Decision: grounded by its own quote in its Discussion
+            home = st.edge["by_discussion"]
+            evidence.add(EvidenceNode(id=by["id"], kind="decision", title=by["choice"], url=home.get("url"),
+                                      date=by["date"], text=by["quote"]), quote=by["quote"])
+            evidence.add(_node(home), quote=quote if home["id"] == source["id"] else by["quote"])
+        evidence.add(_node(source), quote=quote)
+        if by["id"] != source["id"] and by.get("choice") is None:
+            evidence.add(_node(by))
 
     def _resolve(self, anchor: str) -> dict[str, Any] | None:
         text = anchor.strip()
@@ -154,12 +228,12 @@ class AnswerEngine:
                                                                  active=bool(r["active"])))
         return sorted(seen.values(), key=lambda p: (not p.active, p.role != "author", p.handle))
 
-    def _refusal(self, target: Anchor, entity_id: str) -> Answer:
+    def _refusal(self, target: Anchor, entity_id: str, scope: dict[str, Any]) -> Answer:
         evidence = _Evidence()
-        changes = self.reader.nearest_changes(entity_id)
+        changes = self.reader.nearest_changes(entity_id, **scope)
         for change in changes:
             evidence.add(_node(change))
-        nearby = self.reader.nearby_decisions(entity_id)
+        nearby = self.reader.nearby_decisions(entity_id, **scope)
         for row in nearby:
             d, s = row["decision"], row["discussion"]
             evidence.add(EvidenceNode(id=d["id"], kind="decision", title=d["choice"], url=s.get("url"),

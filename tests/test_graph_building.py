@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from whycode.fixtures import fixture_graph
+from whycode.quotes import is_verbatim
 
 BACKOFF_QUOTE = (
     "We chose a capped exponential backoff rather than a fixed retry interval because a fixed interval either "
@@ -102,10 +103,14 @@ def test_derived_nodes_and_edges_are_tagged_derived_and_rest_on_a_quote(empty_st
         assert node.props["origin"] == ("derived" if "Decision" in node.labels else "stated"), node.id
         if "Decision" in node.labels:
             assert node.props["quote"]
+    assert {e.props["basis"] for e in graph.edges("REFINES")} == {"inferred"}
     for edge in graph.edges():
-        assert edge.props["origin"] == ("derived" if edge.type in {"YIELDS", "GOVERNS"} else "stated"), edge
+        inferred = edge.props.get("basis") == "inferred"  # Supersession judged by the model
+        assert edge.props["origin"] == ("derived" if edge.type in {"YIELDS", "GOVERNS"} or inferred else "stated"), edge
         assert edge.props["locator"] and edge.props["observed_at"], edge
-        if edge.props["origin"] == "derived":
+        if edge.type in ("SUPERSEDES", "REFINES"):  # explicit or inferred, it rests on a quote in its source record
+            assert is_verbatim(edge.props["quote"], graph.nodes[edge.props["source"]].props["text"]), edge
+        elif edge.props["origin"] == "derived":
             assert edge.props["quote"] == graph.nodes[edge.target if edge.type == "YIELDS" else edge.source].props["quote"]
 
 

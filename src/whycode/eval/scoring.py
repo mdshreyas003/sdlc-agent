@@ -5,7 +5,8 @@ Every system is scored on the same Cases through the answer contract:
 - answer correctness: share of gold facts the judge finds in the answer (answerable cases; a refusal scores 0)
 - citation precision: share of the distinct node ids an answer cites that resolve to a record the
   system could see (not ablated, not after its as-of date) with every attached quote verbatim. A
-  derived Decision id counts when its quote is verbatim in a record the answer cites.
+  derived Decision id (in the Decisions or the Evidence Chain) counts when its quote is verbatim in a record
+  the answer cites.
 - supersession catch rate: cases with superseded facts; caught when the answer reports the change
   and presents no superseded fact as live
 - refusal accuracy: refused exactly when the case is unanswerable
@@ -95,13 +96,16 @@ def check_citations(answer: Answer, case: Case, corpus: Corpus) -> tuple[int, in
         return record if record is not None and record.visible(case.as_of, case.exclude) else None
 
     records = {n: r for n in quotes if (r := visible(n)) is not None}
-    decisions = {d.id: d for d in answer.decisions}
+    decisions = {d.id: d.quote for d in answer.decisions}
+    # A derived Decision may also appear only in the Evidence Chain (e.g. the one that superseded another).
+    decisions |= {e.node_id: e.quote for e in answer.evidence_chain if e.kind == "decision" and e.quote
+                  and e.node_id not in decisions}
 
     def valid(node_id: str) -> bool:
         if node_id in records:
             return all(is_verbatim(q, records[node_id].source_text) for q in quotes[node_id])
         if node_id in decisions:  # a derived Decision: grounded in a record this answer cites
-            return any(is_verbatim(decisions[node_id].quote, r.source_text) for r in records.values())
+            return any(is_verbatim(decisions[node_id], r.source_text) for r in records.values())
         return False
 
     return len(quotes), sum(valid(n) for n in quotes)

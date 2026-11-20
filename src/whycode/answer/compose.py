@@ -65,6 +65,11 @@ cite's `quote` field. Never paraphrase inside quotation marks.
 - Say what was chosen, why, what was rejected when recorded, and when. Name the Person to Ask, and say \
 when a person is departed (active: false).
 - Mention an Incident the Decision prevented when one is given.
+- Each Decision has a `status`. A `superseded` Decision is dead: say that it was superseded, by what \
+(`superseded_by`) and when (`superseded_at`), cite `superseded_by` (or `supersession_source` when it is \
+empty) in the same sentence, and never describe it as how the code works now. A `refined` Decision is partly \
+live: say what still holds and what the refining Decision changed. When `explicit_or_inferred` is \
+`inferred`, say the change was inferred, not stated in history.
 - Write 2 to 6 short sentences. No URLs."""
 
 
@@ -87,7 +92,8 @@ class AnthropicComposer:
 
 
 class TemplateComposer:
-    """Deterministic, model-free composer for offline demos: one sentence per Decision."""
+    """Deterministic, model-free composer for offline demos: one sentence per Decision, saying when and by what a
+    superseded or refined Decision was overtaken."""
 
     def compose(self, request: ComposeRequest) -> list[DraftSentence]:
         out = []
@@ -96,5 +102,10 @@ class TemplateComposer:
             cites = [DraftCite(node_id=d.id)]
             if d.discussion_id:
                 cites.append(DraftCite(node_id=d.discussion_id, quote=d.quote))
+            if d.status != "live":
+                how = "inferred" if d.explicit_or_inferred == "inferred" else "stated in history"
+                by = f" by {d.superseded_by}" if d.superseded_by else ""
+                text = f"{d.status.capitalize()} on {d.superseded_at.isoformat()}{by} ({how}): {text}"
+                cites.append(DraftCite(node_id=d.superseded_by or d.supersession_source))
             out.append(DraftSentence(text=text, cites=cites))
         return out

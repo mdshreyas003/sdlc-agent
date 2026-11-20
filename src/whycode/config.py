@@ -38,6 +38,7 @@ from neo4j import Driver, GraphDatabase
 from whycode.history.scope import CUTOFF_COMMIT
 
 EXTRACTORS = ("recorded", "anthropic", "none")
+JUDGES = ("recorded", "anthropic", "none")  # supersession judge; none: explicit Supersession only
 
 
 class ConfigError(RuntimeError):
@@ -105,7 +106,7 @@ class Settings:
             raise ConfigError("ANTHROPIC_API_KEY is not set (or use WHY_COMPOSER=template / WHY_EXTRACTOR=recorded)")
         return LlmClient(anthropic.Anthropic(), cache_dir=self.model_cache)
 
-    def proposer(self, extractor: str):
+    def proposer(self, extractor: str, cutoff: dt.date | None = None):
         """The Decision proposer for an extractor name (see WHY_EXTRACTOR)."""
         from whycode.decisions import AnthropicDecisionProposer, NoDecisionProposer
         from whycode.llm import EXTRACTION_MODEL
@@ -116,7 +117,21 @@ class Settings:
             return NoDecisionProposer()
         from whycode.fixtures import recorded_proposer
 
-        return recorded_proposer()
+        return recorded_proposer(cutoff or self.cutoff)  # the window's recordings only for a later cutoff
+
+    def judge(self, kind: str):
+        """The supersession judge for a kind (JUDGES): Opus 5.5, the fixture's recordings, or None (explicit
+        Supersession only)."""
+        if kind == "anthropic":
+            from whycode.llm import JUDGE_MODEL
+            from whycode.supersession import AnthropicSupersessionJudge
+
+            return AnthropicSupersessionJudge(self.llm(), JUDGE_MODEL)
+        if kind == "recorded":
+            from whycode.fixtures import recorded_judge
+
+            return recorded_judge()
+        return None
 
     def composer_impl(self):
         from whycode.answer.compose import AnthropicComposer, TemplateComposer

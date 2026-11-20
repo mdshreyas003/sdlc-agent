@@ -1,6 +1,7 @@
 {
   "_comment": "GitHub logins of each RFC's authors (the header names people, not logins). The real source takes them from the RFC PR.",
   "20151014_online_schema_change.md": {"authors": ["vivekmenezes"]},
+  "20200909_transactional_schema_changes.md": {"authors": ["ajwerner"]},
   "20210115_new_schema_changer.md": {"authors": ["ajwerner", "lucy-zhang"]},
   "20240715_schema_change_retry_policy.md": {"authors": ["fqazi"]}
 }

@@ -22,6 +22,15 @@ Semantics every producer and consumer can rely on:
 - `refused` is True when no Decision reaches the Anchor, or nothing the composer wrote survived
   verification. A refusal still carries the nearest evidence (`evidence_chain`) and `people` to ask, but
   no `decisions` and no `sentences`. Its confidence is Low.
+- Supersession (ticket 04): a Decision's `status` is `superseded` when a later Decision (or record) overrides
+  it, `refined` when a later, itself not superseded, Decision narrows or extends it (partly live), else `live`.
+  For the first two, `superseded_by` is the superseding or refining Decision, or the record when no Decision of
+  it applies (None when the Decision's own record declares it dead, e.g. an RFC `Status: obsolete`);
+  `superseded_at` is when; `explicit_or_inferred` says whether history states it or the judge inferred it; and
+  `supersession_quote` is the verbatim text stating or justifying it, found in `supersession_source`. Both
+  `superseded_by` and `supersession_source` are in `evidence_chain`. Superseded Decisions are the superseded
+  history: they stay in `decisions`, and a sentence that cites one also cites what superseded it, so it is
+  never presented as live. Supersession and history after `as_of` are invisible to a scoreboard query.
 """
 
 from __future__ import annotations
@@ -58,6 +67,7 @@ class DecisionView(_Contract):
     date: dt.date
     status: DecisionStatus = "live"
     superseded_by: str | None = None
+    """For a superseded or refined Decision: the Decision (or record) that superseded or refined it."""
     explicit_or_inferred: SupersessionOrigin | None = None
     link: GovernsLink
     """`hard` when the Change implementing the Decision touched the code; `soft` when only named in text."""
@@ -66,6 +76,12 @@ class DecisionView(_Contract):
     alternatives_rejected: list[str] = []
     governs: list[str] = []
     """Code Entity node ids within the Anchor's scope that this Decision governs."""
+    superseded_at: dt.date | None = None
+    """When it was superseded or refined (the date the superseding Decision or record took effect)."""
+    supersession_quote: str | None = None
+    """The verbatim text that states the Supersession (a revert, an RFC status) or justifies an inferred one."""
+    supersession_source: str | None = None
+    """Node id of the record whose text holds `supersession_quote`."""
 
 
 class EvidenceItem(_Contract):

@@ -6,6 +6,7 @@
     uv run whycode build --history github         # real slice: cache -> graph -> Neo4j, corpus and counts files
     uv run whycode why pkg/sql/schema_changer.go  # prints the Answer contract as JSON
     uv run whycode check-citations --sample 20    # every node id in 20 answers resolves (exit 1 if not)
+    uv run whycode supersession-report            # the supersession judge (Opus 5.5) vs explicit Supersession
 
 Configuration comes from the environment (`whycode.config`); the real slice's scope from `whycode.history.scope`.
 """
@@ -20,7 +21,7 @@ import logging
 import sys
 from pathlib import Path
 
-from whycode.config import EXTRACTORS, ConfigError, Settings
+from whycode.config import EXTRACTORS, JUDGES, ConfigError, Settings
 
 PITCH_LABELS = {"Decisions": "Decision", "Changes": "Change", "Discussions": "Discussion",
                 "Code Entities": "CodeEntity", "Incidents": "Incident", "People": "Person"}
@@ -66,7 +67,12 @@ def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
     if args.history == "github" and extractor == "recorded":
         raise ConfigError("recorded extractions exist only for the fixture history: use --extractor anthropic "
                           "(or none for a graph without Decisions)")
-    proposer = settings.proposer(extractor)  # fail fast on a missing key, before any fetching
+    judge_kind = args.judge or extractor  # recorded judgments only cover recorded Decisions
+    if args.history == "github" and judge_kind == "recorded":
+        raise ConfigError("recorded supersession judgments exist only for the fixture history: use --judge anthropic "
+                          "(or none for explicit Supersession only)")
+    proposer = settings.proposer(extractor, cutoff)  # fail fast on a missing key, before any fetching
+    judge = settings.judge(judge_kind)
     store = GraphStore(settings.driver(), settings.neo4j_database)
 
     cached = None
@@ -83,14 +89,14 @@ def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
         history = load_history(FixtureHistorySource(FIXTURE_DIR, repo=FIXTURE_REPO), cutoff)
         code = fixture_code_index()
 
-    graph = build_graph(history, code, proposer)
+    graph = build_graph(history, code, proposer, judge)
     latest = latest_date(graph)
     if latest and latest > cutoff.isoformat():
         raise RuntimeError(f"the graph holds a date after the cutoff ({latest} > {cutoff}); nothing was written")
     store.replace(graph)
     raw = store.counts()
     report = {
-        "history": args.history, "cutoff": cutoff.isoformat(), "extractor": extractor,
+        "history": args.history, "cutoff": cutoff.isoformat(), "extractor": extractor, "judge": judge_kind,
         "counts": {name: raw.get(label, 0) for name, label in PITCH_LABELS.items()},
         "latest_date": latest, "graph": raw,
     }
@@ -107,6 +113,18 @@ def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
         counts_file.parent.mkdir(parents=True, exist_ok=True)
         counts_file.write_text(json.dumps({k: v for k, v in report.items() if k != "corpus"}, indent=2) + "\n")
     print(json.dumps(report, indent=2))
+    return 0
+
+
+def _supersession_report(settings: Settings, args: argparse.Namespace, transport=None) -> int:
+    from whycode.graph.store import GraphStore
+    from whycode.supersession import judge_report
+
+    graph = GraphStore(settings.driver(), settings.neo4j_database).snapshot()
+    text = judge_report(graph, settings.judge(args.judge)).markdown()
+    if args.out:
+        args.out.write_text(text, encoding="utf-8")
+    print(text)
     return 0
 
 
@@ -152,6 +170,8 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
     build.add_argument("--extractor", choices=EXTRACTORS,
                        help="default: WHY_EXTRACTOR, else recorded (fixtures) or anthropic (github)")
     build.add_argument("--cutoff", help="YYYY-MM-DD; default: WHY_CUTOFF or 2024-06-30")
+    build.add_argument("--judge", choices=JUDGES,
+                       help="supersession judge; default: the same kind as the extractor")
     build.add_argument("--corpus", help="github: where to write the scoreboard corpus (default: WHY_CORPUS)")
     build.add_argument("--counts-file", default="data/graph-counts.json",
                        help="github: where to record the graph counts (default: %(default)s)")
@@ -163,8 +183,13 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
     check = sub.add_parser("check-citations", help="ask why about a sample of Anchors; every node id must resolve")
     check.add_argument("--sample", type=int, default=20)
     check.add_argument("--seed", type=int, default=0)
+    report = sub.add_parser("supersession-report", help="score the supersession judge against explicit Supersession "
+                                                        "in the built graph (precision, recall, disagreements)")
+    report.add_argument("--judge", choices=["recorded", "anthropic"], default="anthropic")
+    report.add_argument("--out", type=Path, help="also write the report (markdown) here")
     args = parser.parse_args(argv)
-    commands = {"build": _build, "fetch": _fetch, "why": _why, "check-citations": _check_citations}
+    commands = {"build": _build, "fetch": _fetch, "why": _why, "check-citations": _check_citations,
+                "supersession-report": _supersession_report}
 
     from whycode.history.checkout import CheckoutError
     from whycode.history.github import GitHubError

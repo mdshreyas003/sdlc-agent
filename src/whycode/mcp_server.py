@@ -21,8 +21,10 @@ INSTRUCTIONS = (
     "Ask why CockroachDB SQL schema-change code is the way it is before you change it. `why` takes a "
     "function (pkg/sql.(*SchemaChanger).exec, SchemaChanger.exec), a file (pkg/sql/schema_changer.go), a "
     "package or a cluster setting (schemachanger.job.max_retry_backoff) and returns the Decisions that govern "
-    "it, each with a verbatim quote, its Discussion, date, Incidents and the Person to Ask. `refused: true` "
-    "means no recorded Decision reaches that code: treat it as unknown, not as permission."
+    "it, each with a verbatim quote, its Discussion, date, Incidents and the Person to Ask. Each Decision has a "
+    "status: `superseded` Decisions are dead history (do not restore what they chose), `refined` ones still hold "
+    "in part, and `superseded_by` / `superseded_at` say by what and when. `refused: true` means no recorded "
+    "Decision reaches that code: treat it as unknown, not as permission."
 )
 
 
@@ -34,6 +36,7 @@ def build_server(engine: AnswerEngine) -> MCPServer:
         """Return the Decisions that govern a Code Entity (function, file, package or cluster setting), with
         an Evidence Chain of verbatim quotes and node ids, a High/Medium/Low confidence, the Person to Ask
         (departed people have active=false), linked Incidents, or a refusal with the nearest evidence.
+        Superseded Decisions come back with status=superseded and what superseded them; never treat them as live.
         A free-form question works if it names exactly one Code Entity."""
         return await anyio.to_thread.run_sync(engine.why, anchor)
 

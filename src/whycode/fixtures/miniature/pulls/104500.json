@@ -1,0 +1,54 @@
+{
+  "pull": {
+    "number": 104500,
+    "title": "sql: treat validation errors as permanent once the upgrade is finalized",
+    "body": "See #101450, which reverted #101200: descriptors can fail validation transiently while the cluster version gate is being crossed.\n\nThis treats descriptor validation errors as permanent again once the cluster version is finalized; until then the schema changer keeps retrying them, so jobs that run during an upgrade still succeed on retry.\n\nRelease note: None",
+    "user": {
+      "login": "fqazi"
+    },
+    "html_url": "https://github.com/cockroachdb/cockroach/pull/104500",
+    "created_at": "2023-06-14T09:00:00Z",
+    "merged_at": "2023-06-20T16:40:00Z",
+    "merge_commit_sha": "c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8",
+    "base": {
+      "ref": "master"
+    },
+    "labels": []
+  },
+  "files": [
+    {
+      "filename": "pkg/sql/schema_changer.go",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 0,
+      "patch": "@@ -120,6 +120,9 @@ func isPermanentSchemaChangeError(err error) bool {\n \tif errors.Is(err, catalog.ErrDescriptorNotFound) {\n \t\treturn true\n \t}\n+\tif catalog.HasValidationError(err) && clusterversion.IsFinalized(err) {\n+\t\treturn true\n+\t}\n \treturn false\n }"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+      "author": {
+        "login": "fqazi"
+      },
+      "commit": {
+        "message": "sql: treat validation errors as permanent once the upgrade is finalized\n\nRelease note: None",
+        "author": {
+          "name": "Faizan Qazi",
+          "date": "2023-06-14T08:55:00Z"
+        }
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "user": {
+        "login": "rafiss"
+      },
+      "state": "APPROVED",
+      "body": "Good middle ground: permanent once the upgrade is done, still retried while it runs.",
+      "submitted_at": "2023-06-19T10:00:00Z"
+    }
+  ],
+  "review_comments": [],
+  "issue_comments": []
+}

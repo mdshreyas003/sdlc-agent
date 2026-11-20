@@ -54,8 +54,9 @@ def test_ingests_scoped_pull_requests_their_linked_issues_labelled_issues_and_rf
     graph = ingest(CachedTransport(miniature_github(), tmp_path / "cache"), checkout)
 
     # Pull requests merged into master by the cutoff that touch the scoped code; not backports, not others,
-    # not the RFC pull requests, not #127200 (merged 2024-07-15).
-    assert real(graph, "PullRequest") == {"pr:98100", "pr:101200", "pr:101450", "pr:110500", "pr:122400"}
+    # not the RFC pull requests, not #127200 or #128000 (merged after the cutoff).
+    assert real(graph, "PullRequest") == {"pr:98100", "pr:101200", "pr:101450", "pr:104500", "pr:110500",
+                                          "pr:122400"}
     # A-schema issues and issues the pull requests close; #127000 was opened after the cutoff; #97000 is a
     # pull request, so it stays a stub.
     assert real(graph, "Issue") == {"issue:98001", "issue:101400", "issue:99500"}
