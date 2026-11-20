@@ -50,5 +50,5 @@ def _from_environment(name: str, supersession: bool) -> System:
 
     settings = Settings.from_env()
     engine = settings.answer_engine(settings.reader(), supersession=supersession)
-    answer_model = COMPOSER_MODEL if settings.composer == "anthropic" else "template"
+    answer_model = settings.model(COMPOSER_MODEL) if settings.composer == "anthropic" else "template"
     return scoreboard_system(name, engine, {"answer": answer_model})

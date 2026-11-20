@@ -15,6 +15,8 @@ One command scores any system that returns the answer contract (`src/whycode/con
 
 Every command takes `--corpus <file.jsonl>` (or `WHYCODE_EVAL_CORPUS`) except `judge-sheet` and `agreement`. Real runs need `ANTHROPIC_API_KEY`; the embedding model downloads once to `.cache/fastembed`.
 
+To run on an OpenAI-compatible server instead (Sarvam by default, or vLLM, OpenRouter), set `WHY_LLM=openai` and `OPENAI_API_KEY` (optionally `OPENAI_BASE_URL`, default `https://api.sarvam.ai/v1`, and `WHY_OPENAI_MODEL`, default `sarvam-105b`). Every baseline, the judge and our system then use that model, and `--answer-model` / `--judge-model` default to it. A non-Opus judge needs `whycode-eval agreement` run again before its scores mean anything, and its runs are not comparable with Opus-judged ones (ADR-0004). Cost shows as unknown.
+
 ```sh
 uv run whycode-eval labels --corpus data/corpus.jsonl --window-end 2025-06-30   # writes gold/automatic.yaml
 uv run whycode-eval check  --corpus data/corpus.jsonl                           # every gold quote vs the corpus

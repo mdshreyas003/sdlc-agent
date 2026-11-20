@@ -23,7 +23,8 @@ from pydantic import BaseModel
 from whycode.llm import PRICES, LlmError, ModelCall, Usage, cached_system, check_stop, structured_call
 
 __all__ = ["ANSWER_MODEL", "EMBEDDING_MODEL", "JUDGE_MODEL", "PRICES", "AnthropicStructured", "AnthropicToolLoop",
-           "ModelCall", "ModelError", "Parsed", "StructuredModel", "Tool", "ToolLoopModel", "Usage"]
+           "ModelCall", "ModelError", "OpenAIStructured", "OpenAIToolLoop",
+           "Parsed", "StructuredModel", "Tool", "ToolLoopModel", "Usage"]
 
 ANSWER_MODEL = "claude-opus-5-5"
 JUDGE_MODEL = "claude-opus-5-5"
@@ -117,13 +118,76 @@ class AnthropicToolLoop:
         raise ModelError("tool loop ended without an answer")
 
 
-def _run_tool(by_name: dict[str, Tool], block: Any) -> dict[str, Any]:
-    result = {"type": "tool_result", "tool_use_id": block.id}
-    tool = by_name.get(block.name)
+class OpenAIStructured(AnthropicStructured):
+    """StructuredModel over an OpenAI-compatible server (Sarvam, vLLM): the same `structured_call`, which picks the
+    API by the client it is given (an `openai.OpenAI`)."""
+
+
+class OpenAIToolLoop:
+    """ToolLoopModel over an OpenAI-compatible server: `AnthropicToolLoop` in chat-completions shapes.
+
+    Every request offers the tools and asks for the final answer as a strict JSON schema; when the turn budget is
+    spent, one last request with `tool_choice: none` asks for the answer. No prompt caching (no OpenAI-style
+    equivalent); `effort` becomes `reasoning_effort`.
+    """
+
+    def __init__(self, client: Any, model: str, *, effort: str = "medium", max_tokens: int = 16000):
+        self.client, self.model, self.effort, self.max_tokens = client, model, effort, max_tokens
+
+    def run(self, *, system: str, user: str, tools: Sequence[Tool], output: type[T],
+            max_turns: int) -> Parsed[T]:
+        from openai.lib._parsing import type_to_response_format_param
+
+        from whycode.llm import openai_call
+
+        by_name = {t.name: t for t in tools}
+        # Plain (not strict) tools: the SDK would validate strict tool arguments itself and end the run on a bad
+        # call, where a bad call must go back to the model as a tool error.
+        tool_defs = [{"type": "function", "function": {"name": t.name, "description": t.description,
+                                                       "parameters": t.input_model.model_json_schema()}}
+                     for t in tools]
+        messages: list[dict[str, Any]] = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+        calls: list[ModelCall] = []
+        for turn in range(max_turns + 1):
+            extra = {"tool_choice": "none"} if turn == max_turns else {}
+            response = self.client.chat.completions.create(
+                model=self.model, max_tokens=self.max_tokens, reasoning_effort=self.effort, messages=messages,
+                tools=tool_defs, response_format=type_to_response_format_param(output), **extra)
+            calls.append(openai_call(response))
+            choice = response.choices[0]
+            if choice.finish_reason == "length":
+                raise ModelError(f"{self.model} output was truncated at max_tokens")
+            message = choice.message
+            if message.tool_calls:
+                messages.append({"role": "assistant", "content": message.content, "tool_calls": [
+                    {"id": c.id, "type": "function", "function": {"name": c.function.name,
+                                                                  "arguments": c.function.arguments}}
+                    for c in message.tool_calls]})
+                messages.extend({"role": "tool", "tool_call_id": c.id,
+                                 "content": _call_tool(by_name, c.function.name, c.function.arguments)[0]}
+                                for c in message.tool_calls)
+                continue
+            if message.refusal:
+                raise ModelError(f"{self.model} refused: {message.refusal}")
+            try:
+                return Parsed(output.model_validate_json(message.content or ""), Usage(calls=calls))
+            except pydantic.ValidationError as error:
+                raise ModelError(f"final answer did not match {output.__name__}") from error
+        raise ModelError("tool loop ended without an answer")
+
+
+def _call_tool(by_name: dict[str, Tool], name: str, args: dict[str, Any] | str) -> tuple[str, bool]:
+    """A tool's output, or an error message for the model: (content, is_error)."""
+    tool = by_name.get(name)
     if tool is None:
-        return result | {"content": f"unknown tool {block.name}", "is_error": True}
+        return f"unknown tool {name}", True
     try:
-        args = block.input if isinstance(block.input, dict) else json.loads(block.input)
-        return result | {"content": tool.call(args)}
+        return tool.call(args if isinstance(args, dict) else json.loads(args)), False
     except Exception as error:  # noqa: BLE001  a bad call goes back to the model, never ends the run
-        return result | {"content": f"{type(error).__name__}: {error}", "is_error": True}
+        return f"{type(error).__name__}: {error}", True
+
+
+def _run_tool(by_name: dict[str, Tool], block: Any) -> dict[str, Any]:
+    content, is_error = _call_tool(by_name, block.name, block.input)
+    result = {"type": "tool_result", "tool_use_id": block.id, "content": content}
+    return result | {"is_error": True} if is_error else result

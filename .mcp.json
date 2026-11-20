@@ -10,7 +10,11 @@
         "NEO4J_PASSWORD": "${NEO4J_PASSWORD:-}",
         "NEO4J_DATABASE": "${NEO4J_DATABASE:-neo4j}",
         "WHY_COMPOSER": "${WHY_COMPOSER:-anthropic}",
-        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY:-}"
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY:-}",
+        "WHY_LLM": "${WHY_LLM:-anthropic}",
+        "OPENAI_BASE_URL": "${OPENAI_BASE_URL:-https://api.sarvam.ai/v1}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY:-}",
+        "WHY_OPENAI_MODEL": "${WHY_OPENAI_MODEL:-sarvam-105b}"
       }
     }
   }

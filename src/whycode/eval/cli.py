@@ -76,22 +76,40 @@ class Deps:
     out: Any = field(default_factory=lambda: sys.stdout)
 
 
+@cache
+def _settings():
+    from whycode.config import Settings
+
+    return Settings.from_env()  # WHY_LLM picks the API, as for our system (whycode.config)
+
+
+def _model(claude_model: str) -> str:
+    """A default model: the Claude one, or WHY_OPENAI_MODEL with WHY_LLM=openai."""
+    return _settings().model(claude_model)
+
+
 def default_deps() -> Deps:
+    openai_api = _settings().llm_api == "openai"
+
     @cache
     def client():
+        if openai_api:
+            from whycode.config import openai_client
+
+            return openai_client(_settings().openai_base_url)
         import anthropic
 
         return anthropic.Anthropic()  # credentials from the environment, never at import time
 
     def structured(model: str) -> StructuredModel:
-        from whycode.eval.models import AnthropicStructured
+        from whycode.eval.models import AnthropicStructured, OpenAIStructured
 
-        return AnthropicStructured(client(), model)
+        return (OpenAIStructured if openai_api else AnthropicStructured)(client(), model)
 
     def tool_loop(model: str) -> ToolLoopModel:
-        from whycode.eval.models import AnthropicToolLoop
+        from whycode.eval.models import AnthropicToolLoop, OpenAIToolLoop
 
-        return AnthropicToolLoop(client(), model)
+        return (OpenAIToolLoop if openai_api else AnthropicToolLoop)(client(), model)
 
     def embedder(name: str):
         from whycode.eval.rag import FastEmbedder
@@ -136,8 +154,8 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--git-repo", type=Path, default=None, help="local cockroachdb clone for the git-agent")
     run.add_argument("--cutoff-rev", default="d13253527955eaa2da09394b8a2729627ab25c48")
     run.add_argument("--window-rev", default=None, help="revision at the end of the Held-out Window")
-    run.add_argument("--answer-model", default=ANSWER_MODEL)
-    run.add_argument("--judge-model", default=JUDGE_MODEL)
+    run.add_argument("--answer-model", default=_model(ANSWER_MODEL))
+    run.add_argument("--judge-model", default=_model(JUDGE_MODEL))
     run.add_argument("--embedding-model", default=EMBEDDING_MODEL)
     run.add_argument("--resume", type=Path, default=None)
     run.add_argument("--include-unverified", action="store_true", help="dev smoke runs only")
@@ -147,7 +165,7 @@ def _parser() -> argparse.ArgumentParser:
     sheet.add_argument("--n", type=int, default=20)
     sheet.add_argument("--seed", type=int, default=0)
     agree = command("agreement", _agreement, "judge agreement with hand labels", corpus=False)
-    agree.add_argument("--judge-model", default=JUDGE_MODEL)
+    agree.add_argument("--judge-model", default=_model(JUDGE_MODEL))
     calib = command("calibration", _calibration, "plot confidence against correctness for one run", corpus=False)
     calib.add_argument("--run", type=Path, required=True, help="a results directory written by `run`")
     calib.add_argument("--systems", default=None, help="comma-separated system names (default: every system)")

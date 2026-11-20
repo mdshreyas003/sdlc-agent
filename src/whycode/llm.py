@@ -1,4 +1,6 @@
-"""The one Anthropic call shape the system uses: a structured (pydantic) response, with its usage, cached on disk.
+"""The one model call shape the system uses: a structured (pydantic) response, with its usage, cached on disk.
+It goes to Anthropic, or to an OpenAI-compatible server (Sarvam, vLLM) when given an `openai.OpenAI` client
+(`WHY_LLM=openai`, ADR-0004).
 
 These models take no sampling parameters, so outputs vary run to run; caching responses keyed by the exact
 request makes rebuilds reproducible (the same graph from the same inputs). Tests never construct this with a
@@ -22,6 +24,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 import anthropic
+import openai
 import pydantic
 from pydantic import BaseModel, ConfigDict
 
@@ -107,7 +110,11 @@ def check_stop(response: Any) -> None:
 
 def structured_call(client: Any, *, model: str, system: str, user: str, output: type[T], effort: str,
                     max_tokens: int) -> tuple[T, ModelCall]:
-    """One `messages.parse` request with structured output; raises `LlmError` when it gives nothing usable."""
+    """One structured-output request over either SDK (an `openai.OpenAI` client means an OpenAI-compatible
+    server such as Sarvam or vLLM); raises `LlmError` when it gives nothing usable."""
+    if isinstance(client, openai.OpenAI):
+        return _openai_structured_call(client, model=model, system=system, user=user, output=output,
+                                       effort=effort, max_tokens=max_tokens)
     try:
         response = client.messages.parse(model=model, max_tokens=max_tokens, system=cached_system(system),
                                          messages=[{"role": "user", "content": user}],
@@ -119,6 +126,36 @@ def structured_call(client: Any, *, model: str, system: str, user: str, output: 
     if response.parsed_output is None:
         raise LlmError(f"{model} stopped with {response.stop_reason} and no parsed output")
     return response.parsed_output, ModelCall.from_response(response)
+
+
+def openai_call(response: Any) -> ModelCall:
+    """The usage of one OpenAI-style chat completion."""
+    u = response.usage
+    return ModelCall(model=response.model, input_tokens=(u.prompt_tokens if u else 0) or 0,
+                     output_tokens=(u.completion_tokens if u else 0) or 0)
+
+
+def _openai_structured_call(client: openai.OpenAI, *, model: str, system: str, user: str, output: type[T],
+                            effort: str, max_tokens: int) -> tuple[T, ModelCall]:
+    """One `chat.completions.parse` request with a strict JSON schema. No prompt caching (no OpenAI-style
+    equivalent); `effort` becomes `reasoning_effort`, whose reasoning text the answer never includes."""
+    try:
+        response = client.chat.completions.parse(
+            model=model, max_tokens=max_tokens, reasoning_effort=effort, response_format=output,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
+    except openai.LengthFinishReasonError as exc:
+        raise LlmError(f"{model} output was truncated at max_tokens") from exc
+    except openai.ContentFilterFinishReasonError as exc:
+        raise LlmError(f"{model} refused (content filter)") from exc
+    except pydantic.ValidationError as exc:
+        raise LlmError(f"{model} returned output that does not fit {output.__name__}: "
+                       f"{exc.error_count()} errors") from exc
+    message = response.choices[0].message
+    if message.refusal:
+        raise LlmError(f"{model} refused: {message.refusal}")
+    if message.parsed is None:
+        raise LlmError(f"{model} stopped with {response.choices[0].finish_reason} and no parsed output")
+    return message.parsed, openai_call(response)
 
 
 _calls: ContextVar[list[ModelCall] | None] = ContextVar("whycode_model_calls", default=None)
@@ -141,7 +178,8 @@ def _record(call: ModelCall) -> None:
 
 
 class LlmClient:
-    def __init__(self, client: anthropic.Anthropic, cache_dir: Path | None = None, max_tokens: int = 16000):
+    def __init__(self, client: anthropic.Anthropic | openai.OpenAI, cache_dir: Path | None = None,
+                 max_tokens: int = 16000):
         self.client = client
         self.cache_dir = Path(cache_dir) if cache_dir else None
         self.max_tokens = max_tokens
@@ -159,7 +197,7 @@ class LlmClient:
         try:
             parsed, call = structured_call(self.client, model=model, system=system, user=user, output=output,
                                            effort=effort, max_tokens=self.max_tokens)
-        except anthropic.APIError as exc:
+        except (anthropic.APIError, openai.APIError) as exc:
             raise LlmError(f"{model} request failed: {exc}") from exc
         _record(call)
         if path:
