@@ -37,16 +37,27 @@ def reader(neo4j_driver):
 
 
 class ScriptedMatcher:
-    """Stands in for the entity-matching model: answers from a script keyed by question; records what it saw."""
+    """Stands in for the entity-matching model: answers from a script keyed by question; for any other question it
+    is sure of `otherwise` (None: unsure of anything)."""
 
-    def __init__(self, script=None):
+    def __init__(self, script=None, otherwise=None):
         self.script = script or {}
-        self.asked = []
+        self.otherwise = otherwise
 
     def match(self, question, candidates):
-        self.asked.append((question, [c.id for c in candidates]))
-        entity_id, sure = self.script.get(question, (None, False))
+        entity_id, sure = self.script.get(question, (self.otherwise, self.otherwise is not None))
         return EntityChoice(entity_id=entity_id, sure=sure, reason="scripted")
+
+
+class SureOnSecondAsk:
+    """A matcher that is unsure the first time and sure of `entity_id` from then on: only a loop would get an answer."""
+
+    def __init__(self, entity_id):
+        self.entity_id, self.asked = entity_id, 0
+
+    def match(self, question, candidates):
+        self.asked += 1
+        return EntityChoice(entity_id=self.entity_id, sure=self.asked > 1, reason="scripted")
 
 
 async def ask(reader, anchor, matcher=None) -> Answer:
@@ -116,10 +127,17 @@ async def test_a_question_naming_no_code_entity_is_matched_by_one_model_step_and
     assert answer.anchor_matched is True and answer.refused is False
     assert answer.decisions == exact.decisions
     assert (exact.confidence, answer.confidence) == ("High", "Medium")  # the Anchor itself rests on a model's pick
-    ((question, shortlist),) = matcher.asked
-    assert question == BACKOFF_QUESTION
-    assert f"function:{EXEC}" in shortlist and "setting:schemachanger.job.max_retry_backoff" in shortlist
     assert exact.anchor_matched is False
+
+
+async def test_the_shortlist_holds_the_code_entities_whose_names_hold_the_questions_words(reader):
+    # A pick off the shortlist is refused, so an answered pick shows the setting was on it.
+    matcher = ScriptedMatcher({BACKOFF_QUESTION: ("setting:schemachanger.job.max_retry_backoff", True)})
+
+    answer = await ask(reader, BACKOFF_QUESTION, matcher)
+
+    assert (answer.anchor.kind, answer.anchor.id, answer.refused) == ("setting", "schemachanger.job.max_retry_backoff",
+                                                                      False)
 
 
 async def test_an_unsure_match_is_a_clear_refusal(reader):
@@ -129,7 +147,12 @@ async def test_an_unsure_match_is_a_clear_refusal(reader):
 
     assert (answer.anchor, answer.refused, answer.refusal_reason) == (None, True, "unresolved")
     assert answer.decisions == [] and answer.sentences == [] and answer.confidence == "Low"
-    assert len(matcher.asked) == 1  # one step, never a loop
+
+
+async def test_matching_is_one_step_never_a_loop(reader):
+    answer = await ask(reader, VAGUE_QUESTION, SureOnSecondAsk(f"function:{EXEC}"))
+
+    assert (answer.anchor, answer.refusal_reason) == (None, "unresolved")  # a second ask would have been sure
 
 
 async def test_a_match_outside_the_shortlist_is_refused_however_sure(reader):
@@ -141,16 +164,16 @@ async def test_a_match_outside_the_shortlist_is_refused_however_sure(reader):
 
 
 async def test_an_exactly_named_code_entity_needs_no_model_step(reader):
-    matcher = ScriptedMatcher()
+    # A matcher sure of another entity for every question: had it been asked, the Anchor would be that entity.
+    matcher = ScriptedMatcher(otherwise="setting:sql.schemachanger.strict_planning_sanity_check.enabled")
 
     named = await ask(reader, "Why does `SchemaChanger.exec` back off between retries?", matcher)
     exact = await ask(reader, "schemachanger.job.max_retry_backoff", matcher)
     nothing_to_match = await ask(reader, "why?", matcher)
 
-    assert named.anchor.id == EXEC and exact.anchor.kind == "setting"
+    assert named.anchor.id == EXEC and exact.anchor.id == "schemachanger.job.max_retry_backoff"
     assert not named.anchor_matched and not exact.anchor_matched
-    assert nothing_to_match.refusal_reason == "unresolved"
-    assert matcher.asked == []
+    assert (nothing_to_match.anchor, nothing_to_match.refusal_reason) == (None, "unresolved")
 
 
 async def test_every_refusal_says_why(reader):

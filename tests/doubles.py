@@ -67,15 +67,13 @@ class OnlyFabricationsComposer:
 
 class ScriptedJudge:
     """Stands in for the supersession judge: labels pairs by (earlier quote, later quote); everything else is
-    unrelated. Records which pairs it was asked about."""
+    unrelated."""
 
     def __init__(self, labels=None):
         self.labels = labels or {}
-        self.pairs = []
 
     def judge(self, pair):
         from whycode.supersession import Judgment
 
-        self.pairs.append(pair)
         label, quote = self.labels.get((pair.earlier.quote, pair.later.quote), ("unrelated", ""))
         return Judgment(label=label, quote=quote, reason=f"scripted {label}")

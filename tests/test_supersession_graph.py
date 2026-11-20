@@ -213,12 +213,19 @@ def test_a_revert_that_records_no_decision_makes_the_reverting_change_the_supers
 def test_decisions_are_paired_on_the_most_specific_code_they_govern_not_merely_the_same_file():
     from doubles import ScriptedJudge
 
-    judge = ScriptedJudge()
-    fixture_graph(judge=judge)
-    asked = {(p.earlier.quote, p.later.quote) for p in judge.pairs}
+    # The judge would link both pairs with a verbatim quote, so only pairing decides which edges exist.
+    judge = ScriptedJudge({
+        (KEEP_RETRYING_QUOTE, FINALIZED_QUOTE): ("refines", "until then the schema changer keeps retrying them"),
+        (BACKOFF_QUOTE, VALIDATION_QUOTE): ("supersedes", "the schema changer should stop retrying and fail the job"),
+    })
+    graph = fixture_graph(judge=judge)
 
-    assert (KEEP_RETRYING_QUOTE, FINALIZED_QUOTE) in asked  # both govern isPermanentSchemaChangeError
-    assert (BACKOFF_QUOTE, VALIDATION_QUOTE) not in asked  # exec vs isPermanentSchemaChangeError: same file only
+    keep, finalized = decision_quoting(graph, KEEP_RETRYING_QUOTE), decision_quoting(graph, FINALIZED_QUOTE)
+    backoff, validation = decision_quoting(graph, BACKOFF_QUOTE), decision_quoting(graph, VALIDATION_QUOTE)
+    assert (finalized, keep) in relations(graph, "REFINES")  # both govern isPermanentSchemaChangeError
+    # exec vs isPermanentSchemaChangeError: the same file only, so never paired.
+    assert not [e for e in graph.edges() if e.type in ("SUPERSEDES", "REFINES") and (e.source, e.target)
+                == (validation, backoff)]
 
 
 def build_report(capsys, *args):

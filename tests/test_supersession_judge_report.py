@@ -42,9 +42,28 @@ def test_precision_and_recall_of_the_judge_against_explicit_supersession():
     text = report.markdown()
     assert "Precision 50% (1 of 2)" in text and "recall 50% (1 of 2)" in text
     assert "rfc:20200909_transactional_schema_changes -> rfc:20210115_new_schema_changer" in text  # the miss
-    # The judge never sees the statement that makes a case explicit.
-    later_texts = [p.later_text for p in judge.pairs if p.later.quote == KEEP_RETRYING_QUOTE]
-    assert later_texts and not [t for t in later_texts if "This reverts commit" in t or 'Revert "' in t]
+
+
+class QuotesTheRevert:
+    """A judge that cheats: it says supersedes, quoting the revert statement, whenever that statement is in the text
+    it is shown (the quote is verbatim in B's discussion, so it would count)."""
+
+    def judge(self, pair):
+        from whycode.supersession import Judgment
+
+        if REVERT_STATEMENT in pair.later_text:
+            return Judgment(label="supersedes", quote=f"{REVERT_STATEMENT}. During upgrades, descriptors can fail",
+                            reason="it says so")
+        return Judgment(label="unrelated", quote="", reason="nothing stated")
+
+
+REVERT_STATEMENT = "This reverts commit 3f6c1e2a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e"
+
+
+def test_the_judge_never_sees_the_statement_that_makes_a_case_explicit():
+    report = judge_report(fixture_graph(), QuotesTheRevert())
+
+    assert report.true_positives == 0 and report.false_negatives == 2  # the revert was masked out of #101450
 
 
 def test_a_supersedes_label_whose_quote_is_not_verbatim_does_not_count():

@@ -103,10 +103,8 @@ class ScriptedModel:
                  input_tokens: int = 1000, output_tokens: int = 100):
         self.reply, self.model = reply, model
         self.input_tokens, self.output_tokens = input_tokens, output_tokens
-        self.calls: list[tuple[str, str]] = []
 
     def parse(self, *, system: str, user: str, output: type[BaseModel]) -> Parsed:
-        self.calls.append((system, user))
         value = self.reply(output, system, user)
         return Parsed(value, Usage(calls=[ModelCall(model=self.model, input_tokens=self.input_tokens,
                                                     output_tokens=self.output_tokens)]))

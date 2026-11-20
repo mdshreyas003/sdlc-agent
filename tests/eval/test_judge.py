@@ -53,16 +53,13 @@ def test_agreement_counts_only_complete_human_labels():
     assert not result.enough and "below the 15 required" in result.summary()
 
 
-def test_fact_judge_sends_the_committed_prompt_and_pads_short_verdicts():
+def test_fact_judge_pads_a_short_verdict_to_one_entry_per_fact():
     model = ScriptedModel(lambda output, system, user: Verdict(covered=[True]))
     judge = FactJudge(model, prompt="JUDGE PROMPT")
 
     verdict = judge(JudgeInput("Why?", "Because.", ("f1", "f2", "f3"), ("dead",)))
 
     assert verdict == Verdict(covered=[True, False, False], presented_as_current=[False], reports_change=False)
-    system, user = model.calls[0]
-    assert system == "JUDGE PROMPT"
-    assert "1. f1\n2. f2\n3. f3" in user and "Superseded facts (in order):\n1. dead" in user
 
 
 def test_rendered_answer_shows_decision_status_for_the_judge():

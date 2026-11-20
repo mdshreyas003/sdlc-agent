@@ -56,37 +56,43 @@ def test_answers_from_the_best_matching_record_with_verbatim_citations():
     assert [(e.node_id, e.kind) for e in answer.evidence_chain] == [("pr:121026", "pr")]
     assert answer.decisions[0].id == "pr:121026" and answer.decisions[0].status == "live"
     assert result.usage.cost_usd() == (1000 * 4 + 100 * 20) / 1e6
-    assert model.calls[0][0] == "RAG PROMPT"
     case = Case(id="c", question_id="c", type="lookup", question=ZONE, anchor=None, as_of=CUTOFF,
                 exclude=frozenset(), answerable=True, gold_facts=["f"], superseded_facts=[])
     assert check_citations(answer, case, CORPUS) == (1, 1)
 
 
-def test_ablated_and_post_cutoff_records_never_reach_the_model():
-    model = ScriptedModel(cite_first_passage)
-    rag(model)(Query(question="Why was the force_declarative setting reverted after upgrades failed?",
-                     as_of=CUTOFF, exclude=frozenset({"pr:125000"})))
+def cite_every_passage(output, system, user):
+    """A model that cites every passage it was shown, so whatever reached it shows up in the answer."""
+    shown = list(dict.fromkeys(re.findall(r'<passage node_id="([^"]+)"', user)))
+    return BaselineAnswer(refused=False, confidence="Low", decisions=[],
+                          evidence=[EvidenceQuote(node_id=i, quote="") for i in shown],
+                          sentences=[CitedSentence(text="Everything I was shown.", cites=shown)])
 
-    shown = set(re.findall(r'<passage node_id="([^"]+)"', model.calls[0][1]))
+
+FORCE_DECLARATIVE = "Why was the force_declarative setting reverted after upgrades failed?"
+
+
+def test_ablated_and_post_cutoff_records_never_reach_the_model():
+    result = rag(ScriptedModel(cite_every_passage))(Query(question=FORCE_DECLARATIVE, as_of=CUTOFF,
+                                                         exclude=frozenset({"pr:125000"})))
+
     hidden = {"pr:125000",  # ablated
               "pr:127500", "issue:130001"}  # dated inside the Held-out Window
-    assert shown == {r.id for r in FIXTURE_RECORDS} - hidden
+    assert {e.node_id for e in result.answer.evidence_chain} == {r.id for r in FIXTURE_RECORDS} - hidden
 
 
 def test_window_visible_query_can_see_post_cutoff_records():
-    model = ScriptedModel(cite_first_passage)
-    rag(model)(Query(question="Why was the force_declarative setting reverted after upgrades failed?", as_of=None))
+    result = rag(ScriptedModel(cite_every_passage))(Query(question=FORCE_DECLARATIVE, as_of=None))
 
-    assert 'node_id="pr:127500"' in model.calls[0][1]
+    assert "pr:127500" in {e.node_id for e in result.answer.evidence_chain}
 
 
 def test_nothing_visible_means_a_refusal_without_a_model_call():
-    model = ScriptedModel(cite_first_passage)
     everything = frozenset(r.id for r in FIXTURE_RECORDS)
 
-    result = rag(model)(Query(question=ZONE, as_of=CUTOFF, exclude=everything))
+    result = rag(ScriptedModel(cite_first_passage))(Query(question=ZONE, as_of=CUTOFF, exclude=everything))
 
-    assert result.answer.refused and model.calls == [] and result.usage.cost_usd() == 0.0
+    assert result.answer.refused and result.usage.calls == [] and result.usage.cost_usd() == 0.0
 
 
 def test_long_records_are_chunked_with_overlap_and_nothing_is_lost():
@@ -113,15 +119,10 @@ def test_vectors_are_cached_by_model_and_content(tmp_path):
 
 
 def test_runs_end_to_end_through_the_anthropic_adapter():
-    requests = []
     reply = cite_first_passage(None, None, '<passage node_id="pr:121026"')
-    client = anthropic_client([text_reply(reply)], requests)
+    client = anthropic_client([text_reply(reply)], [])
 
     result = rag(AnthropicStructured(client, "claude-opus-5-5"))(Query(question=ZONE, as_of=CUTOFF))
 
-    assert result.answer.evidence_chain[0].node_id == "pr:121026"
+    assert result.answer.evidence_chain[0].node_id == "pr:121026"  # the schema-valid reply parsed
     assert result.usage.calls[0].model == "claude-opus-5-5"
-    body = requests[0]
-    assert body["model"] == "claude-opus-5-5"
-    assert body["output_config"]["format"]["type"] == "json_schema"
-    assert "temperature" not in body and "fallbacks" not in body

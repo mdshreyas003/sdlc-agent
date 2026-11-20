@@ -30,18 +30,25 @@ def llm_alone(model):
     return LlmAlone(CORPUS, model, prompt="LLM ALONE PROMPT", answer_model="claude-opus-5-5")
 
 
-def test_the_model_sees_only_the_question_never_a_record():
-    model = ScriptedModel(from_memory)
+def says_what_it_was_told(output, system, user):
+    """A model that can only repeat what it was shown: the question, the Code Entity, the as-of date, and the id of
+    any record whose id or text reached it (so a leaked record shows up as a citation)."""
+    told = [probe for probe in (ZONE, "pkg/sql/configure_zone.go", CUTOFF.isoformat()) if probe in user]
+    leaked = [r.id for r in FIXTURE_RECORDS if r.id in user or r.text[:40] in user]
+    return BaselineAnswer(refused=False, confidence="Low", decisions=[],
+                          evidence=[EvidenceQuote(node_id=i, quote="") for i in leaked],
+                          sentences=[CitedSentence(text=f"Told: {t}", cites=leaked) for t in told])
+
+
+def test_the_model_is_told_the_question_the_code_entity_and_the_date_but_never_a_record():
     query = Query(question=ZONE, anchor=Anchor(kind="file", id="pkg/sql/configure_zone.go"), as_of=CUTOFF)
 
-    llm_alone(model)(query)
+    answer = llm_alone(ScriptedModel(says_what_it_was_told))(query).answer
 
-    ((system, user),) = model.calls
-    assert system == "LLM ALONE PROMPT"
-    assert ZONE in user and "pkg/sql/configure_zone.go" in user
-    assert "2024-06-30" in user  # the only way it can honour as_of is to be told
-    for record in FIXTURE_RECORDS:
-        assert record.text[:40] not in user and record.id not in user
+    # The only way it can honour as_of is to be told the date.
+    assert [s.text for s in answer.sentences] == [f"Told: {ZONE}", "Told: pkg/sql/configure_zone.go",
+                                                  "Told: 2024-06-30"]
+    assert answer.evidence_chain == []  # no record reached it
 
 
 def test_its_answer_goes_through_the_contract_unverified_so_invented_citations_count_against_it():
@@ -57,8 +64,6 @@ def test_its_answer_goes_through_the_contract_unverified_so_invented_citations_c
 
 
 def test_a_window_visible_query_says_all_history_is_in_scope():
-    model = ScriptedModel(from_memory)
+    answer = llm_alone(ScriptedModel(says_what_it_was_told))(Query(question=ZONE, as_of=None)).answer
 
-    llm_alone(model)(Query(question=ZONE, as_of=None))
-
-    assert "2024-06-30" not in model.calls[0][1]
+    assert [s.text for s in answer.sentences] == [f"Told: {ZONE}"]  # no as-of date

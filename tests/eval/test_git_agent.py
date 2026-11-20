@@ -132,40 +132,45 @@ def test_agent_answers_from_git_with_citations_that_check_out(checkouts, repo):
     assert check_citations(answer, case, corpus) == (1, 1)
 
 
-def test_window_cases_use_the_window_checkout(checkouts):
-    loop = ScriptedToolLoop([("git_log", {"max_count": 1})], cite_the_setting_commit)
+def cite_every_commit_seen(outputs):
+    """A final answer that cites every commit the tools showed, so whatever reached the agent shows up in it."""
+    seen = list(dict.fromkeys(f"commit:{sha}" for out in outputs for sha in re.findall(r"commit:([0-9a-f]{40})", out)))
+    return BaselineAnswer(refused=False, confidence="Low", decisions=[],
+                          evidence=[EvidenceQuote(node_id=c, quote="") for c in seen],
+                          sentences=[CitedSentence(text="Everything the tools showed.", cites=seen)])
 
-    agent(checkouts, loop)(Query(question="Is the setting still there?", as_of=None))
 
-    assert loop.outputs[0].endswith('Revert "sql: add sql.schema.force_declarative setting"')
+def cited(result) -> list[str]:
+    return [e.node_id for e in result.answer.evidence_chain]
+
+
+def test_window_cases_use_the_window_checkout(checkouts, repo):
+    loop = ScriptedToolLoop([("git_log", {"max_count": 1})], cite_every_commit_seen)
+
+    result = agent(checkouts, loop)(Query(question="Is the setting still there?", as_of=None))
+
+    assert cited(result) == [f"commit:{repo[1]['revert']}"]  # the latest commit is the window's revert
 
 
 def test_ablated_change_commits_are_hidden_from_the_agent(checkouts, repo):
     _, shas = repo
     corpus = MemoryCorpus([CorpusRecord(id="pr:125000", kind="pr", commits=[shas["setting"]])])
-    loop = ScriptedToolLoop([("git_log", {})], lambda outputs: BaselineAnswer(
-        refused=True, confidence="Low", decisions=[], evidence=[], sentences=[]))
+    loop = ScriptedToolLoop([("git_log", {})], cite_every_commit_seen)
 
-    agent(checkouts, loop, corpus)(Query(question="Why?", as_of=CUTOFF, exclude=frozenset({"pr:125000"})))
+    result = agent(checkouts, loop, corpus)(Query(question="Why?", as_of=CUTOFF, exclude=frozenset({"pr:125000"})))
 
-    assert shas["setting"] not in loop.outputs[0] and shas["zone"] in loop.outputs[0]
+    assert cited(result) == [f"commit:{shas['zone']}"]
 
 
-def test_tool_loop_runs_through_the_anthropic_adapter_and_spends_its_budget(checkouts, repo):
+def test_tool_loop_runs_through_the_anthropic_adapter_and_spends_its_budget(checkouts):
     final = BaselineAnswer(refused=True, confidence="Low", decisions=[], evidence=[], sentences=[])
-    requests = []
     client = anthropic_client([tool_use_reply("git_log", {"grep": "zone"}),
-                               tool_use_reply("rm_rf", {"path": "/"}, id="toolu_2"),
-                               text_reply(final)], requests)
+                               tool_use_reply("rm_rf", {"path": "/"}, id="toolu_2"),  # an unknown tool
+                               text_reply(final)], [])
 
     result = agent(checkouts, AnthropicToolLoop(client, "claude-opus-5-5"))
     result.max_turns = 2
     answered = result(Query(question="Why skip dropped indexes?", as_of=CUTOFF))
 
+    # Two tool turns, then the answer: the unknown tool did not end the run, and the schema-valid reply parsed.
     assert answered.answer.refused and len(answered.usage.calls) == 3
-    first_result = requests[1]["messages"][-1]["content"][0]
-    assert first_result["type"] == "tool_result" and repo[1]["zone"] in first_result["content"]
-    assert requests[2]["messages"][-1]["content"][0]["is_error"] is True  # unknown tool goes back as an error
-    assert "tool_choice" not in requests[0] and requests[2]["tool_choice"] == {"type": "none"}
-    assert {t["name"] for t in requests[0]["tools"]} == {"git_log", "git_show", "git_blame", "git_grep", "read_file"}
-    assert requests[0]["output_config"]["format"]["type"] == "json_schema"

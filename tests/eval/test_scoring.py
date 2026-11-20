@@ -33,11 +33,13 @@ def record(case_id, answer, system="stub", seconds=1.5, usage=None, error=None):
 
 
 class ScriptedJudge:
+    """Answers from verdicts keyed by question; asking about any other question fails the test (KeyError), so
+    `ScriptedJudge({})` shows a score that needed no judge call."""
+
     def __init__(self, verdicts):
-        self.verdicts, self.calls = verdicts, []
+        self.verdicts = verdicts
 
     def __call__(self, item: JudgeInput) -> Verdict:
-        self.calls.append(item)
         return self.verdicts[item.question]
 
 
@@ -83,7 +85,6 @@ def test_refusal_on_an_unanswerable_question_is_correct_and_costs_no_judge_call(
     row = score(UNANSWERABLE, record("U", answered("Not established.", refused=True)), CORPUS, judge)
 
     assert (row.refusal_correct, row.invented, row.correctness, row.citation_precision) == (1.0, 0.0, None, None)
-    assert judge.calls == []
 
 
 def test_answering_a_trap_is_an_invented_answer():
@@ -96,7 +97,7 @@ def test_refusing_an_answerable_question_scores_zero_without_judging():
     judge = ScriptedJudge({})
     row = score(LOOKUP, record("L", answered("No Decision found.", refused=True)), CORPUS, judge)
 
-    assert (row.correctness, row.refusal_correct) == (0.0, 0.0) and judge.calls == []
+    assert (row.correctness, row.refusal_correct) == (0.0, 0.0)
 
 
 def test_citations_to_ablated_or_post_cutoff_records_are_invalid():
