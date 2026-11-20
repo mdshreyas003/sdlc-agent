@@ -108,7 +108,8 @@ should be refused.
 ## Supersession
 
 `why` labels every Decision `live`, `superseded` or `refined` (partly live), with what superseded it, when, the
-verbatim statement or justification, and whether history states it (explicit: reverts, RFC `Status:` headers,
+verbatim statement or justification, the chain to what holds now when the superseder was itself superseded
+(`supersession_chain`), and whether history states it (explicit: reverts, RFC `Status:` headers,
 "supersedes #N") or the judge inferred it (Opus 5.5 over pairs of Decisions governing the same code). Rules:
 `src/whycode/supersession.py`; how answers use them: `src/whycode/answer/status.py` (the Live Decision rule) and
 `src/whycode/answer/engine.py`.

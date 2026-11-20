@@ -29,7 +29,7 @@ from dataclasses import dataclass
 
 from whycode.answer.compose import Composer, ComposeRequest, EvidenceNode
 from whycode.answer.confidence import ConfidenceInputs, score_confidence
-from whycode.answer.patterns import DecisionRow, EntityRow, GraphReader, HistoryView, Record
+from whycode.answer.patterns import DecisionRow, EntityRow, GraphReader, HistoryView, Record, SupersessionRow
 from whycode.answer.resolve import EntityCandidate, EntityMatcher, question_words
 from whycode.answer.status import SupersessionStatus, grounding, supersession_statuses
 from whycode.answer.verify import Superseded, verify
@@ -103,15 +103,30 @@ class _Evidence:
                               date=decision.date, text=decision.quote), quote=decision.quote)
         self.add(_node(discussion, text=discussion_text), quote=discussion_quote or decision.quote)
 
-    def add_superseder(self, status: SupersessionStatus) -> None:
-        """What superseded or refined a Decision, and the record whose text states it."""
-        edge = status.edge
+    def add_supersession(self, status: SupersessionStatus) -> None:
+        """What superseded or refined a Decision, and the record whose text states it, along its whole chain."""
+        for edge in (status.edge, *status.chain):
+            self._add_superseder(edge)
+
+    def _add_superseder(self, edge: SupersessionRow) -> None:
         if isinstance(edge.by, DecisionRow) and edge.by_discussion is not None:
             home = edge.by_discussion
             self.add_decision(edge.by, home, edge.quote if home.id == edge.source.id else None)
         self.add(_node(edge.source), quote=edge.quote)
         if isinstance(edge.by, Record) and edge.by.id != edge.source.id:
             self.add(_node(edge.by))
+
+
+def _dead_in_chain(status: SupersessionStatus, known: dict[str, Superseded]) -> dict[str, Superseded]:
+    """The superseded Decisions along a status's chain (they are evidence too, so never presented as live)."""
+    out = {}
+    edges = (status.edge, *status.chain)
+    for i, later in enumerate(edges[1:], 1):
+        dead = edges[i - 1].by
+        if isinstance(dead, DecisionRow) and dead.id not in known:
+            witnesses = {later.source.id, *(e.by.id for e in edges[i:])}
+            out[dead.id] = Superseded(quote=dead.quote, witnesses=frozenset(witnesses))
+    return out
 
 
 class AnswerEngine:
@@ -147,7 +162,7 @@ class AnswerEngine:
             if status is not None:
                 history = dict(status=status.status, superseded_by=status.by, superseded_at=status.at,
                                explicit_or_inferred=status.basis, supersession_quote=status.edge.quote,
-                               supersession_source=status.source)
+                               supersession_source=status.source, supersession_chain=status.chain_ids)
             decisions.append(DecisionView(
                 id=decision.id, choice=decision.choice, rationale=decision.rationale, quote=decision.quote,
                 date=decision.day, link=row.link, discussion_id=discussion.id,
@@ -160,12 +175,13 @@ class AnswerEngine:
         superseded: dict[str, Superseded] = {}
         quotes = {row.decision.id: row.decision.quote for row in rows}
         for decision_id, status in statuses.items():
-            evidence.add_superseder(status)
+            evidence.add_supersession(status)
             if status.superseded:
                 superseded[decision_id] = Superseded(quote=quotes[decision_id], witnesses=status.witnesses)
+                superseded |= _dead_in_chain(status, superseded)
         reviewed = [i for i, s in discussions.items() if s.kind in ("pr", "rfc")]
         people = self._people(reviewed, speakers, entity, view)
-        if len(superseded) == len(rows):  # no Live Decision reaches the Anchor: refuse, showing the dead history
+        if all(row.decision.id in superseded for row in rows):  # no Live Decision: refuse, showing the history
             return Answer(anchor=target, refused=True, confidence="Low", refusal_reason="superseded",
                           anchor_matched=matched, decisions=decisions, evidence_chain=list(evidence.items.values()),
                           people=people)

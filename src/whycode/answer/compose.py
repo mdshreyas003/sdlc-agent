@@ -67,8 +67,9 @@ when a person is departed (active: false); for a departed person, name `ask_inst
 - Mention an Incident the Decision prevented when one is given.
 - Each Decision has a `status`. A `superseded` Decision is dead: say that it was superseded, by what \
 (`superseded_by`) and when (`superseded_at`), cite `superseded_by` (or `supersession_source` when it is \
-empty) in the same sentence, and never describe it as how the code works now. A `refined` Decision is partly \
-live: say what still holds and what the refining Decision changed. When `explicit_or_inferred` is \
+empty) in the same sentence, and never describe it as how the code works now. When its `supersession_chain` \
+has more than one id, what superseded it was itself superseded: name the last id as what holds now. A `refined` \
+Decision is partly live: say what still holds and what the refining Decision changed. When `explicit_or_inferred` is \
 `inferred`, say the change was inferred, not stated in history.
 - Write 2 to 6 short sentences. No URLs."""
 
@@ -105,7 +106,10 @@ class TemplateComposer:
             if d.status != "live":
                 how = "inferred" if d.explicit_or_inferred == "inferred" else "stated in history"
                 by = f" by {d.superseded_by}" if d.superseded_by else ""
-                text = f"{d.status.capitalize()} on {d.superseded_at.isoformat()}{by} ({how}): {text}"
+                now = f", itself superseded; {d.supersession_chain[-1]} holds now" if d.supersession_chain[1:] else ""
+                text = f"{d.status.capitalize()} on {d.superseded_at.isoformat()}{by}{now} ({how}): {text}"
                 cites.append(DraftCite(node_id=d.superseded_by or d.supersession_source))
+                if now:
+                    cites.append(DraftCite(node_id=d.supersession_chain[-1]))
             out.append(DraftSentence(text=text, cites=cites))
         return out

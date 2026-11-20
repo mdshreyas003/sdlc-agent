@@ -38,8 +38,9 @@ Semantics every producer and consumer can rely on:
   For the first two, `superseded_by` is the superseding or refining Decision, or the record when no Decision of
   it applies (None when the Decision's own record declares it dead, e.g. an RFC `Status: obsolete`);
   `superseded_at` is when; `explicit_or_inferred` says whether history states it or the judge inferred it; and
-  `supersession_quote` is the verbatim text stating or justifying it, found in `supersession_source`. Both
-  `superseded_by` and `supersession_source` are in `evidence_chain`. Superseded Decisions are the superseded
+  `supersession_quote` is the verbatim text stating or justifying it, found in `supersession_source`; and
+  `supersession_chain` follows `superseded_by` to what holds now, when that was itself superseded. All of these
+  ids are in `evidence_chain`. Superseded Decisions are the superseded
   history: they stay in `decisions`, and a sentence that cites one also cites what superseded it, so it is
   never presented as live. Supersession and history after `as_of` are invisible to a scoreboard query.
 """
@@ -94,6 +95,10 @@ class DecisionView(_Contract):
     """The verbatim text that states the Supersession (a revert, an RFC status) or justifies an inferred one."""
     supersession_source: str | None = None
     """Node id of the record whose text holds `supersession_quote`."""
+    supersession_chain: list[str] = []
+    """For a superseded Decision: `superseded_by`, then whatever superseded that, and so on, so the last id is what
+    holds now (a Live or refined Decision, or a record). A refined Decision's chain is just `superseded_by`. Empty
+    when `superseded_by` is None. Every id is in `evidence_chain`."""
 
 
 class EvidenceItem(_Contract):

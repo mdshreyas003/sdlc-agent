@@ -141,7 +141,10 @@ class _Page:
             name = f' "{e(title.title)}"' if title and title.title and title.kind == "decision" else ""
             how = ("inferred by the supersession judge, not stated in history" if d.explicit_or_inferred == "inferred"
                    else "stated in history")
-            rows.append(f'<div class="supersession"><p>{verb}{when}{by}{name} ({how}).</p>'
+            later = d.supersession_chain[1:]
+            now = (f" That was itself superseded: {' then '.join(self.node(n) for n in later)} holds now."
+                   if later else "")
+            rows.append(f'<div class="supersession"><p>{verb}{when}{by}{name} ({how}).{now}</p>'
                         + (f"<blockquote>{e(d.supersession_quote)}</blockquote>"
                            f'<p class="source">From {self.node(d.supersession_source)}</p>'
                            if d.supersession_quote else "") + "</div>")

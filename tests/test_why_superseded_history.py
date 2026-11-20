@@ -89,3 +89,22 @@ async def test_an_anchor_whose_every_decision_is_superseded_is_refused_with_its_
     assert sanity.superseded_by == decision_ids(answer)[ALWAYS_ON_QUOTE]
     assert {"pr:110500", "pr:116000", sanity.superseded_by} <= {e.node_id for e in answer.evidence_chain}
     assert answer.people  # the Person to Ask still comes with the refusal
+
+
+async def test_a_superseded_decision_names_the_chain_to_the_decision_that_holds_now(neo4j_driver, tmp_path):
+    reader = load(neo4j_driver, tmp_path, ALWAYS_ON, ONLY_WHEN_SET)  # #117000 in turn supersedes #116000
+
+    answer = await ask(reader, SETTING)
+
+    ids = decision_ids(answer)
+    always_on, only_when_set = ids[ALWAYS_ON_QUOTE], ids[ONLY_WHEN_SET_QUOTE]
+    by_quote = {d.quote: d for d in answer.decisions}
+    sanity = by_quote[SANITY_QUOTE]
+    assert (sanity.status, sanity.superseded_by) == ("superseded", always_on)
+    # #116000's Decision governs makeState, not the setting, so it is not among the Decisions: the chain says
+    # that it is dead too, and what holds now.
+    assert always_on not in {d.id for d in answer.decisions}
+    assert sanity.supersession_chain == [always_on, only_when_set]
+    assert by_quote[ONLY_WHEN_SET_QUOTE].status == "live"
+    assert set(sanity.supersession_chain) <= {e.node_id for e in answer.evidence_chain}
+    assert answer.refused is False
