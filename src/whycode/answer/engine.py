@@ -291,11 +291,10 @@ class AnswerEngine:
         best = next((p for p in people if p.active), None)
         if best is None:
             areas = _areas(entity)
-            listed = {p.handle for p in people}
-            rows = self.reader.area_people(areas, **scope) if areas else []
-            row = next((r for r in rows if r["handle"] not in listed), None)
-            if row is None:
+            rows = self.reader.area_people(areas, **scope) if areas else []  # active people only
+            if not rows:
                 return people
+            row = rows[0]
             best = PersonView(handle=row["handle"], role=row["role"], active=True, via=row["via"])
             people = [best, *people]
         return [p if p.active else p.model_copy(update={"ask_instead": best.handle}) for p in people]
