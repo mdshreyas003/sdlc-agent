@@ -90,14 +90,6 @@ the entity matcher.
 | `answer/` | Fixed queries, the Live Decision rule, composer, verifier, confidence, `fence.py` (`check_change`) |
 | `mcp_server.py`, `cli.py`, `view.py` | Entry points: MCP (`why-mcp`), the `whycode` command, the human view |
 
-## Status
-
-- **Works and tested:** the fixture end to end, `why`, `check_change`, the human view, Supersession, citation audit.
-- **Built, partly run:** the real CockroachDB slice (28 RFCs, 1,106 PRs, 871 issues; ADR-0002) is wired up. The checked-in
-  graph counts are from a bounded run without Decisions.
-- **Not yet run:** the full real-data build, the supersession judge report and the with/without agent comparison. All
-  need credentials and a long fetch.
-
 ## Go deeper
 
 Real-slice build, flags and approximations, graph schema, free-form questions, agent comparison and tests:
