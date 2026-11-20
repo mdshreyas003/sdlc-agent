@@ -9,9 +9,13 @@ The answer contract then shows each Decision's status (live, superseded or refin
 
 **Blocked by:** 01 (scoring on real data also needs 02 and 03)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] Seam 1 tests: a fixture revert and an RFC with a superseded status produce explicit edges; scripted judge labels produce the right `supersedes` / `refines` edges.
 - [ ] Seam 2 tests: a superseded Decision is never presented as live; a Refinement is shown as partly live.
 - [ ] On real data, the judge's precision and recall against the explicit cases are reported.
 - [ ] The Held-out Window questions are scored for our system with and without supersession, and the difference appears in the results table.
+
+## Comments
+
+2026-11-20: Agent work merged into `main`. Tested only on the fixture history with scripted models. Left for a human: judge precision and recall on real data (`whycode supersession-report`) and Held-out Window scoring with and without Supersession.

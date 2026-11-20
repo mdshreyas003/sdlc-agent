@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] One command ingests the slice. A re-run reads from the local cache and makes no GitHub calls.
 - [ ] Nothing dated after 2024-06-30 is in the graph.
@@ -13,3 +13,7 @@
 - [ ] Every cited node ID resolves (checked automatically over a sample of 20 answers).
 
 **Prerequisites (human):** AuraDB credentials, a GitHub token and an Anthropic API key, provided as environment variables.
+
+## Comments
+
+2026-11-20: Agent work merged into `main`. Tested only on the fixture history with scripted models. Left for a human: the full GitHub backfill (`whycode fetch`, about 2 hours), Decision extraction with a real model, final graph counts, and the 3-real-Anchors-plus-1-refusal check from Claude Code.

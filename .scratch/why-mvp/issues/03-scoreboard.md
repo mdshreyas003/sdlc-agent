@@ -24,3 +24,7 @@ Port the legacy runner, judge and bootstrap statistics as references.
 - [ ] Both baselines run end to end and appear in the results table.
 - [ ] The judge's agreement is reported against at least 15 hand-labelled answers.
 - [ ] Harness tests with stub systems produce known metric values and reproduce fixed-seed intervals.
+
+## Comments
+
+2026-11-20: Agent work merged into `main`. Tested only on the fixture history with scripted models. Left for a human: write at least 30 gold questions plus Held-out Window questions and mark them `human_verified`, hand-label at least 15 answers for judge agreement, then score the test split once (`eval/README.md`).

@@ -7,8 +7,12 @@
 
 **Blocked by:** 03, 04
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] The results table includes all four baselines.
 - [ ] The calibration plot is produced from the harness output by one command.
 - [ ] The human view renders the answer contract for any Anchor and works offline against the fixture graph.
+
+## Comments
+
+2026-11-20: Agent work merged into `main`. Tested only on the fixture history with scripted models. Left for a human: produce the real calibration plot from a dev-split run (`whycode-eval calibration --run <dir>`).

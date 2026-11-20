@@ -15,7 +15,7 @@ There is no Supersession yet: every Decision is treated as live. This ticket fix
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] The fixture history contains at least: 2 RFCs with `Status:` headers, PRs with diffs and review comments, a "Fixes #N" issue labelled as a regression, a revert, and a cluster setting.
 - [ ] Seam 1 tests (scripted model): Decisions exist only when their quote appears verbatim in the source. Hard and soft governs links hit the right Code Entities. All Derived nodes and edges are tagged `derived`. A re-run leaves node and edge counts unchanged. Nothing after the cutoff date is ingested.
@@ -26,3 +26,7 @@ There is no Supersession yet: every Decision is treated as live. This ticket fix
   - Departed people are flagged.
 - [ ] `why` can be called from Claude Code through MCP against the fixture graph, using real models.
 - [ ] The answer contract is written down where tickets 03–05 can import it.
+
+## Comments
+
+2026-11-20: Agent work merged into `main`. Tested only on the fixture history with scripted models. Left for a human: call `why` from Claude Code with real models (needs `ANTHROPIC_API_KEY` and Neo4j; steps in `README.md`).

@@ -11,8 +11,12 @@ Fall back to hand-built "remove this odd-looking check" tasks if fewer than abou
 
 **Blocked by:** 02, 04
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] Seam 2 tests: a diff that reverses a fixture Decision returns a Fence Warning; an unrelated diff returns none; a superseded Decision never triggers a warning.
 - [ ] Each comparison task records the task text, the pre-cutoff commit, the real pitfall and the grading rule before any run.
 - [ ] The results are a with/without table (pitfalls repeated, warnings that led to a change of course), plus one transcript chosen for the demo.
+
+## Comments
+
+2026-11-20: Agent work merged into `main`. Tested only on the fixture history with scripted models. Left for a human: run the agent comparison (`whycode-agents run --repo <clone>`) to fill the with/without table and pick the demo transcript.
