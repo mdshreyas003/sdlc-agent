@@ -31,6 +31,47 @@ tool on `pkg/sql.(*SchemaChanger).exec` before changing its retry loop."
 Configuration (all environment variables) is documented in `src/whycode/config.py`. Model responses are
 cached in `.cache/models` so rebuilds are reproducible.
 
+## The real CockroachDB slice
+
+Scope (ADR-0002, fixed in `src/whycode/history/scope.py`): the 28 schema-change RFCs, the pull requests merged
+into master by 2024-06-30 whose commits touch `pkg/sql/schemachanger`, `pkg/sql/schema_changer.go`,
+`pkg/sql/schemachange` or `pkg/sql/schema_change_cluster_setting.go` (1106 of them), the `A-schema-*` issues
+opened by then (871), and the issues those pull requests and RFCs link to. The code index parses the scoped
+packages plus the neighbouring files that register schema-change cluster settings, at cutoff commit `d132535`.
+
+```sh
+export GITHUB_TOKEN=$(gh auth token)    # only needed for responses that are not cached yet
+export ANTHROPIC_API_KEY=...            # Sonnet 5.5 extracts Decisions (cached in .cache/models)
+export NEO4J_PASSWORD=...               # plus NEO4J_URI / NEO4J_USERNAME for AuraDB
+
+uv run whycode fetch                    # optional: the backfill alone (~9,400 REST calls, ~2 h of rate limit)
+uv run whycode build --history github   # checkout + fetch (cached) + graph -> Neo4j; prints the counts
+uv run whycode check-citations --sample 20   # every node id in 20 answers resolves (exit 1 if not)
+```
+
+- The checkout (`.cache/cockroach`, ~55 MB) is a sparse, blobless clone of the scoped directories at the cutoff
+  commit. Every GitHub response is stored in `.cache/github`, so the backfill is resumable (re-run the same
+  command after a stop; rate limits are waited out) and a re-run makes no GitHub calls (`"github_calls": 0` in
+  the output; `--offline` refuses to touch the network at all). Both live under the ignored `.cache/`.
+- `--limit N` bounds a run (the N most recently merged pull requests, the N most recent labelled issues, at most
+  N linked issues); use the same `--limit` for `fetch` and `build` to stay on the cache. `--extractor none`
+  builds the graph without Decisions (no Anthropic key needed).
+- The build refuses to write a graph holding any date after the cutoff and prints `latest_date`. It writes the
+  scoreboard corpus (`data/corpus.jsonl`, or `WHY_CORPUS`) and records the counts in `data/graph-counts.json`.
+- Known approximations: issue selection and Incident labels use the labels GitHub shows today (label-at-cutoff
+  is not replayed); issue and PR bodies are as edited today; Reviewable review bodies quote earlier comments
+  ("Previously, X wrote…") inside the reviewer's post, so a Decision quoted only from such a block is attributed
+  to the reviewer (the extractor takes the first post holding the quote, usually X's own earlier review).
+
+`data/graph-counts.json` currently holds a **partial** bounded run (`--limit 15 --extractor none`, so no
+Decisions): 0 Decisions, 42 Changes (15 PRs, 27 commits), 73 Discussions (15 PRs, 30 issues, 28 RFCs),
+2458 Code Entities, 4 Incidents, 43 People. The full run replaces it.
+
+Checks to do from Claude Code after the full build (not yet run: they need the Anthropic key): `why` on a
+function (e.g. `pkg/sql.(*SchemaChanger).exec`), a file (`pkg/sql/schema_changer.go`) and a setting
+(`schemachanger.job.max_retry_backoff`) should each return an Evidence Chain, and an Anchor no Decision reaches
+should be refused.
+
 ## Tests
 
 `uv run pytest tests` starts one disposable Neo4j container per session (Docker; with Colima the socket
@@ -41,8 +82,9 @@ always scripted in tests.
 
 | Module (`src/whycode/`) | Role |
 |---|---|
-| `history/` | History source seam (`HistorySource`), records, cutoff rules (`load_history`), fixture replay, GitHub REST payload mapping, RFC headers |
-| `codeindex/` | Code Entities, aliases, diff touches and exact name mentions; tree-sitter Go parser |
+| `history/` | History source seam (`HistorySource`), records, cutoff rules (`load_history`), fixture replay, GitHub REST payload mapping, RFC headers; the real slice: `scope.py`, `github.py` (cached transport, client, `GitHubHistorySource`), `checkout.py` |
+| `codeindex/` | Code Entities, aliases, diff touches and exact name mentions; tree-sitter Go parser (same-package const setting keys, `WithName` aliases) |
+| `audit.py` | The citation audit behind `whycode check-citations` |
 | `linker.py` | Stated Links from written identifiers (closes, reverts, references) |
 | `discussions.py`, `decisions.py` | Discussions as authored segments; Decision extraction behind the `DecisionProposer` seam, kept only with a verbatim quote |
 | `build.py`, `graph/` | Graph building, the idempotent Neo4j store, and the export of citable records in the scoreboard's corpus format (`graph/corpus.py`) |
@@ -52,12 +94,11 @@ always scripted in tests.
 
 ## Extension points for later tickets
 
-- **02 (real slice).** Implement `HistorySource` (`history/__init__.py`); REST bundles map through
-  `history/github_rest.py`; `load_history` applies the cutoff whatever the source returns. `Rfc.authors` are GitHub
-  logins (take them from the RFC PR). Index the checkout with `parse_go_tree(root, scope=[...])`; it reads literal
-  setting keys only (add same-package consts and `WithName` aliases there). Add `--history github` to `cli.py`.
-  Write the scoreboard corpus with `write_jsonl(path, corpus_records(graph))` (`graph/corpus.py`) so ids and texts
-  match what `why` cites. Bare-name mention rules for soft links live in `CodeIndex.mentions`.
+- **02 (real slice), done.** `whycode build --history github` writes the real graph, the scoreboard corpus
+  (`data/corpus.jsonl`) and `data/graph-counts.json`; see "The real CockroachDB slice". Tests serve a fake GitHub
+  (`tests/fake_github.py`, the miniature history as native REST/GraphQL payloads) through the real client and
+  cache. A setting's `WithName` / `WithRetiredName` names are in `CodeEntity.names` (stored on the node as
+  `names`, and in `aliases`).
 - **04 (Supersession).** Explicit inputs already in the graph: `REVERTS` edges (PR -> PR by exact `Revert "<title>"`,
   PR or commit -> commit by full SHA; a commit's PR is its `CONTAINS` source) and RFC `status` / `status_raw` node
   properties plus `REFERENCES` edges with locator `header:Status#...`. `SUPERSEDES` / `REFINES` are already allowed
