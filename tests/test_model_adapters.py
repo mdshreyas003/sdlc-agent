@@ -13,10 +13,11 @@ import httpx2
 from anthropic import Anthropic, DefaultHttpxClient
 
 from whycode.answer.compose import AnthropicComposer, ComposeRequest
+from whycode.answer.resolve import AnthropicEntityMatcher, EntityCandidate
 from whycode.contract import Anchor
 from whycode.decisions import AnthropicDecisionProposer
 from whycode.discussions import Discussion, Segment
-from whycode.llm import COMPOSER_MODEL, EXTRACTION_MODEL, LlmClient
+from whycode.llm import COMPOSER_MODEL, EXTRACTION_MODEL, MATCHER_MODEL, LlmClient
 
 DISCUSSION = Discussion(
     id="pr:1", kind="pr", title="sql: add backoff", url="https://github.com/o/r/pull/1", date=dt.date(2023, 3, 20),
@@ -81,3 +82,18 @@ def test_the_composer_adapter_returns_draft_sentences():
 
     assert [d.text for d in drafts] == ["Backoff is capped."]
     assert api.requests[0]["model"] == "claude-opus-5-5"
+
+
+def test_the_entity_matching_adapter_returns_its_pick_and_is_unsure_when_the_model_fails():
+    candidates = [EntityCandidate(id="function:pkg/sql.(*SchemaChanger).exec", kind="function",
+                                  key="pkg/sql.(*SchemaChanger).exec")]
+    api = FakeApi({"entity_id": candidates[0].id, "sure": True, "reason": "It asks about the retry loop."})
+
+    choice = AnthropicEntityMatcher(client_for(api), MATCHER_MODEL).match("Why the retry loop?", candidates)
+    truncated = AnthropicEntityMatcher(client_for(FakeApi({"entity_id": None, "sure": False}, "max_tokens")),
+                                       MATCHER_MODEL).match("Why the retry loop?", candidates)
+
+    assert (choice.entity_id, choice.sure) == (candidates[0].id, True)
+    assert candidates[0].id in api.requests[0]["messages"][0]["content"]
+    assert api.requests[0]["model"] == "claude-opus-5-5"
+    assert (truncated.entity_id, truncated.sure) == (None, False)

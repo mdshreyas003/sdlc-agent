@@ -129,25 +129,23 @@ def _supersession_report(settings: Settings, args: argparse.Namespace, transport
 
 
 def _why(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.answer.engine import AnswerEngine
     from whycode.answer.patterns import GraphReader
 
     reader = GraphReader(settings.driver(), settings.neo4j_database)
     reader.selfcheck()
-    answer = AnswerEngine(reader, settings.composer_impl()).why(args.anchor)
+    answer = settings.answer_engine(reader).why(args.anchor)
     print(answer.model_dump_json(indent=2))
     return 0
 
 
 def _check_citations(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.answer.engine import AnswerEngine
     from whycode.answer.patterns import GraphReader
     from whycode.audit import GraphResolver, audit_citations, sample_anchors
 
     driver = settings.driver()
     reader = GraphReader(driver, settings.neo4j_database)
     reader.selfcheck()
-    engine = AnswerEngine(reader, settings.composer_impl())
+    engine = settings.answer_engine(reader)
     anchors = sample_anchors(driver, args.sample, args.seed, settings.neo4j_database)
     audit = audit_citations(engine.why, anchors, GraphResolver(driver, settings.neo4j_database))
     print(json.dumps({**audit.report(), "anchors": anchors}, indent=2))

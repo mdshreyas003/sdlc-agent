@@ -5,7 +5,7 @@ MCP tool, with scripted composer and matcher. Assertions are on the Answer contr
 from __future__ import annotations
 
 import pytest
-from doubles import FaithfulComposer
+from doubles import FaithfulComposer, OnlyFabricationsComposer
 from mcp import Client
 
 from whycode.answer.engine import AnswerEngine
@@ -98,3 +98,68 @@ async def test_people_with_nobody_departed_carry_no_suggestion(reader):
     answer = await ask(reader, EXEC)
 
     assert answer.people and all(p.active and p.ask_instead is None and p.via is None for p in answer.people)
+
+
+# --- Anchor resolution -----------------------------------------------------------------------------------------
+
+BACKOFF_QUESTION = "Why does the schema changer back off between retries?"
+VAGUE_QUESTION = "why is the schema changer so slow?"
+
+
+async def test_a_question_naming_no_code_entity_is_matched_by_one_model_step_and_says_so(reader):
+    matcher = ScriptedMatcher({BACKOFF_QUESTION: (f"function:{EXEC}", True)})
+
+    answer = await ask(reader, BACKOFF_QUESTION, matcher)
+    exact = await ask(reader, EXEC)
+
+    assert answer.anchor.model_dump() == {"kind": "function", "id": EXEC}
+    assert answer.anchor_matched is True and answer.refused is False
+    assert answer.decisions == exact.decisions
+    assert (exact.confidence, answer.confidence) == ("High", "Medium")  # the Anchor itself rests on a model's pick
+    ((question, shortlist),) = matcher.asked
+    assert question == BACKOFF_QUESTION
+    assert f"function:{EXEC}" in shortlist and "setting:schemachanger.job.max_retry_backoff" in shortlist
+    assert exact.anchor_matched is False
+
+
+async def test_an_unsure_match_is_a_clear_refusal(reader):
+    matcher = ScriptedMatcher({VAGUE_QUESTION: (f"function:{EXEC}", False)})
+
+    answer = await ask(reader, VAGUE_QUESTION, matcher)
+
+    assert (answer.anchor, answer.refused, answer.refusal_reason) == (None, True, "unresolved")
+    assert answer.decisions == [] and answer.sentences == [] and answer.confidence == "Low"
+    assert len(matcher.asked) == 1  # one step, never a loop
+
+
+async def test_a_match_outside_the_shortlist_is_refused_however_sure(reader):
+    matcher = ScriptedMatcher({VAGUE_QUESTION: ("function:pkg/sql.(*SchemaChanger).madeUp", True)})
+
+    answer = await ask(reader, VAGUE_QUESTION, matcher)
+
+    assert answer.anchor is None and answer.refused is True
+
+
+async def test_an_exactly_named_code_entity_needs_no_model_step(reader):
+    matcher = ScriptedMatcher()
+
+    named = await ask(reader, "Why does `SchemaChanger.exec` back off between retries?", matcher)
+    exact = await ask(reader, "schemachanger.job.max_retry_backoff", matcher)
+    nothing_to_match = await ask(reader, "why?", matcher)
+
+    assert named.anchor.id == EXEC and exact.anchor.kind == "setting"
+    assert not named.anchor_matched and not exact.anchor_matched
+    assert nothing_to_match.refusal_reason == "unresolved"
+    assert matcher.asked == []
+
+
+async def test_every_refusal_says_why(reader):
+    ungoverned = await ask(reader, "scbuild.Build")
+    unresolved = await ask(reader, "pkg/sql/no_such_file.go")
+    async with Client(build_server(AnswerEngine(reader, OnlyFabricationsComposer()))) as client:
+        result = await client.call_tool("why", {"anchor": EXEC})
+    unverified = Answer.model_validate(result.structured_content)
+    answered = await ask(reader, EXEC)
+
+    assert [a.refusal_reason for a in (ungoverned, unresolved, unverified, answered)] == [
+        "ungoverned", "unresolved", "unverified", None]

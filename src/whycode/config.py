@@ -8,7 +8,9 @@ and never in tests.
     NEO4J_PASSWORD       (required)
     NEO4J_DATABASE       neo4j
     WHY_CUTOFF           2024-06-30 (ADR-0002); nothing after this date is ingested
-    WHY_COMPOSER         anthropic (Opus 5.5) | template (offline, model-free)
+    WHY_COMPOSER         anthropic (Opus 5.5) | template (offline, model-free). Also picks the entity-matching
+                         step for free-form questions: Opus 5.5 with anthropic; none with template (a question
+                         that names no Code Entity exactly is then refused)
     WHY_EXTRACTOR        recorded (fixture recordings, offline) | anthropic (Sonnet 5.5) | none (no Decisions)
                          default: recorded for the fixture history, anthropic for the GitHub history
     WHY_MODEL_CACHE      .cache/models (cached model responses, for reproducible rebuilds)
@@ -132,6 +134,21 @@ class Settings:
 
             return recorded_judge()
         return None
+
+    def matcher_impl(self):
+        """The entity-matching step for free-form questions: Opus 5.5 with the anthropic composer, else None."""
+        if self.composer != "anthropic":
+            return None
+        from whycode.answer.resolve import AnthropicEntityMatcher
+        from whycode.llm import MATCHER_MODEL
+
+        return AnthropicEntityMatcher(self.llm(), MATCHER_MODEL)
+
+    def answer_engine(self, reader, supersession: bool = True):
+        """The AnswerEngine every interface uses (MCP, `whycode why`, the human view, the scoreboard)."""
+        from whycode.answer.engine import AnswerEngine
+
+        return AnswerEngine(reader, self.composer_impl(), supersession=supersession, matcher=self.matcher_impl())
 
     def composer_impl(self):
         from whycode.answer.compose import AnthropicComposer, TemplateComposer
