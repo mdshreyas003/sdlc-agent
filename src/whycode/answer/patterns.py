@@ -102,10 +102,46 @@ WHERE {_REAL.format(v="s")} AND {_SEEN.format(v="s")} AND {_SEEN.format(v="d")}
 WITH DISTINCT d, s
 RETURN d {{.id, .choice, .quote, .date}} AS decision, s {{.id, .kind, .title, .url}} AS discussion
 ORDER BY decision.date DESC, decision.id LIMIT $limit""",
+    # check_change: the Code Entities of a diff's files with every CodeEntity field (to rebuild a CodeIndex), plus
+    # the settings the diff names by literal and the settings of the files' packages (their Go variables).
+    "diff_entities": """
+MATCH (e:CodeEntity)
+WHERE (e.kind = 'file' AND e.key IN $paths)
+   OR (e.kind IN ['function', 'setting'] AND e.parent IN $paths)
+   OR (e.kind = 'setting' AND (e.package IN $packages OR e.key IN $literals
+                              OR any(n IN coalesce(e.names, []) WHERE n IN $literals)))
+RETURN e {.kind, .key, .parent, .package, .package_name, .name, .receiver, .pointer_receiver, .go_var, .names}
+       AS entity
+ORDER BY entity.kind, entity.key LIMIT $limit""",
+    # check_change: the Decisions governing exactly these Code Entities, their Discussions and governs links.
+    "governing_exact": f"""
+MATCH (d:Decision)-[g:GOVERNS]->(e:CodeEntity)
+WHERE e.id IN $ids
+MATCH (s:Discussion)-[:YIELDS]->(d)
+WHERE {_REAL.format(v="s")} AND {_SEEN.format(v="s")} AND {_SEEN.format(v="d")}
+  AND g.observed_at <= $as_of AND NOT coalesce(g.change, "") IN $exclude
+WITH d, s, collect(DISTINCT {{entity: e.id, link: g.link, change: g.change}}) AS governs
+RETURN d {{.id, .choice, .rationale, .quote, .date}} AS decision,
+       s {{.id, .kind, .title, .url, .date}} AS discussion, governs
+ORDER BY decision.date DESC, decision.id LIMIT $limit""",
+    # check_change: the lines Changes added to and removed from files.
+    "change_lines": f"""
+MATCH (c:Change)-[t:TOUCHES]->(f:CodeEntity {{kind: 'file'}})
+WHERE c.id IN $ids AND f.key IN $paths AND {_REAL.format(v="c")}
+RETURN c.id AS change, f.key AS path, coalesce(t.added, []) AS added, coalesce(t.removed, []) AS removed
+ORDER BY change, path LIMIT $limit""",
+    # check_change: which Change closed which Incident, for these Changes and Discussions.
+    "incident_links": f"""
+MATCH (c:Change)-[:CLOSES]->(i:Incident)
+WHERE (i.id IN $ids OR c.id IN $ids) AND {_SEEN.format(v="c")} AND {_SEEN.format(v="i")}
+RETURN DISTINCT c.id AS change, i.id AS incident
+ORDER BY incident, change LIMIT $limit""",
 }
 
 _SAMPLE = {"name": "x", "id": "x", "ids": ["x"], "handles": ["x"], "limit": 1, "as_of": ALL_HISTORY,
-           "exclude": ["x"]}
+           "exclude": ["x"], "paths": ["x"], "packages": ["x"], "literals": ["x"]}
+DIFF_ENTITY_LIMIT = 5000
+"""check_change reads at most this many Code Entities for one diff (the files' functions and settings)."""
 
 
 class GraphReader:
@@ -172,3 +208,20 @@ class GraphReader:
     def nearby_decisions(self, entity_id: str, as_of: str = ALL_HISTORY,
                          exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
         return self._rows("nearby_decisions", id=entity_id, as_of=as_of, exclude=list(exclude), limit=10)
+
+    # check_change (`whycode.answer.fence`).
+
+    def diff_entities(self, paths: list[str], packages: list[str], literals: list[str]) -> list[dict[str, Any]]:
+        return [r["entity"] for r in self._rows("diff_entities", paths=paths, packages=packages, literals=literals,
+                                                limit=DIFF_ENTITY_LIMIT)]
+
+    def governing_exact(self, entity_ids: list[str], as_of: str = ALL_HISTORY,
+                        exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
+        return self._rows("governing_exact", ids=entity_ids, as_of=as_of, exclude=list(exclude), limit=4 * ROW_LIMIT)
+
+    def change_lines(self, change_ids: list[str], paths: list[str]) -> list[dict[str, Any]]:
+        return self._rows("change_lines", ids=change_ids, paths=paths, limit=4 * ROW_LIMIT)
+
+    def incident_links(self, record_ids: list[str], as_of: str = ALL_HISTORY,
+                       exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
+        return self._rows("incident_links", ids=record_ids, as_of=as_of, exclude=list(exclude), limit=4 * ROW_LIMIT)

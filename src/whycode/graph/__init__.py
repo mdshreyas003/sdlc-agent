@@ -3,7 +3,8 @@
 Schema (labels on nodes, types on edges):
 - Nodes: Change (PullRequest, Commit), Discussion (PullRequest, Issue, Rfc), Incident, Person, Decision,
   CodeEntity (Package, File, Function, Setting), Stub (referenced, never ingested, never cited).
-- Stated edges: CONTAINS, TOUCHES, CLOSES, REFERENCES, REVERTS, AUTHORED, REVIEWED.
+- Stated edges: CONTAINS, TOUCHES, CLOSES, REFERENCES, REVERTS, AUTHORED, REVIEWED. A pull request's TOUCHES
+  edge to a file also carries `added` / `removed`: the distinct lines its diff added and removed there (trimmed).
 - Derived edges: YIELDS (Discussion -> Decision), GOVERNS (Decision -> CodeEntity, link hard|soft).
   Ticket 04 adds SUPERSEDES / REFINES (Decision -> Decision, explicit|inferred).
 

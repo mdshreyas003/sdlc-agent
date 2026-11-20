@@ -1,0 +1,13 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index 8deca2e..8b4a96e 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -77,5 +77,8 @@ func (sc *SchemaChanger) runBackfill(ctx context.Context) error {
+ // maybeUpdateZoneConfigsForPKChange moves zone configs for any rewritten
+ // indexes from the old index over to the new index.
+ func (sc *SchemaChanger) maybeUpdateZoneConfigsForPKChange(ctx context.Context) error {
++	if sc.descID == 0 {
++		return errors.AssertionFailedf("schema changer has no descriptor")
++	}
+ 	return nil
+ }

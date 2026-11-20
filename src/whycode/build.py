@@ -16,7 +16,7 @@ from collections import defaultdict
 
 from whycode import discussions as disc
 from whycode import ids
-from whycode.codeindex import CodeEntity, CodeIndex
+from whycode.codeindex import ChangedLine, CodeEntity, CodeIndex
 from whycode.decisions import DecisionProposer, ExtractedDecision, extract_decisions
 from whycode.graph import DERIVED, STATED, Edge, Graph, Node
 from whycode.history.records import History
@@ -42,6 +42,19 @@ def latest_date(graph: Graph) -> str | None:
     days = [str(n.props[p])[:10] for n in graph.nodes.values() for p in _DATE_PROPS if n.props.get(p)]
     days += [str(e.props["observed_at"])[:10] for e in graph.edges() if e.props.get("observed_at")]
     return max(days, default=None)
+
+
+MAX_STORED_LINES = 1000
+"""Per file and Change: at most this many distinct added (and removed) lines are kept for `check_change`."""
+
+
+def _changed_text(lines: list[ChangedLine]) -> dict[str, list[str]]:
+    """The distinct added and removed lines of a Change's file diff, whitespace trimmed (stored on the Change's
+    TOUCHES edge to the file, so `check_change` can tell when a proposed diff undoes them)."""
+    def distinct(sign: str) -> list[str]:
+        return list(dict.fromkeys(t for line in lines if line.sign == sign and (t := line.text.strip())))[
+            :MAX_STORED_LINES]
+    return {"added": distinct("+"), "removed": distinct("-")}
 
 
 def _discussion_node(d: disc.Discussion, node_labels: set[str], **props) -> Node:
@@ -121,7 +134,8 @@ class _Builder:
             for change in pr.files:
                 for entity in sorted(self.code.touched_by(change), key=lambda e: e.id):
                     self.touches[d.id].add(entity)
-                    self._edge(d.id, "TOUCHES", entity.id, f"files[{change.path}]", d.date)
+                    lines = _changed_text(self.code.changed_lines(change)) if entity.kind == "file" else {}
+                    self._edge(d.id, "TOUCHES", entity.id, f"files[{change.path}]", d.date, **lines)
             for commit in pr.commits:
                 cid, at = ids.commit_id(commit.sha), (commit.at or pr.merged_at).date()
                 self.graph.add_node(Node(cid, frozenset({"Change", "Commit"}), {

@@ -1,0 +1,13 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index 8deca2e..7f66c18 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -45,7 +45,7 @@ func isPermanentSchemaChangeError(err error) bool {
+ 	if errors.Is(err, catalog.ErrDescriptorNotFound) {
+ 		return true
+ 	}
+-	if catalog.HasValidationError(err) && clusterversion.IsFinalized(err) {
++	if catalog.HasValidationError(err) {
+ 		return true
+ 	}
+ 	return false

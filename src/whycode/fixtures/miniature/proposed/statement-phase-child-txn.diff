@@ -1,0 +1,15 @@
+diff --git a/pkg/sql/schemachanger/scrun/scrun.go b/pkg/sql/schemachanger/scrun/scrun.go
+index d86cb94..f8748b5 100644
+--- a/pkg/sql/schemachanger/scrun/scrun.go
++++ b/pkg/sql/schemachanger/scrun/scrun.go
+@@ -24,7 +24,9 @@ var enforcePlannerSanityCheck = settings.RegisterBoolSetting(
+ // RunStatementPhase executes in-transaction schema changes for the targeted
+ // state.
+ func RunStatementPhase(ctx context.Context, sv *settings.Values, state scplan.State) (scplan.State, error) {
+-	return makeState(ctx, sv, state)
++	// Run the statement phase in a child transaction so that a failed backfill
++	// does not roll back the user's other writes.
++	return runInChildTxn(ctx, func() (scplan.State, error) { return makeState(ctx, sv, state) })
+ }
+ 
+ // RunPreCommitPhase is part of the transaction commit process.

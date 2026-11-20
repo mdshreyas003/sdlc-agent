@@ -84,6 +84,31 @@ def _rank(row: dict[str, Any], own_record: str) -> tuple:
     return (row["basis"] != "explicit", by.get("choice") is None, by["id"] == own_record, row["at"], by["id"])
 
 
+def supersession_statuses(reader: GraphReader, own_record: dict[str, str], scope: dict[str, Any]) -> dict[str, _Status]:
+    """Decision id -> its Supersession status, for the Decisions (id -> its Discussion id) that are not live.
+    Shared by `why` and `check_change`: a Live Decision is one this leaves out or marks `refined`."""
+    if not own_record:
+        return {}
+    rows = reader.supersession(sorted(own_record), **scope)
+    refiners = sorted({r["by"]["id"] for r in rows if r["type"] == "REFINES"})
+    dead_refiners = {r["decision"] for r in (reader.supersession(refiners, **scope) if refiners else [])
+                     if r["type"] == "SUPERSEDES"}
+    edges: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for r in rows:
+        edges[r["decision"]].append(r)
+    out = {}
+    for decision_id, found in edges.items():
+        for status, type_ in (("superseded", "SUPERSEDES"), ("refined", "REFINES")):
+            candidates = [r for r in found if r["type"] == type_ and r["by"]["id"] not in
+                          (dead_refiners if type_ == "REFINES" else ())]
+            if candidates:
+                best = min(candidates, key=lambda r: _rank(r, own_record[decision_id]))
+                by = best["by"]["id"]
+                out[decision_id] = _Status(status, best, None if by == own_record[decision_id] else by)
+                break
+    return out
+
+
 class AnswerEngine:
     def __init__(self, reader: GraphReader, composer: Composer, supersession: bool = True):
         self.reader = reader
@@ -171,26 +196,7 @@ class AnswerEngine:
 
     def _statuses(self, own_record: dict[str, str], scope: dict[str, Any]) -> dict[str, _Status]:
         """Decision id -> its Supersession status, for the Decisions that are not live."""
-        if not self.supersession or not own_record:
-            return {}
-        rows = self.reader.supersession(sorted(own_record), **scope)
-        refiners = sorted({r["by"]["id"] for r in rows if r["type"] == "REFINES"})
-        dead_refiners = {r["decision"] for r in (self.reader.supersession(refiners, **scope) if refiners else [])
-                         if r["type"] == "SUPERSEDES"}
-        edges: dict[str, list[dict[str, Any]]] = defaultdict(list)
-        for r in rows:
-            edges[r["decision"]].append(r)
-        out = {}
-        for decision_id, found in edges.items():
-            for status, type_ in (("superseded", "SUPERSEDES"), ("refined", "REFINES")):
-                candidates = [r for r in found if r["type"] == type_ and r["by"]["id"] not in
-                              (dead_refiners if type_ == "REFINES" else ())]
-                if candidates:
-                    best = min(candidates, key=lambda r: _rank(r, own_record[decision_id]))
-                    by = best["by"]["id"]
-                    out[decision_id] = _Status(status, best, None if by == own_record[decision_id] else by)
-                    break
-        return out
+        return supersession_statuses(self.reader, own_record, scope) if self.supersession else {}
 
     @staticmethod
     def _add_superseder(evidence: _Evidence, st: _Status) -> None:

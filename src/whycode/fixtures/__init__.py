@@ -18,6 +18,11 @@ Story (all in `miniature/`):
 
 Recorded responses stand in for the models: `extractions.json` (and `extractions_window.json` for window records)
 for Decision extraction, `judgments.json` for the supersession judge.
+
+`proposed/*.diff` are changes a coding agent might propose against `code/` (`git diff` output), for `check_change`:
+removing the retry backoff (the #98001 hot loop), making validation errors always permanent (the #101400 fallout),
+raising the backoff cap default, a statement phase in a child transaction (the superseded RFC's design), and two
+diffs no Live Decision governs (a rename in `scbuild.Build`, an assertion in an ungoverned function).
 """
 
 from __future__ import annotations
@@ -39,6 +44,14 @@ FIXTURE_REPO = "cockroachdb/cockroach"
 FIXTURE_CUTOFF = dt.date(2024, 6, 30)
 FIXTURE_WINDOW_END = dt.date(2025, 6, 30)
 """Build with this cutoff to include the Held-out Window (scoreboard runs answer `as_of` the cutoff from it)."""
+
+
+PROPOSED_DIR = FIXTURE_DIR / "proposed"
+
+
+def proposed_diff(name: str) -> str:
+    """A proposed change against the fixture code, as `git diff` prints it."""
+    return (PROPOSED_DIR / f"{name}.diff").read_text()
 
 
 def fixture_code_index() -> CodeIndex:
