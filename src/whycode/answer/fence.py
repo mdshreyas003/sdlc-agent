@@ -6,8 +6,9 @@ No model is involved; code decides from the graph:
 2. Rebuild a `CodeIndex` from the graph's Code Entities for those files (fixed pattern `diff_entities`) and map
    every changed line to the function or setting it lies in (`CodeIndex.changed_lines`). Files the index does not
    hold touch nothing.
-3. Read the Decisions that govern exactly the touched entities, and drop the superseded ones (the same
-   Supersession statuses `why` shows): a superseded Decision never warns, a refined one does (partly live).
+3. Read the Decisions that govern exactly the touched functions and settings (and the file itself, when a
+   changed line lies outside all of them), and drop the superseded ones (the same Supersession statuses `why`
+   shows): a superseded Decision never warns, a refined one does (partly live).
 4. For each remaining Decision, look for evidence, strongest first:
    - `reverses`: a changed line undoes a line that a Change implementing the Decision wrote in that file (the diff
      removes a line it added, or restores a line it removed), and the line lies in code the Decision governs
@@ -41,6 +42,7 @@ MAX_WARNINGS = 10
 MAX_DIFF_CHARS = 2_000_000
 MAX_FILES = 200
 MAX_LITERALS = 200
+MAX_REVERSED_LINES = 10
 _LEVELS: tuple[Confidence, ...] = ("Low", "Medium", "High")
 _LITERAL = re.compile(r'"([^"\\\n]{1,200})"')
 _IDENT = re.compile(r"[A-Za-z_]\w{2,}")
@@ -175,9 +177,15 @@ class FenceChecker:
         touched = self._touched(changes)
         if not touched:
             return ChangeCheck()
-        entity_ids = sorted({t.file for t in touched.values()}
-                            | {e.id for t in touched.values() for line in t.lines for e in line.entities})
-        rows = self.reader.governing_exact(entity_ids, **scope)
+        specific = {e.id for t in touched.values() for line in t.lines for e in line.entities}
+        entity_ids = sorted({t.file for t in touched.values()} | specific)
+        # A file's own Decisions matter only for lines outside every function and setting (every Change that
+        # touched the file governs it, so asking for them otherwise would only crowd out the specific ones).
+        file_level = {t.file for t in touched.values()
+                      if any(not line.entities and _significant(line.text) for line in t.lines)}
+        if not specific | file_level:
+            return ChangeCheck(touched=entity_ids)
+        rows = self.reader.governing_exact(sorted(specific | file_level), **scope)
         statuses = (supersession_statuses(self.reader, {r["decision"]["id"]: r["discussion"]["id"] for r in rows},
                                           scope) if self.supersession and rows else {})
         rows = [r for r in rows if getattr(statuses.get(r["decision"]["id"]), "status", None) != "superseded"]
@@ -261,7 +269,7 @@ class FenceChecker:
             decision_id=d["id"], entity_id=entity, quote=d["quote"], incident_ids=incidents, confidence=confidence,
             kind=kind, choice=d["choice"], status=status.status if status else "live", discussion_id=s["id"],
             url=s.get("url"), date=dt.date.fromisoformat(d["date"][:10]) if d.get("date") else None,
-            change_id=change_id, reversed_lines=list(dict.fromkeys(u.line for u in undone)),
+            change_id=change_id, reversed_lines=list(dict.fromkeys(u.line for u in undone))[:MAX_REVERSED_LINES],
             reason=_reason(kind, entity, link, s["id"], change_id, undone, status, incidents),
         )
 

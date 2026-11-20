@@ -160,7 +160,7 @@ class FenceWarning(_Contract):
     change_id: str | None = None
     """For `reverses`: the Change implementing the Decision whose lines the diff undoes."""
     reversed_lines: list[str] = []
-    """For `reverses`: the undone lines, as written in the implementing Change (whitespace trimmed)."""
+    """For `reverses`: the undone lines, as written in the implementing Change (whitespace trimmed; at most 10)."""
 
 
 class ChangeCheck(_Contract):
