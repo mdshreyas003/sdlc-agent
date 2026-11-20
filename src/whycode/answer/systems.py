@@ -45,13 +45,10 @@ def ours_without_supersession(ctx) -> System:
 
 
 def _from_environment(name: str, supersession: bool) -> System:
-    from whycode.answer.patterns import GraphReader
     from whycode.config import Settings
     from whycode.llm import COMPOSER_MODEL
 
     settings = Settings.from_env()
-    reader = GraphReader(settings.driver(), settings.neo4j_database)
-    reader.selfcheck()
-    engine = settings.answer_engine(reader, supersession=supersession)
+    engine = settings.answer_engine(settings.reader(), supersession=supersession)
     answer_model = COMPOSER_MODEL if settings.composer == "anthropic" else "template"
     return scoreboard_system(name, engine, {"answer": answer_model})

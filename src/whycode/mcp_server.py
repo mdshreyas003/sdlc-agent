@@ -64,13 +64,10 @@ def build_server(engine: AnswerEngine, checker: FenceChecker | None = None) -> M
 
 def main() -> None:
     logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-    from whycode.answer.patterns import GraphReader
     from whycode.config import Settings
 
     settings = Settings.from_env()
-    reader = GraphReader(settings.driver(), settings.neo4j_database)
-    reader.selfcheck()
-    build_server(settings.answer_engine(reader)).run()
+    build_server(settings.answer_engine(settings.reader())).run()
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ import datetime as dt
 import json
 import logging
 import sys
+from functools import partial
 from pathlib import Path
 
 from whycode.config import EXTRACTORS, JUDGES, ConfigError, Settings
@@ -131,7 +132,7 @@ def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
     return 0
 
 
-def _supersession_report(settings: Settings, args: argparse.Namespace, transport=None) -> int:
+def _supersession_report(settings: Settings, args: argparse.Namespace) -> int:
     from whycode.graph.store import GraphStore
     from whycode.supersession import judge_report
 
@@ -143,48 +144,35 @@ def _supersession_report(settings: Settings, args: argparse.Namespace, transport
     return 0
 
 
-def _why(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.answer.patterns import GraphReader
-
-    reader = GraphReader(settings.driver(), settings.neo4j_database)
-    reader.selfcheck()
-    answer = settings.answer_engine(reader).why(args.anchor)
+def _why(settings: Settings, args: argparse.Namespace) -> int:
+    answer = settings.answer_engine(settings.reader()).why(args.anchor)
     print(answer.model_dump_json(indent=2))
     return 0
 
 
-def _check_change(settings: Settings, args: argparse.Namespace, transport=None) -> int:
+def _check_change(settings: Settings, args: argparse.Namespace) -> int:
     from whycode.answer.fence import FenceChecker
-    from whycode.answer.patterns import GraphReader
 
     diff = sys.stdin.read() if args.diff == "-" else Path(args.diff).read_text(encoding="utf-8")
-    reader = GraphReader(settings.driver(), settings.neo4j_database)
-    reader.selfcheck()
-    print(FenceChecker(reader).check(diff).model_dump_json(indent=2))
+    print(FenceChecker(settings.reader()).check(diff).model_dump_json(indent=2))
     return 0
 
 
-def _check_citations(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.answer.patterns import GraphReader
+def _check_citations(settings: Settings, args: argparse.Namespace) -> int:
     from whycode.audit import GraphResolver, audit_citations, sample_anchors
 
     driver = settings.driver()
-    reader = GraphReader(driver, settings.neo4j_database)
-    reader.selfcheck()
-    engine = settings.answer_engine(reader)
+    engine = settings.answer_engine(settings.reader(driver))
     anchors = sample_anchors(driver, args.sample, args.seed, settings.neo4j_database)
     audit = audit_citations(engine.why, anchors, GraphResolver(driver, settings.neo4j_database))
     print(json.dumps({**audit.report(), "anchors": anchors}, indent=2))
     return 0 if audit.ok else 1
 
 
-def _serve(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.answer.patterns import GraphReader
+def _serve(settings: Settings, args: argparse.Namespace) -> int:
     from whycode.view import make_server
 
-    reader = GraphReader(settings.driver(), settings.neo4j_database)
-    reader.selfcheck()
-    server = make_server(settings.answer_engine(reader).why, args.host, args.port)
+    server = make_server(settings.answer_engine(settings.reader()).why, args.host, args.port)
     host, port = server.server_address[:2]
     print(f"serving http://{host}:{port}/", flush=True)
     try:
@@ -243,14 +231,15 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8765, help="0 picks a free port (default: %(default)s)")
     args = parser.parse_args(argv)
-    commands = {"build": _build, "fetch": _fetch, "why": _why, "check-change": _check_change,
+    commands = {"build": partial(_build, transport=github_transport),
+                "fetch": partial(_fetch, transport=github_transport), "why": _why, "check-change": _check_change,
                 "check-citations": _check_citations, "supersession-report": _supersession_report, "serve": _serve}
 
     from whycode.history.checkout import CheckoutError
     from whycode.history.github import GitHubError
 
     try:
-        return commands[args.command](Settings.from_env(), args, github_transport)
+        return commands[args.command](Settings.from_env(), args)
     except ConfigError as exc:
         print(f"whycode: {exc}", file=sys.stderr)
         return 2

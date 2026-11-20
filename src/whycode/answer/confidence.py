@@ -9,8 +9,9 @@ Not how sure the model sounds, but how the answer is grounded:
 - Supersession resting on model judgment caps it at Medium: when any Decision's status (superseded or refined)
   comes from an inferred edge rather than one history states; so does an Anchor the entity-matching step chose
   for a free-form question;
-- anything the verifier dropped lowers it one level;
-- a refusal is always Low.
+- anything the verifier dropped lowers it one level.
+
+A refusal is always Low; the engine sets that itself, without scoring.
 
 The thresholds are a first cut, to be calibrated on the dev split (ticket 03/06).
 """
@@ -44,7 +45,6 @@ class DecisionGrounding:
 class ConfidenceInputs:
     decisions: tuple[DecisionGrounding, ...]
     dropped: int = 0
-    refused: bool = False
     anchor_matched: bool = False
 
 
@@ -56,7 +56,7 @@ def _strength(d: DecisionGrounding) -> int:
 
 def score_confidence(inputs: ConfidenceInputs) -> Confidence:
     live = [d for d in inputs.decisions if d.status != "superseded"]  # Live Decisions, refined ones included
-    if inputs.refused or not live:
+    if not live:
         return "Low"
     level = max(_strength(d) for d in live)
     if inputs.anchor_matched or any(d.supersession == "inferred" for d in inputs.decisions):

@@ -163,10 +163,9 @@ class _Touched:
 
 
 class FenceChecker:
-    def __init__(self, reader: GraphReader, supersession: bool = True, max_warnings: int = MAX_WARNINGS):
+    def __init__(self, reader: GraphReader, supersession: bool = True):
         self.reader = reader
         self.supersession = supersession
-        self.max_warnings = max_warnings
 
     def check(self, diff: str, as_of: dt.date | None = None, exclude: Iterable[str] = ()) -> ChangeCheck:
         """Fence Warnings for a proposed diff. `as_of` and `exclude` are the same view of history as for `why`."""
@@ -207,8 +206,8 @@ class FenceChecker:
                 warnings.append(warning)
         warnings.sort(key=lambda w: (w.kind != "reverses", -LEVELS.index(w.confidence), w.status != "live",
                                      -(w.date or dt.date.min).toordinal(), w.decision_id))
-        return ChangeCheck(touched=entity_ids, warnings=warnings[: self.max_warnings],
-                           omitted=max(0, len(warnings) - self.max_warnings))
+        return ChangeCheck(touched=entity_ids, warnings=warnings[:MAX_WARNINGS],
+                           omitted=max(0, len(warnings) - MAX_WARNINGS))
 
     def _touched(self, changes: list[FileChange]) -> dict[str, _Touched]:
         """File key -> the file's node id and its changed lines, for the diff's files the code index holds."""

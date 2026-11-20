@@ -100,6 +100,14 @@ class Settings:
         driver.verify_connectivity()
         return driver
 
+    def reader(self, driver: Driver | None = None):
+        """A read-only `GraphReader` over the configured database, every query pattern checked (fails fast)."""
+        from whycode.answer.patterns import GraphReader
+
+        reader = GraphReader(driver or self.driver(), self.neo4j_database)
+        reader.selfcheck()
+        return reader
+
     def llm(self):
         import anthropic
 
