@@ -25,7 +25,7 @@ def test_committed_gold_questions_are_well_formed():
 def test_committed_prompts_exist():
     names = {p.name for p in (DEFAULT_EVAL_DIR / "prompts").iterdir()}
 
-    assert {"judge.md", "rag_answer.md", "git_agent.md"} <= names
+    assert {"judge.md", "rag_answer.md", "git_agent.md", "llm_alone.md"} <= names
     assert len(prompts_version(DEFAULT_EVAL_DIR)) == 12
 
 

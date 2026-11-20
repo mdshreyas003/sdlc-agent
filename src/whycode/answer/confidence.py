@@ -7,7 +7,8 @@ Not how sure the model sounds, but how the answer is grounded:
 - the answer starts at its strongest Decision that is not superseded (superseded Decisions are history, not
   the reason the code is the way it is now); when every Decision is superseded, it is Low;
 - Supersession resting on model judgment caps it at Medium: when any Decision's status (superseded or refined)
-  comes from an inferred edge rather than one history states;
+  comes from an inferred edge rather than one history states; so does an Anchor the entity-matching step chose
+  for a free-form question;
 - anything the verifier dropped lowers it one level;
 - a refusal is always Low.
 
@@ -38,6 +39,7 @@ class ConfidenceInputs:
     decisions: tuple[DecisionGrounding, ...]
     dropped: int = 0
     refused: bool = False
+    anchor_matched: bool = False
 
 
 def _strength(d: DecisionGrounding) -> int:
@@ -51,7 +53,7 @@ def score_confidence(inputs: ConfidenceInputs) -> Confidence:
     if inputs.refused or not current:
         return "Low"
     level = max(_strength(d) for d in current)
-    if any(d.supersession == "inferred" for d in inputs.decisions):
+    if inputs.anchor_matched or any(d.supersession == "inferred" for d in inputs.decisions):
         level = min(level, 1)
     if inputs.dropped:
         level -= 1

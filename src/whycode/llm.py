@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 EXTRACTION_MODEL = "claude-sonnet-5-5"
 COMPOSER_MODEL = "claude-opus-5-5"
 JUDGE_MODEL = "claude-opus-5-5"
+MATCHER_MODEL = "claude-opus-5-5"  # the entity-matching step for free-form questions
 
 T = TypeVar("T", bound=pydantic.BaseModel)
 

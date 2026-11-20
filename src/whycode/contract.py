@@ -21,7 +21,16 @@ Semantics every producer and consumer can rely on:
   `evidence_chain` are verbatim in that node's source text (rule: `whycode.quotes.is_verbatim`).
 - `refused` is True when no Decision reaches the Anchor, or nothing the composer wrote survived
   verification. A refusal still carries the nearest evidence (`evidence_chain`) and `people` to ask, but
-  no `decisions` and no `sentences`. Its confidence is Low.
+  no `decisions` and no `sentences`. Its confidence is Low. `refusal_reason` says which case it is.
+- Person to Ask (ticket 06): `people` lists the authors and approvers of the Decisions' records, active first. A
+  departed person's `ask_instead` names the next-best active person: an active person already in `people`, else
+  the author or approver of the latest Change touching the nearest enclosing area of the code (the Anchor's
+  file, then its directories up to two levels deep, e.g. `pkg/sql/`), who is then added to `people` with `via`
+  set to that Change.
+- Anchor resolution (ticket 06): an exact key or alias, else exactly one Code Entity named in a free-form question;
+  otherwise one entity-matching model step over a shortlist of Code Entities. A match the step is unsure of, or
+  one outside the shortlist, is refused (`anchor` None); a confident match sets `anchor_matched` and caps
+  confidence at Medium, since the Anchor itself rests on model judgment.
 - Supersession (ticket 04): a Decision's `status` is `superseded` when a later Decision (or record) overrides
   it, `refined` when a later, itself not superseded, Decision narrows or extends it (partly live), else `live`.
   For the first two, `superseded_by` is the superseding or refining Decision, or the record when no Decision of
@@ -46,6 +55,7 @@ DecisionStatus = Literal["live", "superseded", "refined"]
 SupersessionOrigin = Literal["explicit", "inferred"]
 GovernsLink = Literal["hard", "soft"]
 PersonRole = Literal["author", "approver"]
+RefusalReason = Literal["unresolved", "ungoverned", "unverified"]
 
 
 class _Contract(BaseModel):
@@ -102,6 +112,11 @@ class PersonView(_Contract):
     handle: str
     role: PersonRole
     active: bool
+    ask_instead: str | None = None
+    """On a departed person: the handle of the next-best active person to ask instead (also in `people`)."""
+    via: str | None = None
+    """On a person brought in only as someone else's `ask_instead`: the Change near the Anchor they authored
+    (`role` author) or approved (`role` approver), which is why they are active in that area of the code."""
 
 
 class IncidentRef(_Contract):
@@ -129,6 +144,13 @@ class Answer(_Contract):
     people: list[PersonView] = []
     incidents: list[IncidentRef] = []
     sentences: list[Sentence] = []
+    anchor_matched: bool = False
+    """True when a free-form question named no Code Entity exactly and the entity-matching step chose `anchor`:
+    check that it is the code you meant."""
+    refusal_reason: RefusalReason | None = None
+    """Why `refused` is True: `unresolved` (no Code Entity matched the question, or the match was unsure),
+    `ungoverned` (no Decision reaches the Anchor), `unverified` (nothing the composer wrote survived
+    verification)."""
 
 
 class FenceWarning(_Contract):

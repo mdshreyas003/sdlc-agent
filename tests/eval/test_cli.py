@@ -47,7 +47,10 @@ QUESTIONS = [
 def reply(output, system, user):
     if output is Verdict:
         return Verdict(covered=[True] * 5, presented_as_current=[False] * 5, reports_change=True)
-    node_id = re.search(r'<passage node_id="([^"]+)"', user)[1]
+    passage = re.search(r'<passage node_id="([^"]+)"', user)
+    if passage is None:  # the LLM alone sees no records
+        return BaselineAnswer(refused=True, confidence="Low", decisions=[], evidence=[], sentences=[])
+    node_id = passage[1]
     return BaselineAnswer(refused=False, confidence="Medium", decisions=[],
                           evidence=[EvidenceQuote(node_id=node_id, quote="made up")],
                           sentences=[CitedSentence(text="Because of that record.", cites=[node_id])])
@@ -105,6 +108,24 @@ def test_one_command_scores_our_system_and_both_baselines(workspace, repo):
     assert window_git["answer"]["sentences"][0]["cites"] == [f"commit:{repo[1]['revert']}"]
     manifest = json.loads((run_dir / "manifest.json").read_text())
     assert manifest["systems"]["vector-rag"] == {"answer": "claude-opus-5-5", "embedding": "BAAI/bge-small-en-v1.5"}
+
+
+ALL_SYSTEMS = ("ours=eval_support:ours_factory,"
+               "ours-without-supersession=eval_support:ours_without_supersession_factory,"
+               "llm-alone,vector-rag,git-agent")
+
+
+def test_the_results_table_has_our_system_and_all_four_baselines(workspace, repo):
+    d = deps()
+    assert run(workspace, repo, d, "--systems", ALL_SYSTEMS) == 0
+
+    report = d.out.getvalue()
+    assert "| question type | ours | ours-without-supersession | llm-alone | vector-rag | git-agent |" in report
+    assert "llm-alone 0" in report  # no failed calls
+    run_dir = workspace[0] / "results" / "dev-20261120-120000"
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert manifest["systems"]["llm-alone"] == {"answer": "claude-opus-5-5"}
+    assert "llm_alone.md" in manifest["prompt_files"]
 
 
 def test_labels_are_generated_and_keep_a_human_verification(workspace):

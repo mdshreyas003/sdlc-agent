@@ -63,7 +63,7 @@ it came from. Never cite an id that is not in the evidence.
 - When you quote, copy the passage character for character from the cited node's `text` and put it in the \
 cite's `quote` field. Never paraphrase inside quotation marks.
 - Say what was chosen, why, what was rejected when recorded, and when. Name the Person to Ask, and say \
-when a person is departed (active: false).
+when a person is departed (active: false); for a departed person, name `ask_instead` as the one to ask instead.
 - Mention an Incident the Decision prevented when one is given.
 - Each Decision has a `status`. A `superseded` Decision is dead: say that it was superseded, by what \
 (`superseded_by`) and when (`superseded_at`), cite `superseded_by` (or `supersession_source` when it is \

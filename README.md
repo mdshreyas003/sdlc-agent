@@ -33,6 +33,37 @@ tool on `pkg/sql.(*SchemaChanger).exec` before changing its retry loop."
 Configuration (all environment variables) is documented in `src/whycode/config.py`. Model responses are
 cached in `.cache/models` so rebuilds are reproducible.
 
+### Free-form questions and the Person to Ask
+
+`why` also takes a question in words. A question that names exactly one Code Entity (`SchemaChanger.exec`,
+`schema_changer.go`) resolves without a model. Otherwise one entity-matching step (Opus 5.5, cached) picks from a
+shortlist of Code Entities whose names hold the question's words; if it is unsure, or picks something off the
+shortlist, the answer is a refusal with `refusal_reason: "unresolved"`. A matched answer says so
+(`anchor_matched: true`) and is at most Medium confidence. With `WHY_COMPOSER=template` there is no matching step:
+such questions are refused. Rules: `src/whycode/answer/resolve.py` and the `_resolve` step of
+`src/whycode/answer/engine.py`.
+
+Departed people (inactive 12 months or more at the cutoff) carry `ask_instead`: the next-best active person, either
+an active author or approver already in the answer, or the author or approver of the latest Change touching the
+nearest enclosing area of the code, who is then listed with `via` naming that Change.
+
+### The human view
+
+One page per Answer for people (Decisions, Evidence Chain, superseded history, Person to Ask, refusal state), and
+the same Answer as JSON for anything else. It renders on the server with no scripts or remote assets, so it works
+offline against the fixture graph:
+
+```sh
+uv run whycode build                              # the fixture graph (recorded responses, no network)
+WHY_COMPOSER=template uv run whycode serve        # serving http://127.0.0.1:8765/  (--port 0 picks a free port)
+# open http://127.0.0.1:8765/?anchor=pkg/sql.isPermanentSchemaChangeError
+curl 'http://127.0.0.1:8765/why?anchor=scbuild.Build'   # the Answer contract as JSON
+```
+
+Good demo Anchors on the fixture: `pkg/sql.isPermanentSchemaChangeError` (a revert and a refinement),
+`sql.schemachanger.strict_planning_sanity_check.enabled` (departed people, with someone to ask instead),
+`scrun.RunStatementPhase` (an RFC superseded by a later one), `scbuild.Build` (a refusal with the nearest evidence).
+
 ## The real CockroachDB slice
 
 Scope (ADR-0002, fixed in `src/whycode/history/scope.py`): the 28 schema-change RFCs, the pull requests merged
@@ -109,7 +140,9 @@ always scripted in tests.
 | `build.py`, `graph/` | Graph building, the idempotent Neo4j store, and the export of citable records in the scoreboard's corpus format (`graph/corpus.py`) |
 | `supersession.py` | Supersession detector: explicit parsing, candidate pairs, the judge seam (`SupersessionJudge`), the judge report |
 | `answer/` | Fixed read-only query patterns (all honour `as_of` / `exclude`), composer seam, verifier, confidence scorer, `AnswerEngine`; `answer/systems.py` plugs it into the scoreboard |
+| `answer/resolve.py` | The entity-matching step for free-form questions (`EntityMatcher` seam) and its shortlist words |
 | `mcp_server.py`, `cli.py` | MCP server (`why-mcp`) and the `whycode` command |
+| `view.py` | The human view behind `whycode serve`: `/why` (JSON) and one server-rendered page per Answer |
 | `quotes.py`, `ids.py` | The one verbatim rule and the node id convention, shared with the scoreboard |
 
 ## Extension points for later tickets
@@ -130,6 +163,10 @@ always scripted in tests.
 - **05 (`check_change`).** `CodeIndex.touched_by(FileChange)` maps a diff to Code Entities; every `CodeEntity` field
   is stored on its graph node, so the server can rebuild a `CodeIndex` from the nodes of the diff's files.
   `FenceWarning` is in `contract.py`; register the tool next to `why` in `mcp_server.py`.
+- **06 (demo polish), done.** Scoreboard: `llm-alone` baseline and `whycode-eval calibration` (`eval/README.md`).
+  Answer contract additions (all optional): `Answer.anchor_matched`, `Answer.refusal_reason`,
+  `PersonView.ask_instead`, `PersonView.via`. Every interface builds its engine with `Settings.answer_engine(reader)`
+  (composer plus entity matcher from the environment), so a new tool gets the same Anchor resolution.
 - **Scoreboard "ours" system, done.** `whycode.answer.systems:ours` and `:ours_without_supersession` (see
   `eval/README.md`). Build the graph through the end of the Held-out Window (`whycode build --cutoff <window end>`)
   and export the corpus from that graph; every pattern then filters by the query's `as_of` and `exclude` (record
