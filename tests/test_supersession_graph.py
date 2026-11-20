@@ -207,3 +207,25 @@ def test_a_revert_that_records_no_decision_makes_the_reverting_change_the_supers
     finalized = decision_quoting(graph, FINALIZED_QUOTE)
     (edge,) = [e for e in graph.edges("SUPERSEDES") if e.target == finalized]
     assert (edge.source, edge.props["basis"], edge.props["observed_at"]) == ("pr:128000", "explicit", "2024-08-05")
+
+
+def test_decisions_are_paired_on_the_most_specific_code_they_govern_not_merely_the_same_file():
+    from doubles import ScriptedJudge
+
+    judge = ScriptedJudge()
+    fixture_graph(judge=judge)
+    asked = {(p.earlier.quote, p.later.quote) for p in judge.pairs}
+
+    assert (KEEP_RETRYING_QUOTE, FINALIZED_QUOTE) in asked  # both govern isPermanentSchemaChangeError
+    assert (BACKOFF_QUOTE, VALIDATION_QUOTE) not in asked  # exec vs isPermanentSchemaChangeError: same file only
+
+
+def test_each_decision_is_judged_against_at_most_a_few_later_ones():
+    from whycode.supersession import candidate_pairs
+
+    graph = fixture_graph()
+    later_per_earlier = {}
+    for earlier, later, _ in candidate_pairs(graph, max_later=1):
+        later_per_earlier.setdefault(earlier, []).append(later)
+
+    assert later_per_earlier and all(len(v) == 1 for v in later_per_earlier.values())

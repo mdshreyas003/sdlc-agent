@@ -16,8 +16,10 @@ that states or justifies it, `source` (the record whose text holds that quote), 
 The superseding node of an explicit case is each Decision of the later record that governs a Code Entity the
 earlier Decision governs; when there is none, the later record itself.
 
-**Inferred** Supersession (`origin: derived`): every pair of Decisions that govern the same Code Entity (not a
-package), where B took effect later than A and comes from another Discussion, is a candidate. The judge (Opus 5.5
+**Inferred** Supersession (`origin: derived`): pairs of Decisions that govern the same Code Entity, where B took
+effect later than A and comes from another Discussion, are candidates (`candidate_pairs`: the most specific code
+both govern, so two Decisions on different functions of one file are not paired; at most `MAX_LATER` later
+Decisions per Decision). The judge (Opus 5.5
 behind the `SupersessionJudge` seam) labels it supersedes / refines / unrelated with a quote; the model proposes,
 code decides: a label becomes an edge only when its quote has at least `MIN_DECISION_QUOTE_WORDS` words and is
 verbatim in B's Discussion. Pairs that need no judgment are skipped: those already linked explicitly, and those
@@ -220,6 +222,8 @@ def _statements(index: _Index, discussions: Iterable[Discussion]) -> list[Edge]:
 
 Label = Literal["supersedes", "refines", "unrelated"]
 EDGE_TYPE = {"supersedes": "SUPERSEDES", "refines": "REFINES"}
+MAX_LATER = 5
+"""Each Decision is judged against at most this many later Decisions (the nearest in time)."""
 
 
 class Judgment(BaseModel):
@@ -261,13 +265,29 @@ def summary(graph: Graph, decision_id: str) -> DecisionSummary:
                            choice=d["choice"], rationale=d["rationale"], quote=d["quote"], date=d["date"])
 
 
-def candidate_pairs(graph: Graph) -> list[tuple[str, str, tuple[str, ...]]]:
-    """(earlier, later, shared entities) for every pair of Decisions that govern the same Code Entity, the later
-    one from another Discussion and strictly later, oldest later Decision first."""
+def candidate_pairs(graph: Graph, max_later: int | None = None) -> list[tuple[str, str, tuple[str, ...]]]:
+    """(earlier, later, shared entities) for the pairs of Decisions to judge, oldest later Decision first.
+
+    A pair shares a Code Entity among the most specific ones each Decision governs (a file counts only for a
+    Decision that governs nothing inside it), the later one is from another Discussion and strictly later.
+    Each earlier Decision is paired with its `max_later` nearest later Decisions (default `MAX_LATER`), which
+    bounds the judge's cost at that many calls per Decision.
+    """
+    max_later = MAX_LATER if max_later is None else max_later
     index = _Index(graph)
+    parent = {e.target: e.source for e in graph.edges("CONTAINS")
+              if "CodeEntity" in graph.nodes[e.source].labels and "CodeEntity" in graph.nodes[e.target].labels}
+
+    def ancestors(entity: str) -> set[str]:
+        out = set()
+        while (entity := parent.get(entity)) is not None and entity not in out:
+            out.add(entity)
+        return out
+
     governed_by: dict[str, set[str]] = defaultdict(set)
     for decision, entities in index.governs.items():
-        for entity in entities:
+        inside = set().union(*(ancestors(e) for e in entities))
+        for entity in entities - inside:
             governed_by[entity].add(decision)
     shared: dict[tuple[str, str], set[str]] = defaultdict(set)
     for entity, decisions in governed_by.items():
@@ -276,9 +296,16 @@ def candidate_pairs(graph: Graph) -> list[tuple[str, str, tuple[str, ...]]]:
                 pa, pb = index.decisions[a].props, index.decisions[b].props
                 if pa["discussion_id"] != pb["discussion_id"] and pa["date"] < pb["date"]:
                     shared[(a, b)].add(entity)
-    return [(a, b, tuple(sorted(es))) for (a, b), es in
-            sorted(shared.items(), key=lambda kv: (index.decisions[kv[0][1]].props["date"],
-                                                   index.decisions[kv[0][0]].props["date"], kv[0]))]
+
+    def when(decision: str) -> str:
+        return index.decisions[decision].props["date"]
+
+    nearest: dict[str, list[str]] = defaultdict(list)
+    for a, b in sorted(shared, key=lambda pair: (when(pair[1]), pair[1])):
+        nearest[a].append(b)
+    keep = {(a, b) for a, laters in nearest.items() for b in laters[:max_later]}
+    return [(a, b, tuple(sorted(shared[(a, b)]))) for a, b in
+            sorted(keep, key=lambda pair: (when(pair[1]), when(pair[0]), pair))]
 
 
 def inferred_supersessions(graph: Graph, discussions: Iterable[Discussion], explicit: Iterable[Edge],
