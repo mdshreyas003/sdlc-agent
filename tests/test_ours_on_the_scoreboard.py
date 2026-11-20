@@ -52,7 +52,7 @@ def ours(reader):
 
 def ask(system, anchor, as_of=None, exclude=()) -> Answer:
     return system.run(Query(question=f"Why is {anchor.id} like this?", anchor=anchor, as_of=as_of,
-                            exclude=frozenset(exclude)))
+                            exclude=frozenset(exclude))).answer
 
 
 def node_ids(answer: Answer) -> set[str]:
@@ -119,6 +119,32 @@ def test_an_issue_decision_governs_code_only_once_the_change_implementing_it_has
 
     assert before.refused is True and before.decisions == []
     assert {d.discussion_id for d in after.decisions} == {"issue:98001", "pr:98100"}
+
+
+def test_our_system_reports_the_model_usage_of_every_answer_for_the_cost_column(reader, tmp_path):
+    from fake_anthropic import FakeApi, client_for
+
+    from whycode.answer.compose import AnthropicComposer
+    from whycode.answer.resolve import AnthropicEntityMatcher
+    from whycode.eval.runner import Answered
+    from whycode.llm import COMPOSER_MODEL, MATCHER_MODEL
+
+    matcher_api = FakeApi({"entity_id": "function:pkg/sql.(*SchemaChanger).exec", "sure": True, "reason": "retries"})
+    composer_api = FakeApi({"sentences": [{"text": "Retries back off exponentially.",
+                                           "cites": [{"node_id": "pr:98100", "quote": ""}]}]})
+    engine = AnswerEngine(reader, AnthropicComposer(client_for(composer_api, tmp_path), COMPOSER_MODEL),
+                          matcher=AnthropicEntityMatcher(client_for(matcher_api, tmp_path), MATCHER_MODEL))
+    ours = scoreboard_system("ours", engine)
+    query = Query(question="Why does the schema changer back off between job retries?")
+
+    first, again = ours.run(query), ours.run(query)  # the second from the model cache
+
+    assert isinstance(first, Answered) and first.answer.anchor_matched and not first.answer.refused
+    assert [c.model for c in first.usage.calls] == ["claude-opus-5-5", "claude-opus-5-5"]  # matcher, composer
+    assert first.usage.cost_usd() == pytest.approx(2 * (10 * 4.0 + 5 * 20.0) / 1e6)  # Opus 5.5 prices
+    # A cached response still costs what it cost to make, so the cost column does not depend on a warm cache.
+    assert len(matcher_api.requests) == len(composer_api.requests) == 1
+    assert again.usage == first.usage
 
 
 # --- one scoreboard run: `whycode-eval run` with both of our systems, a scripted fact judge ------------------

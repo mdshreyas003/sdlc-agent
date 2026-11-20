@@ -1,9 +1,9 @@
 """What a system under test is, and how answers are collected from it.
 
 A system is any callable from `Query` to the answer contract (`Answer`), optionally wrapped in
-`Answered` to report model usage for the cost column. Our system plugs in as
-`System("ours", lambda q: why(q.anchor or q.question), models={...})`; the baselines live in
-`whycode.eval.rag` and `whycode.eval.git_agent`.
+`Answered` to report model usage for the cost column. Our system plugs in through
+`whycode.answer.systems.scoreboard_system`; the baselines live in `whycode.eval.rag`, `whycode.eval.llm_alone`
+and `whycode.eval.git_agent`.
 
 Every system must honour the whole query: answer as of `as_of` (None = all history, including
 the Held-out Window) and treat every node id in `exclude` as absent (ablation).

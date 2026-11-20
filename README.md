@@ -216,4 +216,5 @@ always scripted in tests.
 - **Scoreboard "ours" system, done.** `whycode.answer.systems:ours` and `:ours_without_supersession` (see
   `eval/README.md`). Build the graph through the end of the Held-out Window (`whycode build --cutoff <window end>`)
   and export the corpus from that graph; every pattern then filters by the query's `as_of` and `exclude` (record
-  level, like the scoreboard's corpus). Our system reports no model usage yet, so its cost column is empty.
+  level, like the scoreboard's corpus). Our system reports the usage of every model call an answer took (entity
+  matching, composing) for the cost column; a cached response reports what it cost to make.

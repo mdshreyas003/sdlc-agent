@@ -46,8 +46,9 @@ Window: build it with `whycode build --cutoff <window end>` and write the corpus
 (`whycode.graph.corpus`); `as_of` and `exclude` are applied in every query pattern. The supersession catch rate of
 the two systems on `supersession` and `window-after` cases is the "with and without supersession" difference. A
 gold question without an `anchor` reaches our system as its words and goes through the entity-matching step (one
-Opus 5.5 call, or a refusal with `WHY_COMPOSER=template`); our system does not report model usage yet, so its cost
-column stays empty.
+Opus 5.5 call, or a refusal with `WHY_COMPOSER=template`). Our system returns `Answered` with the usage of every model
+call an answer took (entity matching, composing), so its cost column fills; a response from the model cache reports
+the usage recorded when it was made, so the cost does not depend on a warm cache.
 
 The four baselines (spec user story 32):
 

@@ -7,46 +7,21 @@ reproducible rebuilds, and degrade to "nothing proposed" on truncation instead o
 from __future__ import annotations
 
 import datetime as dt
-import json
 
-import httpx2
-from anthropic import Anthropic, DefaultHttpxClient
+from fake_anthropic import FakeApi, client_for
 
 from whycode.answer.compose import AnthropicComposer, ComposeRequest
 from whycode.answer.resolve import AnthropicEntityMatcher, EntityCandidate
 from whycode.contract import Anchor
 from whycode.decisions import AnthropicDecisionProposer
 from whycode.discussions import Discussion, Segment
-from whycode.llm import COMPOSER_MODEL, EXTRACTION_MODEL, MATCHER_MODEL, LlmClient
+from whycode.llm import COMPOSER_MODEL, EXTRACTION_MODEL, MATCHER_MODEL
 
 DISCUSSION = Discussion(
     id="pr:1", kind="pr", title="sql: add backoff", url="https://github.com/o/r/pull/1", date=dt.date(2023, 3, 20),
     authors=("fqazi",), segments=(Segment("body", "We chose capped exponential backoff over a fixed interval.",
                                           "fqazi", dt.date(2023, 3, 14)),),
 )
-
-
-class FakeApi:
-    def __init__(self, payload: dict, stop_reason: str = "end_turn"):
-        self.payload, self.stop_reason, self.requests = payload, stop_reason, []
-
-    def __call__(self, request: httpx2.Request) -> httpx2.Response:
-        body = json.loads(request.content)
-        self.requests.append(body)
-        text = json.dumps(self.payload)
-        if self.stop_reason == "max_tokens":
-            text = text[: len(text) // 2]
-        return httpx2.Response(200, json={
-            "id": "msg_test", "type": "message", "role": "assistant", "model": body["model"],
-            "content": [{"type": "text", "text": text}], "stop_reason": self.stop_reason, "stop_sequence": None,
-            "usage": {"input_tokens": 10, "output_tokens": 5},
-        })
-
-
-def client_for(api: FakeApi, cache_dir=None) -> LlmClient:
-    sdk = Anthropic(api_key="test", base_url="https://api.test", max_retries=0,
-                    http_client=DefaultHttpxClient(transport=httpx2.MockTransport(api)))
-    return LlmClient(sdk, cache_dir=cache_dir)
 
 
 CANDIDATE = {"choice": "Use capped exponential backoff", "rationale": "A fixed interval misbehaves.",
