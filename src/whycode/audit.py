@@ -1,8 +1,9 @@
 """Citation audit: ask `why` about a sample of Anchors and check that every node id in every answer resolves.
 
 Every id an Answer carries counts: Decisions (and what supersedes them), their Discussions and governed Code
-Entities, the Evidence Chain, Incidents, People (`person:<handle>`) and every sentence citation. An id resolves
-when the graph holds it as a real record (stubs, referenced but never ingested, do not count).
+Entities, the Evidence Chain, Incidents, People (`person:<handle>`, and the Change a suggested person is active
+through) and every sentence citation. An id resolves when the graph holds it as a real record (stubs, referenced
+but never ingested, do not count).
 
     uv run whycode check-citations --sample 20      # exit code 1 if any id fails to resolve
 
@@ -58,7 +59,7 @@ def answer_ids(answer: Answer) -> set[str]:
         out |= {d.id, *d.governs, *(i for i in (d.discussion_id, d.superseded_by) if i)}
     out |= {e.node_id for e in answer.evidence_chain}
     out |= {i.id for i in answer.incidents}
-    out |= {ids.person_id(p.handle) for p in answer.people}
+    out |= {ids.person_id(p.handle) for p in answer.people} | {p.via for p in answer.people if p.via}
     out |= {c for s in answer.sentences for c in s.cites}
     return out
 

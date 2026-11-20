@@ -127,9 +127,10 @@ async def test_a_governed_setting_returns_its_decision_and_flags_departed_people
     assert answer.anchor.kind == "setting"
     assert [d.quote for d in answer.decisions] == [SANITY_QUOTE]
     assert answer.decisions[0].discussion_id == pr(110500)
-    # The author and the approver have been inactive for over a year at the cutoff.
-    assert {(p.handle, p.role, p.active) for p in answer.people} == {("postamar", "author", False),
-                                                                    ("ajwerner", "approver", False)}
+    # The author and the approver have been inactive for over a year at the cutoff; the next-best active person
+    # is suggested beside them (tests/test_why_people_and_resolve.py).
+    assert {(p.handle, p.role, p.active) for p in answer.people if p.via is None} == {
+        ("postamar", "author", False), ("ajwerner", "approver", False)}
 
 
 async def test_a_decision_reaching_the_anchor_only_by_a_soft_link_is_less_confident(reader):

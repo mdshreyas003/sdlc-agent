@@ -1,7 +1,9 @@
 """Answer engine behind `why(anchor)`: resolve, traverse, compose, verify, score.
 
-1. Resolve the Anchor to one Code Entity: exact key or alias first; otherwise one entity-matching step over
-   the code-like tokens of a free-form question. Zero or several candidates: refuse, never guess.
+1. Resolve the Anchor to one Code Entity: exact key or alias first; then exactly one Code Entity named by the
+   code-like tokens of a free-form question; otherwise one entity-matching model step (the `EntityMatcher` seam)
+   over a shortlist of Code Entities found from the question's words. Unsure, off the shortlist, or no matcher:
+   refuse, never guess. A matched Anchor rests on model judgment, so its answer is at most Medium confidence.
 2. Traverse fixed read-only patterns: Anchor -> governing Decisions -> Supersession -> Discussions -> closing
    Changes -> People and Incidents. No planning, no model-written queries.
 3. Compose sentences from the retrieved nodes only (the `Composer` seam).
@@ -12,6 +14,11 @@ one with a REFINES edge from a Decision that is not itself superseded is refined
 reverted no longer narrows anything). Among several edges the strongest names the superseder: explicit before
 inferred, a Decision before a record, then the earliest. `supersession=False` builds the scoreboard's
 "without supersession" system: every Decision is treated as live.
+
+Person to Ask: the authors and approving reviewers of the Decisions' records, active first. Each departed one's
+`ask_instead` is the next-best active person: the first active person already listed, else the author or approver
+of the latest Change touching the nearest enclosing area of the code (the Anchor's file, then its directories up
+to two levels deep), who is then listed with `via` naming that Change.
 """
 
 from __future__ import annotations
@@ -26,12 +33,15 @@ from typing import Any
 from whycode.answer.compose import Composer, ComposeRequest, EvidenceNode
 from whycode.answer.confidence import ConfidenceInputs, DecisionGrounding, score_confidence
 from whycode.answer.patterns import ALL_HISTORY, GraphReader
+from whycode.answer.resolve import EntityCandidate, EntityMatcher, question_words
 from whycode.answer.verify import Superseded, verify
 from whycode.contract import Anchor, Answer, DecisionView, EvidenceItem, IncidentRef, PersonView
 
 MAX_ANCHOR_CHARS = 2000
 MAX_EXACT_CHARS = 300
 MAX_TOKENS = 30
+MAX_CANDIDATES = 30
+MIN_AREA_DEPTH = 2  # the widest area searched for a next-best Person to Ask: `pkg/sql/`
 _BACKTICKED = re.compile(r"`([^`\s]+)`")
 _TOKEN = re.compile(r"[\w./()*-]+")
 _CAMEL = re.compile(r"[a-z][A-Z]")
@@ -46,6 +56,25 @@ def _code_tokens(question: str) -> list[str]:
         if re.search(r"[A-Za-z]", token) and (re.search(r"[./_(]", token) or _CAMEL.search(token)):
             out.append(token)
     return list(dict.fromkeys(out))[:MAX_TOKENS]
+
+
+def _areas(entity: dict[str, Any]) -> list[str]:
+    """Path prefixes of the areas enclosing a Code Entity, nearest first: its file, then its directories."""
+    if entity.get("file"):
+        path, out = entity["file"], [entity["file"]]
+    elif entity["kind"] == "package":
+        path, out = entity["key"].rstrip("/") + "/", []
+    else:
+        return []
+    parts = path.rstrip("/").split("/")
+    top = len(parts) - (0 if path.endswith("/") else 1)
+    return out + ["/".join(parts[:i]) + "/" for i in range(top, MIN_AREA_DEPTH - 1, -1)]
+
+
+@dataclass(frozen=True, slots=True)
+class _Resolved:
+    entity: dict[str, Any]
+    matched: bool  # chosen by the entity-matching model step, not by an exact name
 
 
 def _date(value: str | None) -> dt.date | None:
@@ -85,22 +114,25 @@ def _rank(row: dict[str, Any], own_record: str) -> tuple:
 
 
 class AnswerEngine:
-    def __init__(self, reader: GraphReader, composer: Composer, supersession: bool = True):
+    def __init__(self, reader: GraphReader, composer: Composer, supersession: bool = True,
+                 matcher: EntityMatcher | None = None):
         self.reader = reader
         self.composer = composer
         self.supersession = supersession
+        self.matcher = matcher
 
     def why(self, anchor: str, as_of: dt.date | None = None, exclude: Iterable[str] = ()) -> Answer:
         """The Answer for an Anchor. `as_of` and `exclude` are the scoreboard's view of history: nothing dated
         after `as_of` (None: all of it) and none of the `exclude`d records, nor what rests on them, is seen."""
         scope = {"as_of": as_of.isoformat() if as_of else ALL_HISTORY, "exclude": sorted(set(exclude))}
-        entity = self._resolve(anchor)
-        if entity is None:
-            return Answer(anchor=None, refused=True, confidence="Low")
+        resolved = self._resolve(anchor)
+        if resolved is None:
+            return Answer(anchor=None, refused=True, confidence="Low", refusal_reason="unresolved")
+        entity, matched = resolved.entity, resolved.matched
         target = Anchor(kind=entity["kind"], id=entity["key"])
         rows = self.reader.governing(entity["id"], **scope)
         if not rows:
-            return self._refusal(target, entity["id"], scope)
+            return self._refusal(target, entity, scope, matched)
 
         evidence = _Evidence()
         decisions: list[DecisionView] = []
@@ -149,19 +181,22 @@ class AnswerEngine:
         for incident in incident_rows:
             evidence.add(_node(incident, kind="incident"))
         reviewed = [i for i, s in discussions.items() if s["kind"] in ("pr", "rfc")]
-        people = self._people(reviewed, speakers)
+        people = self._people(reviewed, speakers, entity, scope)
 
         request = ComposeRequest(anchor=target, decisions=decisions, evidence=list(evidence.nodes.values()),
                                  people=people)
         verified = verify(self.composer.compose(request), list(evidence.nodes.values()), superseded)
         incidents = [IncidentRef(id=i["id"], url=i.get("url")) for i in incident_rows]
         if not verified.sentences:
-            return Answer(anchor=target, refused=True, confidence="Low",
-                          evidence_chain=list(evidence.items.values()), people=people, incidents=incidents)
+            return Answer(anchor=target, refused=True, confidence="Low", refusal_reason="unverified",
+                          anchor_matched=matched, evidence_chain=list(evidence.items.values()), people=people,
+                          incidents=incidents)
         return Answer(
             anchor=target,
             refused=False,
-            confidence=score_confidence(ConfidenceInputs(tuple(grounding), dropped=verified.dropped)),
+            anchor_matched=matched,
+            confidence=score_confidence(ConfidenceInputs(tuple(grounding), dropped=verified.dropped,
+                                                         anchor_matched=matched)),
             decisions=decisions,
             evidence_chain=list(evidence.items.values()),
             people=people,
@@ -204,31 +239,69 @@ class AnswerEngine:
         if by["id"] != source["id"] and by.get("choice") is None:
             evidence.add(_node(by))
 
-    def _resolve(self, anchor: str) -> dict[str, Any] | None:
+    def _resolve(self, anchor: str) -> _Resolved | None:
         text = anchor.strip()
         if not text or len(text) > MAX_ANCHOR_CHARS or any(ord(c) < 32 and c not in "\t\n\r" for c in text):
             return None
         if len(text) <= MAX_EXACT_CHARS:
             exact = self.reader.resolve(text)
-            if exact:
-                return exact[0] if len(exact) == 1 else None  # an ambiguous alias is refused, not guessed
+            if exact:  # an ambiguous alias is refused, not guessed
+                return _Resolved(exact[0], matched=False) if len(exact) == 1 else None
         found: dict[str, dict[str, Any]] = {}
         for token in _code_tokens(text):
             rows = self.reader.resolve(token)
             if len(rows) == 1:
                 found[rows[0]["id"]] = rows[0]
-        return next(iter(found.values())) if len(found) == 1 else None
+        if len(found) == 1:
+            return _Resolved(next(iter(found.values())), matched=False)
+        return self._match(text, list(found.values()))
 
-    def _people(self, reviewed_records: list[str], speakers: list[str]) -> list[PersonView]:
+    def _match(self, question: str, named: list[dict[str, Any]]) -> _Resolved | None:
+        """The one entity-matching model step: the entities the question names (several) and those whose names
+        hold its words are the shortlist; the matcher must be sure, and must pick from the shortlist."""
+        if self.matcher is None:
+            return None
+        words = question_words(question)
+        found = self.reader.candidates(words, MAX_CANDIDATES) if words else []
+        shortlist = {r["id"]: r for r in [*named, *found][:MAX_CANDIDATES]}
+        if not shortlist:
+            return None
+        candidates = [EntityCandidate(id=r["id"], kind=r["kind"], key=r["key"]) for r in shortlist.values()]
+        choice = self.matcher.match(question, candidates)
+        if not choice.sure or choice.entity_id not in shortlist:
+            return None
+        return _Resolved(shortlist[choice.entity_id], matched=True)
+
+    def _people(self, reviewed_records: list[str], speakers: list[str], entity: dict[str, Any],
+                scope: dict[str, Any]) -> list[PersonView]:
         seen: dict[tuple[str, str], PersonView] = {}
         rows = self.reader.people(reviewed_records) if reviewed_records else []
         rows += [{**r, "role": "author"} for r in (self.reader.people_by_handle(speakers) if speakers else [])]
         for r in rows:
             seen.setdefault((r["handle"], r["role"]), PersonView(handle=r["handle"], role=r["role"],
                                                                  active=bool(r["active"])))
-        return sorted(seen.values(), key=lambda p: (not p.active, p.role != "author", p.handle))
+        people = sorted(seen.values(), key=lambda p: (not p.active, p.role != "author", p.handle))
+        return self._with_next_best(people, entity, scope)
 
-    def _refusal(self, target: Anchor, entity_id: str, scope: dict[str, Any]) -> Answer:
+    def _with_next_best(self, people: list[PersonView], entity: dict[str, Any],
+                        scope: dict[str, Any]) -> list[PersonView]:
+        """Point every departed person at the next-best active person, bringing one in from the area if needed."""
+        if all(p.active for p in people):
+            return people
+        best = next((p for p in people if p.active), None)
+        if best is None:
+            areas = _areas(entity)
+            listed = {p.handle for p in people}
+            rows = self.reader.area_people(areas, **scope) if areas else []
+            row = next((r for r in rows if r["handle"] not in listed), None)
+            if row is None:
+                return people
+            best = PersonView(handle=row["handle"], role=row["role"], active=True, via=row["via"])
+            people = [best, *people]
+        return [p if p.active else p.model_copy(update={"ask_instead": best.handle}) for p in people]
+
+    def _refusal(self, target: Anchor, entity: dict[str, Any], scope: dict[str, Any], matched: bool) -> Answer:
+        entity_id = entity["id"]
         evidence = _Evidence()
         changes = self.reader.nearest_changes(entity_id, **scope)
         for change in changes:
@@ -241,5 +314,6 @@ class AnswerEngine:
             evidence.add(_node(s, text=""), quote=d["quote"])
         records = [c["id"] for c in changes] + [r["discussion"]["id"] for r in nearby
                                                  if r["discussion"]["kind"] in ("pr", "rfc")]
-        return Answer(anchor=target, refused=True, confidence="Low", evidence_chain=list(evidence.items.values()),
-                      people=self._people(list(dict.fromkeys(records)), []))
+        return Answer(anchor=target, refused=True, confidence="Low", refusal_reason="ungoverned",
+                      anchor_matched=matched, evidence_chain=list(evidence.items.values()),
+                      people=self._people(list(dict.fromkeys(records)), [], entity, scope))
