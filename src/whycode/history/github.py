@@ -266,7 +266,10 @@ query($owner: String!, $name: String!, $commit: String!, $path: String!, $first:
       ... on Commit {
         history(path: $path, first: $first, after: $after) {
           pageInfo { hasNextPage endCursor }
-          nodes { oid associatedPullRequests(first: 5) { nodes { number baseRefName mergedAt } } }
+          nodes {
+            oid parents { totalCount }
+            associatedPullRequests(first: 5) { nodes { number baseRefName mergedAt } }
+          }
         }
       }
     }
@@ -375,6 +378,10 @@ class GitHubHistorySource:
                 if history is None:
                     raise GitHubError(f"no commit history for {path} at {self.scope.cutoff_commit}")
                 for node in history["nodes"]:
+                    # A bors merge commit batches several pull requests but is associated with only one of
+                    # them, not necessarily one that touched the path; the pull requests' own commits are.
+                    if (node.get("parents") or {}).get("totalCount", 1) > 1:
+                        continue
                     for pr in node["associatedPullRequests"]["nodes"]:
                         if self._merged_in_scope(pr.get("mergedAt"), pr.get("baseRefName")):
                             merged[pr["number"]] = pr["mergedAt"]
