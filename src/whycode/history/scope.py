@@ -8,7 +8,10 @@
 - RFCs: `rfc_stems` under `rfc_dir`, read from the checkout at the cutoff commit.
 - Code index: `code_paths` (directories recursively, or single files) at the cutoff commit, always (Code
   Entities carry no date, so a window build must not move them); a superset of `pr_paths` with the neighbouring
-  files that register schema-change cluster settings.
+  files that register schema-change cluster settings. The catalog packages (`pkg/sql/catalog/lease`,
+  `.../schemadesc`, ...) are not neighbours in this sense: their design reaches the graph through the RFCs and
+  `A-schema-*` issues, so gold questions about them anchor on scoped code (e.g. `pkg/sql.WaitToUpdateLeases`), and a
+  committed-files test keeps every gold anchor inside `code_paths`.
 """
 
 from __future__ import annotations

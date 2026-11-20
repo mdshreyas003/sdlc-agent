@@ -31,3 +31,19 @@ def test_committed_prompts_exist():
 
 def test_committed_judge_labels_load():
     load_labels(DEFAULT_EVAL_DIR / "judge_agreement" / "labels.yaml")
+
+
+def test_every_gold_anchor_lies_inside_the_real_slice_code_scope():
+    from whycode.history.scope import SCHEMA_CHANGES
+
+    def inside(kind: str, key: str) -> bool:
+        if kind == "function":  # `pkg/sql.(*SchemaChanger).exec`: a scoped directory, or a package with scoped files
+            directory, _, name = key.rpartition("/")
+            package = f"{directory}/{name.split('.', 1)[0]}"
+            return any(package == p or package.startswith(p + "/") or p.rsplit("/", 1)[0] == package
+                       for p in SCHEMA_CHANGES.code_paths)
+        return any(key == p or key.startswith(p + "/") for p in SCHEMA_CHANGES.code_paths)
+
+    outside = [(q.id, q.anchor.id) for q in load_gold(DEFAULT_EVAL_DIR / "gold")
+               if q.anchor is not None and q.anchor.kind != "setting" and not inside(q.anchor.kind, q.anchor.id)]
+    assert outside == []  # an anchor outside the code index can only ever be refused as unresolved

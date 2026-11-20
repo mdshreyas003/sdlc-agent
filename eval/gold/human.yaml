@@ -35,8 +35,8 @@
   origin: human
   question: Why do SQL statements use leased table descriptors instead of the descriptors gossiped to every node?
   anchor:
-    kind: package
-    id: pkg/sql/catalog/lease
+    kind: function
+    id: pkg/sql.WaitToUpdateLeases
   gold_facts:
   - Gossiped table descriptors are not safe to use
   - Leases allow cached table descriptors to be used safely
@@ -47,7 +47,9 @@
     quote: Implement a table descriptor lease mechanism to allow safe usage of cached table descriptors.
   split: test
   human_verified: false
-  note: Draft. Ablated by H-007.
+  note: Draft. Ablated by H-007. Anchored on the schema changer's wait for every node's lease to reach the new
+    descriptor version (pkg/sql/schema_changer.go at the cutoff); the lease package itself, pkg/sql/catalog/lease,
+    is outside the code scope (ADR-0002, history/scope.py).
 
 - id: H-003
   type: supersession
@@ -73,8 +75,8 @@
   origin: human
   question: How are user-defined schemas stored, and is the 2018 schemas RFC still the design to follow?
   anchor:
-    kind: package
-    id: pkg/sql/catalog/schemadesc
+    kind: function
+    id: pkg/sql/schemachanger/scbuild/internal/scbuildstmt.CreateSchema
   gold_facts:
   - The 2018 "User-defined SQL logical schemas" RFC was superseded by the 2020 user-defined schemas RFC
   - Schemas get their own schema descriptors
@@ -87,7 +89,9 @@
     quote: we'll introduce a `SchemaDescriptor` to the `sqlbase.Descriptor` union to store schema metadata
   split: dev
   human_verified: false
-  note: Draft, explicit Supersession (RFC Status header). Confirm the anchor package exists at the cutoff.
+  note: Draft, explicit Supersession (RFC Status header). Anchored on the declarative schema changer's CREATE SCHEMA
+    builder (scbuildstmt/create_schema.go at the cutoff), which adds the schema descriptor; the descriptor package,
+    pkg/sql/catalog/schemadesc, is outside the code scope (ADR-0002, history/scope.py).
 
 - id: H-005
   type: supersession
