@@ -50,9 +50,11 @@ def render_answer(answer: Answer) -> str:
     lines = [f"Refused: {'yes' if answer.refused else 'no'}"]
     if answer.decisions:
         lines.append("Decisions:")
-        for d in answer.decisions:
-            status = d.status if not d.superseded_by else f"{d.status}, superseded by {d.superseded_by}"
-            lines.append(f"- [{status}] {d.choice} Rationale: {d.rationale} (dated {d.date.isoformat()})")
+        for decision in answer.decisions:
+            status = (decision.status if not decision.superseded_by
+                      else f"{decision.status}, superseded by {decision.superseded_by}")
+            lines.append(f"- [{status}] {decision.choice} Rationale: {decision.rationale} "
+                         f"(dated {decision.date.isoformat()})")
     lines.append("Answer:")
     lines.append(" ".join(s.text for s in answer.sentences) or "(no text)")
     return "\n".join(lines)

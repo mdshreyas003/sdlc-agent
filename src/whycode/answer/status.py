@@ -99,8 +99,8 @@ def _with_chains(reader: GraphReader, statuses: dict[str, SupersessionStatus],
     """Each superseded status with the Supersession chain that follows its superseding Decision (a refining one is
     live by construction)."""
     strongest: dict[str, SupersessionRow | None] = {}  # Decision id -> its strongest SUPERSEDES edge, None if live
-    home = {s.by: s.edge.by_discussion.id for s in statuses.values()
-            if s.superseded and s.by and s.edge.by_discussion is not None}  # Decision id -> its Discussion id
+    home = {status.by: status.edge.by_discussion.id for status in statuses.values()
+            if status.superseded and status.by and status.edge.by_discussion is not None}  # Decision -> Discussion
     frontier = set(home)
     for _ in range(MAX_CHAIN):
         if not frontier:
@@ -124,7 +124,7 @@ def _with_chains(reader: GraphReader, statuses: dict[str, SupersessionStatus],
             seen.add(by)
         return tuple(out)
 
-    return {d: replace(s, chain=chain(s.by)) for d, s in statuses.items()}
+    return {decision: replace(status, chain=chain(status.by)) for decision, status in statuses.items()}
 
 
 def grounding(row: Governing, status: SupersessionStatus | None, link: GovernsLink | None = None) -> DecisionGrounding:

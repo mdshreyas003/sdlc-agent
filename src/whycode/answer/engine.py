@@ -182,18 +182,19 @@ class AnswerEngine:
             if status.superseded:
                 superseded[decision_id] = Superseded(quote=quotes[decision_id], witnesses=status.witnesses)
                 superseded |= _dead_in_chain(status, superseded)
-        reviewed = [i for i, s in discussions.items() if s.kind in ("pr", "rfc")]
+        reviewed = [record_id for record_id, record in discussions.items() if record.kind in ("pr", "rfc")]
         people = self._people(reviewed, speakers, entity, view)
         if all(row.decision.id in superseded for row in rows):  # no Live Decision: refuse, showing the history
             return Answer(anchor=resolved.anchor, refused=True, confidence="Low", refusal_reason="superseded",
                           anchor_matched=matched, decisions=decisions, evidence_chain=list(evidence.items.values()),
                           people=people)
 
-        issues = [i for i, s in discussions.items() if s.kind == "issue"]
+        issues = [record_id for record_id, record in discussions.items() if record.kind == "issue"]
         closers = self.reader.closers(issues, view) if issues else []
         for change in closers:
             evidence.add(_node(change))
-        changes = [i for i, s in discussions.items() if s.kind == "pr"] + [c.id for c in closers]
+        changes = [record_id for record_id, record in discussions.items() if record.kind == "pr"]
+        changes += [c.id for c in closers]
         incident_rows = self.reader.incidents(changes + list(discussions), view)
         for incident in incident_rows:
             evidence.add(_node(incident, kind="incident"))

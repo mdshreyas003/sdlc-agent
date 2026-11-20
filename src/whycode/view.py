@@ -37,7 +37,7 @@ LINK_LABEL = {"hard": "hard link: implemented by a Change that touched this code
               "soft": "soft link: the code is named in the Discussion"}
 
 
-def e(text: object) -> str:
+def esc(text: object) -> str:
     return html.escape(str(text), quote=True)
 
 
@@ -60,15 +60,15 @@ class _Page:
         if not node_id:
             return ""
         if node_id in self.evidence:
-            return f'<a class="node" href="#{_slug(node_id)}">{e(node_id)}</a>'
-        return f'<span class="node">{e(node_id)}</span>'
+            return f'<a class="node" href="#{_slug(node_id)}">{esc(node_id)}</a>'
+        return f'<span class="node">{esc(node_id)}</span>'
 
     def render(self) -> str:
         a = self.a
         parts = [self.summary()]
         if a.sentences:
             parts.append(self.section("answer", "Answer", "\n".join(
-                f'<p class="sentence">{e(s.text)} ' + " ".join(f"[{self.node(c)}]" for c in s.cites) + "</p>"
+                f'<p class="sentence">{esc(s.text)} ' + " ".join(f"[{self.node(c)}]" for c in s.cites) + "</p>"
                 for s in a.sentences)))
         live = [d for d in a.decisions if d.status != "superseded"]
         dead = [d for d in a.decisions if d.status == "superseded"]
@@ -92,87 +92,90 @@ class _Page:
 
     @staticmethod
     def section(id_: str, title: str, body: str) -> str:
-        return f'<section id="{id_}">\n<h2>{e(title)}</h2>\n{body}\n</section>'
+        return f'<section id="{id_}">\n<h2>{esc(title)}</h2>\n{body}\n</section>'
 
     @staticmethod
     def link(label: str, url: str | None) -> str:
-        return f'<a href="{e(url)}">{e(label)}</a>' if url else e(label)
+        return f'<a href="{esc(url)}">{esc(label)}</a>' if url else esc(label)
 
     def summary(self) -> str:
         a = self.a
         if a.anchor is None:
-            head = f'<h1 class="anchor">{e(self.q)}</h1>'
+            head = f'<h1 class="anchor">{esc(self.q)}</h1>'
         else:
-            head = (f'<p class="kind">{e(a.anchor.kind)}</p>\n<h1 class="anchor"><code>{e(a.anchor.id)}</code></h1>')
+            head = (f'<p class="kind">{esc(a.anchor.kind)}</p>\n'
+                    f'<h1 class="anchor"><code>{esc(a.anchor.id)}</code></h1>')
         lines = [head]
         if a.anchor_matched:
-            lines.append(f'<p class="note">Matched from your question "{e(self.q)}" by the entity-matching step: '
+            lines.append(f'<p class="note">Matched from your question "{esc(self.q)}" by the entity-matching step: '
                          "check that this is the code you meant.</p>")
-        badges = [f'<span class="badge conf-{e(a.confidence.lower())}">{e(a.confidence)} confidence</span>']
+        badges = [f'<span class="badge conf-{esc(a.confidence.lower())}">{esc(a.confidence)} confidence</span>']
         if not a.refused:
             badges.append(f'<span class="badge">{len(a.decisions)} Decision{"s" * (len(a.decisions) != 1)}</span>')
         lines.append('<p class="badges">' + " ".join(badges) + "</p>")
         if a.refused:
             reason = REFUSALS.get(a.refusal_reason or "", "no Decision could be given")
-            asked = f' "{e(self.q)}"' if a.refusal_reason == "unresolved" else ""
-            lines.append(f'<div class="refusal" role="status"><strong>Refused: {e(reason)}</strong>{asked}. '
+            asked = f' "{esc(self.q)}"' if a.refusal_reason == "unresolved" else ""
+            lines.append(f'<div class="refusal" role="status"><strong>Refused: {esc(reason)}</strong>{asked}. '
                          "Treat the reason as unknown, not as permission to change the code."
                          + (" The nearest evidence and people to ask are below." if a.evidence_chain or a.people
                             else "") + "</div>")
         json_href = "/why?" + urllib.parse.urlencode({"anchor": self.q})
-        lines.append(f'<p class="json"><a href="{e(json_href)}">This answer as JSON</a> (the answer contract)</p>')
+        lines.append(f'<p class="json"><a href="{esc(json_href)}">This answer as JSON</a> (the answer contract)</p>')
         return '<section id="summary">\n' + "\n".join(lines) + "\n</section>"
 
-    def decision(self, d: DecisionView) -> str:
-        rows = [f'<p class="meta"><span class="status status-{e(d.status)}">{e(STATUS_LABEL[d.status])}</span> '
-                f"{e(d.date.isoformat())}, {e(LINK_LABEL[d.link])}</p>",
-                f"<h3>{e(d.choice)}</h3>"]
-        if d.rationale:
-            rows.append(f'<p class="rationale">{e(d.rationale)}</p>')
-        rows.append(f"<blockquote>{e(d.quote)}</blockquote>")
-        rows.append(f'<p class="source">From {self.node(d.discussion_id)}; Decision {self.node(d.id)}</p>')
-        if d.alternatives_rejected:
-            rows.append("<p>Rejected: " + "; ".join(e(x) for x in d.alternatives_rejected) + "</p>")
-        if d.status != "live":
-            verb = "Superseded" if d.status == "superseded" else "Refined"
-            when = f" on {e(d.superseded_at.isoformat())}" if d.superseded_at else ""
-            by = f" by {self.node(d.superseded_by)}" if d.superseded_by else " by its own record"
-            title = self.evidence.get(d.superseded_by or "")
-            name = f' "{e(title.title)}"' if title and title.title and title.kind == "decision" else ""
-            how = ("inferred by the supersession judge, not stated in history" if d.explicit_or_inferred == "inferred"
-                   else "stated in history")
-            later = d.supersession_chain[1:]
+    def decision(self, decision: DecisionView) -> str:
+        rows = [f'<p class="meta"><span class="status status-{esc(decision.status)}">'
+                f"{esc(STATUS_LABEL[decision.status])}</span> "
+                f"{esc(decision.date.isoformat())}, {esc(LINK_LABEL[decision.link])}</p>",
+                f"<h3>{esc(decision.choice)}</h3>"]
+        if decision.rationale:
+            rows.append(f'<p class="rationale">{esc(decision.rationale)}</p>')
+        rows.append(f"<blockquote>{esc(decision.quote)}</blockquote>")
+        rows.append(f'<p class="source">From {self.node(decision.discussion_id)}; '
+                    f"Decision {self.node(decision.id)}</p>")
+        if decision.alternatives_rejected:
+            rows.append("<p>Rejected: " + "; ".join(esc(x) for x in decision.alternatives_rejected) + "</p>")
+        if decision.status != "live":
+            verb = "Superseded" if decision.status == "superseded" else "Refined"
+            when = f" on {esc(decision.superseded_at.isoformat())}" if decision.superseded_at else ""
+            by = f" by {self.node(decision.superseded_by)}" if decision.superseded_by else " by its own record"
+            title = self.evidence.get(decision.superseded_by or "")
+            name = f' "{esc(title.title)}"' if title and title.title and title.kind == "decision" else ""
+            inferred = decision.explicit_or_inferred == "inferred"
+            how = "inferred by the supersession judge, not stated in history" if inferred else "stated in history"
+            later = decision.supersession_chain[1:]
             now = (f" That was itself superseded: {' then '.join(self.node(n) for n in later)} holds now."
                    if later else "")
             rows.append(f'<div class="supersession"><p>{verb}{when}{by}{name} ({how}).{now}</p>'
-                        + (f"<blockquote>{e(d.supersession_quote)}</blockquote>"
-                           f'<p class="source">From {self.node(d.supersession_source)}</p>'
-                           if d.supersession_quote else "") + "</div>")
-        if d.governs:
+                        + (f"<blockquote>{esc(decision.supersession_quote)}</blockquote>"
+                           f'<p class="source">From {self.node(decision.supersession_source)}</p>'
+                           if decision.supersession_quote else "") + "</div>")
+        if decision.governs:
             rows.append('<p class="governs">Governs: ' + ", ".join(
-                f'<a href="{e(_view_href(split_entity_id(g)[1]))}"><code>{e(split_entity_id(g)[1])}</code></a>'
-                for g in d.governs) + "</p>")
-        return f'<article class="decision status-{e(d.status)}">\n' + "\n".join(rows) + "\n</article>"
+                f'<a href="{esc(_view_href(split_entity_id(g)[1]))}"><code>{esc(split_entity_id(g)[1])}</code></a>'
+                for g in decision.governs) + "</p>")
+        return f'<article class="decision status-{esc(decision.status)}">\n' + "\n".join(rows) + "\n</article>"
 
     def person(self, p: PersonView) -> str:
-        handle = f'<span class="handle">@{e(p.handle)}</span>'
+        handle = f'<span class="handle">@{esc(p.handle)}</span>'
         if p.via:
-            what = f"{e(p.role)} of {self.node(p.via)}, active in this area"
+            what = f"{esc(p.role)} of {self.node(p.via)}, active in this area"
         elif p.active:
-            what = f"{e(p.role)}, active"
+            what = f"{esc(p.role)}, active"
         elif p.ask_instead:
-            what = f'{e(p.role)}, departed: ask <span class="handle">@{e(p.ask_instead)}</span> instead'
+            what = f'{esc(p.role)}, departed: ask <span class="handle">@{esc(p.ask_instead)}</span> instead'
         else:
-            what = f"{e(p.role)}, departed"
+            what = f"{esc(p.role)}, departed"
         return f'<li class="{"active" if p.active else "departed"}">{handle} <span>{what}</span></li>'
 
     def item(self, i: EvidenceItem) -> str:
-        title = f" {e(i.title)}" if i.title else ""
-        date = f' <span class="date">{e(i.date.isoformat())}</span>' if i.date else ""
-        source = f' <a href="{e(i.url)}">source</a>' if i.url else ""
-        quote = f"<blockquote>{e(i.quote)}</blockquote>" if i.quote else ""
-        return (f'<li id="{_slug(i.node_id)}"><span class="kind-tag">{e(i.kind)}</span> '
-                f"<code>{e(i.node_id)}</code>{title}{date}{source}{quote}</li>")
+        title = f" {esc(i.title)}" if i.title else ""
+        date = f' <span class="date">{esc(i.date.isoformat())}</span>' if i.date else ""
+        source = f' <a href="{esc(i.url)}">source</a>' if i.url else ""
+        quote = f"<blockquote>{esc(i.quote)}</blockquote>" if i.quote else ""
+        return (f'<li id="{_slug(i.node_id)}"><span class="kind-tag">{esc(i.kind)}</span> '
+                f"<code>{esc(i.node_id)}</code>{title}{date}{source}{quote}</li>")
 
 
 STYLE = """
@@ -233,13 +236,13 @@ def render_page(question: str = "", answer: Answer | None = None) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{e(title)}</title>
+<title>{esc(title)}</title>
 <style>{STYLE}</style>
 </head>
 <body>
 <header>
 <form method="get" action="/">
-<input name="anchor" value="{e(question)}" placeholder="Anchor or question" aria-label="Anchor or question" autofocus>
+<input name="anchor" value="{esc(question)}" placeholder="Anchor or question" aria-label="Anchor or question" autofocus>
 <button type="submit">Why?</button>
 </form>
 <p>Why is this CockroachDB schema-change code the way it is? Decisions, their evidence and the people to ask.</p>

@@ -114,23 +114,24 @@ def _resolve(index: DecisionIndex, ref: str) -> str | None:
 
 def _statements(index: DecisionIndex, discussions: Iterable[Discussion]) -> list[Edge]:
     out = []
-    for d in discussions:
-        if d.kind == "rfc":
+    for discussion in discussions:
+        if discussion.kind == "rfc":
             continue  # an RFC states Supersession in its Status header
-        for segment in d.segments:
+        for segment in discussion.segments:
             if segment.locator not in _STATEMENT_FIELDS:
                 continue
             for m in SUPERSEDE_TEXT.finditer(segment.text):
                 other = _resolve(index, m.group("ref"))
-                if other is None or other == d.id:
+                if other is None or other == discussion.id:
                     continue
-                later, earlier_record = (d.id, other) if m.group("verb").lower() == "supersedes" else (other, d.id)
+                supersedes = m.group("verb").lower() == "supersedes"
+                later, earlier_record = (discussion.id, other) if supersedes else (other, discussion.id)
                 at = index.date(later)
                 for earlier in index.of_record.get(earlier_record, ()):
                     if index.decisions[earlier].props["date"] > at:
                         continue
                     for superseder in index.superseders(earlier, later):
-                        out.append(supersession_edge(superseder, earlier, quote=m.group(0), record=d.id,
+                        out.append(supersession_edge(superseder, earlier, quote=m.group(0), record=discussion.id,
                                          locator=f"{segment.locator}#{m.start()}-{m.end()}", at=at,
                                          via="supersedes-text"))
     return out

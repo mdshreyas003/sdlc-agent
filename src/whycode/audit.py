@@ -55,8 +55,9 @@ def sample_anchors(driver: Driver, n: int, seed: int = 0, database: str | None =
 
 def answer_ids(answer: Answer) -> set[str]:
     out: set[str] = set()
-    for d in answer.decisions:
-        out |= {d.id, *d.governs, *(i for i in (d.discussion_id, d.superseded_by) if i)}
+    for decision in answer.decisions:
+        out |= {decision.id, *decision.governs, *decision.supersession_chain,
+                *(i for i in (decision.discussion_id, decision.superseded_by) if i)}
     out |= {e.node_id for e in answer.evidence_chain}
     out |= {i.id for i in answer.incidents}
     out |= {ids.person_id(p.handle) for p in answer.people} | {p.via for p in answer.people if p.via}

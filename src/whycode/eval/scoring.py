@@ -83,12 +83,12 @@ def score(case: Case, record: AnswerRecord, corpus: Corpus, judge: Judge) -> Ite
 def check_citations(answer: Answer, case: Case, corpus: Corpus) -> tuple[int, int]:
     """(distinct node ids cited, how many of them are valid) for one answer."""
     quotes: dict[str, list[str]] = {}
-    for e in answer.evidence_chain:
-        quotes.setdefault(e.node_id, []).extend([e.quote] if e.quote else [])
-    for d in answer.decisions:
-        quotes.setdefault(d.id, []).append(d.quote)
-    for s in answer.sentences:
-        for node_id in s.cites:
+    for item in answer.evidence_chain:
+        quotes.setdefault(item.node_id, []).extend([item.quote] if item.quote else [])
+    for decision in answer.decisions:
+        quotes.setdefault(decision.id, []).append(decision.quote)
+    for sentence in answer.sentences:
+        for node_id in sentence.cites:
             quotes.setdefault(node_id, [])
 
     def visible(node_id: str) -> CorpusRecord | None:

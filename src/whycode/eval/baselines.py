@@ -56,16 +56,17 @@ def refusal(query: Query, text: str) -> Answer:
 
 def to_answer(found: BaselineAnswer, query: Query, lookup: Callable[[str], CorpusRecord | None]) -> Answer:
     decisions = []
-    for d in found.decisions:
-        source = lookup(d.source_id)
+    for proposed in found.decisions:
+        source = lookup(proposed.source_id)
         try:
-            date = dt.date.fromisoformat(d.date)
+            date = dt.date.fromisoformat(proposed.date)
         except ValueError:
             if source is None or source.date is None:
                 continue  # no date can be given without inventing one
             date = source.date
-        decisions.append(DecisionView(id=d.source_id, choice=d.choice, rationale=d.rationale, quote=d.quote,
-                                      date=date, status=d.status, superseded_by=d.superseded_by, link="soft"))
+        decisions.append(DecisionView(id=proposed.source_id, choice=proposed.choice, rationale=proposed.rationale,
+                                      quote=proposed.quote, date=date, status=proposed.status,
+                                      superseded_by=proposed.superseded_by, link="soft"))
     evidence = []
     for e in found.evidence:
         record = lookup(e.node_id)

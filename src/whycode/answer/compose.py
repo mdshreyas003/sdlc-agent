@@ -98,18 +98,20 @@ class TemplateComposer:
 
     def compose(self, request: ComposeRequest) -> list[DraftSentence]:
         out = []
-        for d in request.decisions:
-            text = f"{d.choice} ({d.date.isoformat()}): {d.rationale}"
-            cites = [DraftCite(node_id=d.id)]
-            if d.discussion_id:
-                cites.append(DraftCite(node_id=d.discussion_id, quote=d.quote))
-            if d.status != "live":
-                how = "inferred" if d.explicit_or_inferred == "inferred" else "stated in history"
-                by = f" by {d.superseded_by}" if d.superseded_by else ""
-                now = f", itself superseded; {d.supersession_chain[-1]} holds now" if d.supersession_chain[1:] else ""
-                text = f"{d.status.capitalize()} on {d.superseded_at.isoformat()}{by}{now} ({how}): {text}"
-                cites.append(DraftCite(node_id=d.superseded_by or d.supersession_source))
+        for decision in request.decisions:
+            text = f"{decision.choice} ({decision.date.isoformat()}): {decision.rationale}"
+            cites = [DraftCite(node_id=decision.id)]
+            if decision.discussion_id:
+                cites.append(DraftCite(node_id=decision.discussion_id, quote=decision.quote))
+            if decision.status != "live":
+                how = "inferred" if decision.explicit_or_inferred == "inferred" else "stated in history"
+                by = f" by {decision.superseded_by}" if decision.superseded_by else ""
+                chain = decision.supersession_chain
+                now = f", itself superseded; {chain[-1]} holds now" if chain[1:] else ""
+                when = decision.superseded_at.isoformat()
+                text = f"{decision.status.capitalize()} on {when}{by}{now} ({how}): {text}"
+                cites.append(DraftCite(node_id=decision.superseded_by or decision.supersession_source))
                 if now:
-                    cites.append(DraftCite(node_id=d.supersession_chain[-1]))
+                    cites.append(DraftCite(node_id=chain[-1]))
             out.append(DraftSentence(text=text, cites=cites))
         return out
