@@ -4,10 +4,17 @@
 directly. It answers the three questions the build asks of code:
 
 - `touched_by(change)`: which entities a Change's diff touches (the basis of hard governs links);
+- `changed_lines(change)`: each added or removed line of a diff with the entities it lies in (`check_change`);
 - `mentions(text)`: which entities a piece of text names exactly (the basis of soft governs links);
 - each entity's `aliases`: the exact spellings an Anchor may use (stored in the graph for resolution).
 
 Matching is exact, never fuzzy: an alias that names more than one entity is ignored.
+
+A changed line lies in the declaration that encloses it: the hunk header (`git diff` prints the nearest top-level
+line above the hunk there), or a top-level line inside the hunk above it (a `func` declaration, a setting
+registration `x = settings.Register...Setting(`; any other top-level line, such as a closing brace or a comment,
+ends the enclosing declaration). A line also touches the functions it declares and the settings it names (key or
+name literal, or the Go variable within the setting's package).
 """
 
 from __future__ import annotations
@@ -78,6 +85,23 @@ _FUNC = re.compile(
     r"\bfunc\s+(?:\(\s*(?:[A-Za-z_]\w*\s+)?(\*?)\s*([A-Za-z_]\w*)(?:\[[^\]]*\])?\s*\)\s*)?([A-Za-z_]\w*)\s*[\[(]"
 )
 _HUNK = re.compile(r"^@@ [^@]* @@(.*)$")
+_REGISTRATION = re.compile(r"^\s*(?:var\s+)?([A-Za-z_]\w*)\s*(?:[\w.*\[\]]+\s*)?=\s*settings\.Register\w*Setting\(")
+_LABEL = re.compile(r"^[A-Za-z_]\w*:\s*$")
+
+
+@dataclass(frozen=True, slots=True)
+class ChangedLine:
+    """An added (`+`) or removed (`-`) line of a file diff and the functions and settings it lies in or names
+    (empty: the line is at file level, e.g. an import or a type)."""
+
+    sign: str
+    text: str  # without the sign
+    entities: frozenset[CodeEntity]
+
+
+def _alternation(names: Iterable[str], before: str, after: str) -> re.Pattern | None:
+    names = sorted(names, key=len, reverse=True)
+    return re.compile(before + "|".join(re.escape(n) for n in names) + after) if names else None
 
 
 class CodeIndex:
@@ -88,6 +112,15 @@ class CodeIndex:
             (e.parent, e.receiver, e.name): e for e in self.entities if e.kind == "function"
         }
         self._settings_by_key = {e.key: e for e in self.entities if e.kind == "setting"}
+        self._settings_by_var: dict[tuple[str | None, str], list[CodeEntity]] = defaultdict(list)
+        self._settings_by_go_var: dict[str, list[CodeEntity]] = defaultdict(list)
+        for s in self._settings_by_key.values():
+            if s.go_var:
+                self._settings_by_var[(s.parent, s.go_var)].append(s)
+                self._settings_by_go_var[s.go_var].append(s)
+        self._setting_literals = {name: s for s in self._settings_by_key.values() for name in (s.key, *s.names)}
+        self._setting_literal_re = _alternation(self._setting_literals, '"(', ')"')
+        self._go_var_re = _alternation(self._settings_by_go_var, r"\b(", r")\b")
         self._mention_names = self._unique_names(self._mentionable)
         self._mention_re = (
             re.compile(
@@ -102,31 +135,65 @@ class CodeIndex:
     def get(self, key: str) -> CodeEntity | None:
         return self._by_key.get(key)
 
+    def file_of(self, change: FileChange) -> CodeEntity | None:
+        """The file entity a diff edits (by its path, or its previous path for a rename); None if not indexed."""
+        file = self._by_key.get(change.path) or (change.previous_path and self._by_key.get(change.previous_path))
+        return file if file is not None and file.kind == "file" else None
+
     def touched_by(self, change: FileChange) -> set[CodeEntity]:
-        """Entities a file diff touches: the file, functions named by hunk headers or declared on changed
-        lines, and settings whose key or name literal, or Go variable, appears on a changed line.
+        """Entities a file diff touches: the file, and the functions and settings its changed lines lie in or
+        name (see the module docstring).
 
         No line-level anchoring: diffs of files the index does not hold touch nothing.
         """
-        file = self._by_key.get(change.path) or (change.previous_path and self._by_key.get(change.previous_path))
-        if file is None or file.kind != "file":
+        file = self.file_of(change)
+        if file is None:
             return set()
-        touched = {file}
-        changed: list[str] = []
+        return {file}.union(*(line.entities for line in self.changed_lines(change)))
+
+    def changed_lines(self, change: FileChange) -> list[ChangedLine]:
+        """The added and removed lines of a file diff, in order, each with the entities it lies in or names."""
+        file = self.file_of(change)
+        if file is None:
+            return []
+        out: list[ChangedLine] = []
+        enclosing: frozenset[CodeEntity] = frozenset()
         for line in (change.patch or "").splitlines():
             if header := _HUNK.match(line):
-                touched |= self._declared(file.key, header.group(1))
-            elif line[:1] in "+-" and not line.startswith(("+++", "---")):
-                changed.append(line[1:])
-                touched |= self._declared(file.key, line[1:])
-        body = "\n".join(changed)
-        for setting in self._settings_by_key.values():
-            if any(f'"{name}"' in body for name in (setting.key, *setting.names)) or (
-                setting.go_var and setting.package == file.package
-                and re.search(rf"\b{re.escape(setting.go_var)}\b", body)
-            ):
-                touched.add(setting)
-        return touched
+                enclosing = self._scope(file, header.group(1).strip()) or frozenset()
+                continue
+            sign, text = line[:1], line[1:]
+            if sign not in (" ", "+", "-") or line.startswith(("+++ ", "--- ")):
+                continue  # "\ No newline at end of file", file headers
+            scope = self._scope(file, text)
+            if sign != " ":
+                own = enclosing if scope is None or text[:1] in "})" else scope
+                named = self._declared(file.key, text) | self._named_settings(file, text)
+                out.append(ChangedLine(sign, text, own | named))
+            if scope is not None:
+                enclosing = scope
+        return out
+
+    def _scope(self, file: CodeEntity, text: str) -> frozenset[CodeEntity] | None:
+        """The declaration a line opens: the functions a top-level `func` line declares, the setting a
+        registration line declares, nothing for any other top-level line; None for a line inside the current
+        declaration (indented, blank, or a label)."""
+        if not text.strip():
+            return None
+        if m := _REGISTRATION.match(text):
+            return frozenset(self._settings_by_var.get((file.key, m.group(1)), ()))
+        if text[0].isspace() or _LABEL.match(text):
+            return None
+        return frozenset(self._declared(file.key, text)) if text.startswith("func") else frozenset()
+
+    def _named_settings(self, file: CodeEntity, text: str) -> set[CodeEntity]:
+        out: set[CodeEntity] = set()
+        if self._setting_literal_re:
+            out |= {self._setting_literals[m.group(1)] for m in self._setting_literal_re.finditer(text)}
+        if self._go_var_re:
+            for m in self._go_var_re.finditer(text):
+                out |= {s for s in self._settings_by_go_var[m.group(1)] if s.package == file.package}
+        return out
 
     def mentions(self, text: str) -> set[CodeEntity]:
         """Entities the text names exactly. Bare function names count only when written as code

@@ -1,0 +1,13 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index a005d2d..73fe437 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -260,7 +260,7 @@ func IsPermanentSchemaChangeError(err error) bool {
+ 		}
+ 	}
+ 
+-	return true
++	return false
+ }
+ 
+ var errSchemaChangeNotFirstInLine = errors.Newf("schema change not first in line")

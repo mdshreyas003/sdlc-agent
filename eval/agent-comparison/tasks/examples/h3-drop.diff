@@ -1,0 +1,13 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index a005d2d..f012248 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -251,7 +251,7 @@ func IsPermanentSchemaChangeError(err error) bool {
+ 	}
+ 
+ 	switch pgerror.GetPGCode(err) {
+-	case pgcode.SerializationFailure, pgcode.InternalConnectionFailure, pgcode.OutOfMemory:
++	case pgcode.SerializationFailure, pgcode.InternalConnectionFailure:
+ 		return false
+ 
+ 	case pgcode.Internal, pgcode.RangeUnavailable:

@@ -1,0 +1,17 @@
+diff --git a/pkg/sql/schemachanger/scbuild/build.go b/pkg/sql/schemachanger/scbuild/build.go
+index a6b9f1c..1a8d341 100644
+--- a/pkg/sql/schemachanger/scbuild/build.go
++++ b/pkg/sql/schemachanger/scbuild/build.go
+@@ -16,9 +16,9 @@ import (
+ 
+ // Build constructs a new state from an initial state and a statement.
+ func Build(ctx context.Context, initial scpb.CurrentState, stmt tree.Statement) (scpb.CurrentState, error) {
+-	bs := newBuilderState(ctx, initial)
+-	bs.buildStatement(stmt)
+-	return bs.output(), nil
++	b := newBuilderState(ctx, initial)
++	b.buildStatement(stmt)
++	return b.output(), nil
+ }
+ 
+ type builderState struct {

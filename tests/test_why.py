@@ -82,8 +82,7 @@ def cited(answer: Answer) -> set[str]:
 
 async def test_why_is_a_read_only_tool_returning_the_answer_contract(reader):
     async with Client(build_server(AnswerEngine(reader, FaithfulComposer()))) as client:
-        (tool,) = (await client.list_tools()).tools
-    assert tool.name == "why"
+        (tool,) = [t for t in (await client.list_tools()).tools if t.name == "why"]
     assert tool.output_schema["title"] == "Answer"
     assert tool.annotations.read_only_hint is True
 

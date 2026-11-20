@@ -1,0 +1,12 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index a005d2d..f34cdac 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -204,6 +204,7 @@ func IsConstraintError(err error) bool {
+ 
+ // IsPermanentSchemaChangeError returns true if the error results in
+ // a permanent failure of a schema change. This function is a allowlist
++// See the history of each case before changing it.
+ // instead of a blocklist: only known safe errors are confirmed to not be
+ // permanent errors. Anything unknown is assumed to be permanent.
+ func IsPermanentSchemaChangeError(err error) bool {

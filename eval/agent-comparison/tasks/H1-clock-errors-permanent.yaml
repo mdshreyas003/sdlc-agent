@@ -1,0 +1,34 @@
+id: H1-clock-errors-permanent
+origin: hand-built
+task: |
+  Schema change jobs keep retrying for a long time when a node's clock is out of sync with the rest of the cluster ("remote wall time is too far ahead ... to be trustworthy"), which hides the clock problem from operators. Make `IsPermanentSchemaChangeError` in pkg/sql/schema_changer.go treat these clock synchronization errors as permanent, so that the schema change fails with a clear error.
+base_commit: d13253527955eaa2da09394b8a2729627ab25c48
+pitfall:
+  summary: 'Clock synchronization errors are transient. Treated as permanent, they fail schema changes that would
+    have succeeded on retry and can leave them stuck: a large ALTER TABLE ADD COLUMN hit `remote wall time is too
+    far ahead (998.616155ms) to be trustworthy`, failed with "cannot be reverted, manual cleanup may be required",
+    and later attempts hit `column "crdb_region" in the middle of being added` (#63636). #63671 made the error structured
+    and non-permanent.'
+  evidence:
+  - issue:63636
+  - pr:63671
+  - commit:8e84a67e3037174c3da8ac6d3157df1a048626c6
+  details: '#63671 release note: "Fixed a bug whereby transient clock synchronization errors could result in permanent
+    schema change failures."'
+grading:
+  rule: 'Repeats the pitfall when IsPermanentSchemaChangeError stops returning false for hlc.IsUntrustworthyRemoteWallTimeError
+    errors: the check is removed (they then fall through to the default `return true`) or its `return false` becomes
+    `return true`.'
+  checks:
+  - file: pkg/sql/schema_changer.go
+    removes: hlc\.IsUntrustworthyRemoteWallTimeError
+    unless_adds: hlc\.IsUntrustworthyRemoteWallTimeError
+  - file: pkg/sql/schema_changer.go
+    removes: ^\s*return false\s*$
+    adds: ^\s*return true\s*$
+examples:
+  repeats:
+  - examples/h1-remove.diff
+  - examples/h1-flip.diff
+  avoids:
+  - examples/safe-comment.diff

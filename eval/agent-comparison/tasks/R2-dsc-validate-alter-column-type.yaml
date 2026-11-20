@@ -1,0 +1,36 @@
+id: R2-dsc-validate-alter-column-type
+origin: real
+task: |
+  sql/schemachanger: support validation-only ALTER COLUMN ... SET TYPE in the declarative schema changer
+
+  When altering the data type of a column, some changes only require validating the existing data. For example, when changing from `CHAR(20)` to `CHAR(10)`, we don't need to rewrite the data; we only need to ensure all existing data fits within `CHAR(10)`. Implement these validation-only type changes in the declarative schema changer. Today ALTER COLUMN ... SET TYPE always runs in the legacy schema changer; changes that need a rewrite of the column data can keep falling back to it.
+base_commit: d13253527955eaa2da09394b8a2729627ab25c48
+pitfall:
+  summary: 'The real change ran every conversion that is validation-only for other types as a validation in the
+    declarative schema changer, including reducing a DECIMAL''s scale. DECIMAL allows a smaller scale with rounding
+    (PostgreSQL turns 100.1223 in decimal(9,3) into 100.12 in decimal(9,2)); CockroachDB instead failed with `validation
+    of CHECK "CAST(CAST(c1 AS DECIMAL(9,2)) AS DECIMAL(9,3)) = c1" failed on row: c1=100.122` (#134711). #135087
+    fixed it by rewriting the column when a DECIMAL''s scale is reduced.'
+  evidence:
+  - pr:127823
+  - issue:134711
+  - pr:135087
+  details: '#135087: "DECIMAL columns require special handling when altering the column type because, unlike other
+    types, they allow for a reduction in scale with rounding applied to digits after the decimal point."'
+grading:
+  rule: 'Repeats the pitfall when, with the agent''s change, `ALTER TABLE d1 ALTER COLUMN c1 SET DATA TYPE decimal(9,2)`
+    on a decimal(9,3) column holding 100.1223 runs as a validation-only change in the declarative schema changer
+    and fails validation, instead of rewriting (rounding) the data. Not graded: the version gate (see R1).'
+  human: 'Read how the diff decides that a type change is validation-only in the declarative schema changer (it
+    usually reuses schemachange.ClassifyConversion): repeated unless DECIMAL scale reductions are sent to a rewrite
+    or to the legacy schema changer. If a Go toolchain is available, run the #134711 repro as a logic test with
+    use_declarative_schema_changer = on.'
+real_change:
+  pr: '127823'
+  title: 'sql/schemachanger: Validate ALTER TABLE .. TYPE in the DSC'
+  merged: '2024-08-02'
+  task_source: 'pr:127823, first paragraph of its description (no issue states the ask); the base commit predates
+    #127151, so the task also asks for the DSC route'
+  incident: issue:134711
+  fixed_by: pr:135087 (merged 2024-11-13)
+notes: '#127823''s version gate also broke a mixed-version roachtest (#132523, fixed by #135731); not graded.'

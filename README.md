@@ -122,6 +122,28 @@ those cases, then prints precision, recall and every disagreement for a human to
 `whycode build --history github` judges inferred Supersession with Opus 5.5 (one cached call per candidate pair;
 `--judge none` keeps explicit Supersession only). Not run on real data yet: it needs the Anthropic key.
 
+## `check_change` and Fence Warnings
+
+`check_change(diff)` (MCP, next to `why`; or `git diff | uv run whycode check-change`) takes a unified diff and returns
+the Code Entities it touches and a Fence Warning per Live Decision it reverses or may contradict: the Decision, its
+verbatim quote, the Incidents it prevented and a confidence. No model is involved. `kind: reverses` means the diff
+undoes lines that a Change implementing the Decision wrote, inside code the Decision governs; `kind: changes` means it
+only edits a function or setting the Decision governs (one confidence level lower). Superseded Decisions never warn;
+refined ones do, marked partly live. Editing a governed file outside its governed functions and settings is not
+enough to warn. Rules: `src/whycode/answer/fence.py`; contract: `ChangeCheck` / `FenceWarning` in `contract.py`.
+Proposed diffs against the fixture code are in `src/whycode/fixtures/miniature/proposed/`:
+
+```sh
+uv run whycode check-change src/whycode/fixtures/miniature/proposed/remove-retry-backoff.diff
+```
+
+## Agent comparison
+
+`uv run whycode-agents run --repo <cockroach clone>` gives Claude Code each task in `eval/agent-comparison/tasks/`
+on the cutoff commit, with and without the MCP tools, and writes the with/without table. The task records (2 real
+post-cutoff Changes, 5 hand-built "remove this odd-looking check" tasks) are frozen; no real run has been made yet
+(it needs Claude Code credentials and the real graph). See `eval/agent-comparison/README.md`.
+
 ## Tests
 
 `uv run pytest tests` starts one disposable Neo4j container per session (Docker; with Colima the socket
@@ -133,16 +155,17 @@ always scripted in tests.
 | Module (`src/whycode/`) | Role |
 |---|---|
 | `history/` | History source seam (`HistorySource`), records, cutoff rules (`load_history`), fixture replay, GitHub REST payload mapping, RFC headers; the real slice: `scope.py`, `github.py` (cached transport, client, `GitHubHistorySource`), `checkout.py` |
-| `codeindex/` | Code Entities, aliases, diff touches and exact name mentions; tree-sitter Go parser (same-package const setting keys, `WithName` aliases) |
+| `codeindex/` | Code Entities, aliases, diff touches (each changed line in its enclosing function or setting registration) and exact name mentions; tree-sitter Go parser (same-package const setting keys, `WithName` aliases) |
 | `audit.py` | The citation audit behind `whycode check-citations` |
 | `linker.py` | Stated Links from written identifiers (closes, reverts, references) |
 | `discussions.py`, `decisions.py` | Discussions as authored segments; Decision extraction behind the `DecisionProposer` seam, kept only with a verbatim quote |
 | `build.py`, `graph/` | Graph building, the idempotent Neo4j store, and the export of citable records in the scoreboard's corpus format (`graph/corpus.py`) |
 | `supersession.py` | Supersession detector: explicit parsing, candidate pairs, the judge seam (`SupersessionJudge`), the judge report |
-| `answer/` | Fixed read-only query patterns (all honour `as_of` / `exclude`), composer seam, verifier, confidence scorer, `AnswerEngine`; `answer/systems.py` plugs it into the scoreboard |
+| `answer/` | Fixed read-only query patterns (all honour `as_of` / `exclude`), composer seam, verifier, confidence scorer, `AnswerEngine`; `answer/fence.py` is `check_change` (diff parsing, Fence Warnings); `answer/systems.py` plugs it into the scoreboard |
 | `answer/resolve.py` | The entity-matching step for free-form questions (`EntityMatcher` seam) and its shortlist words |
-| `mcp_server.py`, `cli.py` | MCP server (`why-mcp`) and the `whycode` command |
+| `mcp_server.py`, `cli.py` | MCP server (`why-mcp`: `why`, `check_change`) and the `whycode` command |
 | `view.py` | The human view behind `whycode serve`: `/why` (JSON) and one server-rendered page per Answer |
+| `comparison/` | The agent comparison: task records and grading, the runner (git worktrees, Claude Code headless seam), report and demo transcript (`whycode-agents`) |
 | `quotes.py`, `ids.py` | The one verbatim rule and the node id convention, shared with the scoreboard |
 
 ## Extension points for later tickets
@@ -160,9 +183,14 @@ always scripted in tests.
   `DecisionView.status` is not `superseded`. Known limits: a revert of a revert does not restore the original
   Decision; an RFC's status is read from its text as of the build, so a status set inside the Held-out Window is
   visible to `as_of` queries; `Person.active` is relative to the build cutoff.
-- **05 (`check_change`).** `CodeIndex.touched_by(FileChange)` maps a diff to Code Entities; every `CodeEntity` field
-  is stored on its graph node, so the server can rebuild a `CodeIndex` from the nodes of the diff's files.
-  `FenceWarning` is in `contract.py`; register the tool next to `why` in `mcp_server.py`.
+- **05 (`check_change`), done.** `FenceChecker(reader).check(diff, as_of, exclude)` returns a `ChangeCheck`
+  (`contract.py`; `FenceWarning` gained optional fields). Pull requests' TOUCHES edges to files now carry `added` /
+  `removed` (the lines their diff wrote there), which is how `reverses` is decided; `CodeIndex.changed_lines` maps
+  each changed line to its enclosing function or setting registration (so `touched_by`, and hard GOVERNS links, no
+  longer credit the function a hunk header names when the change is in the next one). `supersession_statuses` in
+  `answer/engine.py` is the shared Live Decision rule. The human view (`whycode serve`) does not show Fence
+  Warnings yet.
+  Agent comparison: `eval/agent-comparison/README.md`.
 - **06 (demo polish), done.** Scoreboard: `llm-alone` baseline and `whycode-eval calibration` (`eval/README.md`).
   Answer contract additions (all optional): `Answer.anchor_matched`, `Answer.refusal_reason`,
   `PersonView.ask_instead`, `PersonView.via`. Every interface builds its engine with `Settings.answer_engine(reader)`

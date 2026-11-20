@@ -5,6 +5,7 @@
     uv run whycode fetch [--limit N]              # real slice: fill the GitHub cache (resumable; re-run after a stop)
     uv run whycode build --history github         # real slice: cache -> graph -> Neo4j, corpus and counts files
     uv run whycode why pkg/sql/schema_changer.go  # prints the Answer contract as JSON
+    git diff | uv run whycode check-change        # prints the Fence Warnings (ChangeCheck contract) as JSON
     uv run whycode check-citations --sample 20    # every node id in 20 answers resolves (exit 1 if not)
     uv run whycode supersession-report            # the supersession judge (Opus 5.5) vs explicit Supersession
     uv run whycode serve [--port 8765]            # the human view: one page per Answer, and /why as JSON
@@ -139,6 +140,17 @@ def _why(settings: Settings, args: argparse.Namespace, transport=None) -> int:
     return 0
 
 
+def _check_change(settings: Settings, args: argparse.Namespace, transport=None) -> int:
+    from whycode.answer.fence import FenceChecker
+    from whycode.answer.patterns import GraphReader
+
+    diff = sys.stdin.read() if args.diff == "-" else Path(args.diff).read_text(encoding="utf-8")
+    reader = GraphReader(settings.driver(), settings.neo4j_database)
+    reader.selfcheck()
+    print(FenceChecker(reader).check(diff).model_dump_json(indent=2))
+    return 0
+
+
 def _check_citations(settings: Settings, args: argparse.Namespace, transport=None) -> int:
     from whycode.answer.patterns import GraphReader
     from whycode.audit import GraphResolver, audit_citations, sample_anchors
@@ -197,6 +209,8 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
     github_options(fetch)
     why = sub.add_parser("why", help="print the Answer for an Anchor (function, file, package or setting)")
     why.add_argument("anchor")
+    change = sub.add_parser("check-change", help="print the Fence Warnings for a proposed diff (no model needed)")
+    change.add_argument("diff", nargs="?", default="-", help="a unified diff file (`git diff` output); - for stdin")
     check = sub.add_parser("check-citations", help="ask why about a sample of Anchors; every node id must resolve")
     check.add_argument("--sample", type=int, default=20)
     check.add_argument("--seed", type=int, default=0)
@@ -208,8 +222,8 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8765, help="0 picks a free port (default: %(default)s)")
     args = parser.parse_args(argv)
-    commands = {"build": _build, "fetch": _fetch, "why": _why, "check-citations": _check_citations,
-                "supersession-report": _supersession_report, "serve": _serve}
+    commands = {"build": _build, "fetch": _fetch, "why": _why, "check-change": _check_change,
+                "check-citations": _check_citations, "supersession-report": _supersession_report, "serve": _serve}
 
     from whycode.history.checkout import CheckoutError
     from whycode.history.github import GitHubError

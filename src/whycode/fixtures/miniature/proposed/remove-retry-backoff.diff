@@ -1,0 +1,20 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index 8deca2e..5af085c 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -55,12 +55,10 @@ func isPermanentSchemaChangeError(err error) bool {
+ func (sc *SchemaChanger) exec(ctx context.Context) error {
+ 	opts := retry.Options{InitialBackoff: 20 * time.Millisecond, Multiplier: 1.5}
+ 	for r := retry.Start(opts); r.Next(); {
+-		opts.MaxBackoff = schemaChangeJobMaxRetryBackoff.Get(sc.settings)
+-		err := sc.step(ctx)
+-		if err == nil || isPermanentSchemaChangeError(err) {
+-			return err
++		if err := sc.step(ctx); err != nil && !isPermanentSchemaChangeError(err) {
++			continue
+ 		}
+-		log.Warningf(ctx, "schema change job will retry with backoff: %v", err)
++		return nil
+ 	}
+ 	return nil
+ }

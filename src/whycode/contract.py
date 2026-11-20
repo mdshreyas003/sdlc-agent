@@ -153,8 +153,18 @@ class Answer(_Contract):
     verification)."""
 
 
+FenceKind = Literal["reverses", "changes"]
+
+
 class FenceWarning(_Contract):
-    """A proposed Change would contradict or reverse a Live Decision."""
+    """A proposed Change would contradict or reverse a Live Decision (ticket 05, `whycode.answer.fence`).
+
+    `kind` is `reverses` when the diff undoes lines that a Change implementing the Decision wrote (removes lines it
+    added, or restores lines it removed) inside code the Decision governs, and `changes` when it only edits a
+    function or setting the Decision governs (a possible contradiction the agent must judge from the quote).
+    A superseded Decision never warns; a refined one (partly live) does, with `status: refined`.
+    `incident_ids` are the Incidents the Decision prevented: those closed by the Changes that implement it
+    (or the Decision's own issue, when that is an Incident). Every id resolves to a graph record."""
 
     decision_id: str
     entity_id: str
@@ -162,3 +172,26 @@ class FenceWarning(_Contract):
     quote: str
     incident_ids: list[str] = []
     confidence: Confidence
+    kind: FenceKind = "changes"
+    choice: str | None = None
+    status: DecisionStatus = "live"
+    discussion_id: str | None = None
+    """The Discussion the Decision (and its verbatim `quote`) comes from."""
+    url: str | None = None
+    date: dt.date | None = None
+    change_id: str | None = None
+    """For `reverses`: the Change implementing the Decision whose lines the diff undoes."""
+    reversed_lines: list[str] = []
+    """For `reverses`: the undone lines, as written in the implementing Change (whitespace trimmed; at most 10)."""
+
+
+class ChangeCheck(_Contract):
+    """Result of `check_change(diff)`: the Code Entities the diff touches and the Fence Warnings, strongest first
+    (`reverses` before `changes`, then confidence, then newest). No warnings means no Live Decision governs what
+    the diff touches, not that the change is safe."""
+
+    touched: list[str] = []
+    """Code Entity node ids the diff touches (files, functions, settings in the code index)."""
+    warnings: list[FenceWarning] = []
+    omitted: int = 0
+    """Warnings left out past the cap (the weakest ones)."""

@@ -1,0 +1,44 @@
+id: R1-dsc-trivial-alter-column-type
+origin: real
+task: |
+  sql/schemachanger: support trivial ALTER COLUMN ... SET TYPE in declarative schema changer
+
+  The `ALTER COLUMN ... TYPE` command should be implemented in the declarative schema changer. This issue is used to track the work for trivial changes. Trivial changes are data type changes that don't require a backfill or a shadow column. Only update to the type in the descriptor is needed. One example of a trivial change is to alter the type from a SMALLINT to a BIGINT, or CHAR(10) to a CHAR(20).
+
+  We should make sure to avoid as many of the known limitations tracked in CRDB-25314 as we can.
+base_commit: d13253527955eaa2da09394b8a2729627ab25c48
+pitfall:
+  summary: 'The real change modelled the type change as a drop plus an add of the ColumnType element and, so that
+    an altered column does not emit RemoveDroppedColumnType, made the ColumnType drop op in pkg/sql/schemachanger/scplan/internal/opgen/opgen_column_type.go
+    scan every target of the plan for each dropped column. DROP DATABASE drops every column, so it became quadratic:
+    a performance regression in DROP DATABASE (#127747). #127755 fixed it by first checking, cheaply, whether the
+    dropped column references a type at all.'
+  evidence:
+  - pr:127151
+  - commit:52c12c046386d0ad3e18301832529a810992da34
+  - issue:127747
+  - pr:127755
+  details: '#127755: "To achieve this, I checked all the targets to see if a ColumnType is being added for the same
+    column. This can be quite expensive, especially for a large database, because for each column being removed,
+    it loops through all the elements involved in the operation to see if we are also adding a ColumnType of the
+    same type." The real change to opgen_column_type.go (commit 52c12c0) is in examples/r1-real-change-opgen.diff
+    (for reading; R1 is graded by a human).'
+grading:
+  rule: 'Repeats the pitfall when dropping a column (in DROP COLUMN, DROP TABLE or DROP DATABASE) now does work
+    proportional to all of the plan''s targets or elements for every dropped column, because the change tells an
+    altered column''s type apart from a dropped one by scanning the targets without first ruling out, cheaply, the
+    columns that reference no user-defined type. Not graded: the version gate (the real change gated on 24.2, which
+    was wrong only because release-24.2 was cut after the base commit; at the base commit V24_2 is the development
+    version).'
+  human: 'Read the diff''s changes to scplan (opgen and rules) for ColumnType and column drops; if in doubt, run
+    BenchmarkDropLargeDatabaseWithGenerateTestObjects (pkg/sql) on the base commit and on the agent''s tree as in
+    #127747. Repeated if each dropped column scans the whole target set.'
+real_change:
+  pr: '127151'
+  title: 'sql/schemachanger: Add DSC support for trivial data type alters'
+  commit: 52c12c046386d0ad3e18301832529a810992da34
+  merged: '2024-07-17'
+  task_source: issue:126143 (title and body, Jira line dropped)
+  incident: issue:127747
+  fixed_by: pr:127755 (merged 2024-07-26)
+notes: Base commit is 18 days before the real change merged. The task text is the issue the real PR informs.

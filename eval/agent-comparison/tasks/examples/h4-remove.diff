@@ -1,0 +1,18 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index a005d2d..d91aa87 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -221,13 +221,6 @@ func IsPermanentSchemaChangeError(err error) bool {
+ 		return false
+ 	}
+ 
+-	// Ignore error thrown because of a read at a very old timestamp.
+-	// The Backfill will grab a new timestamp to read at for the rest
+-	// of the backfill.
+-	if errors.HasType(err, (*kvpb.BatchTimestampBeforeGCError)(nil)) {
+-		return false
+-	}
+-
+ 	// Clock sync problems should not lead to permanently failed schema changes.
+ 	if hlc.IsUntrustworthyRemoteWallTimeError(err) {
+ 		return false
