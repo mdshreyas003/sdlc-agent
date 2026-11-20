@@ -1,5 +1,5 @@
 {
-  "_comment": "Recorded supersession judge responses per candidate pair (earlier decision id -> later decision id), standing in for Opus 5.5. 'earlier' and 'later' are for reading only. Pairs inside the Held-out Window are asked only when the fixture is built with FIXTURE_WINDOW_END.",
+  "_comment": "Recorded supersession judge responses per candidate pair (earlier decision id -> later decision id), standing in for Opus 5.5. 'earlier' and 'later' are for reading only. Pairs inside the Held-out Window are asked only when the fixture is built with FIXTURE_WINDOW_END. Pairs already linked explicitly are asked only by `whycode supersession-report`.",
   "decision:c99635c7bee654c9 -> decision:902b146fbbe76b99": {
     "earlier": "issue:98001: Back off exponentially between schema change job retries instead of retrying immediately",
     "later": "pr:98100: Default the schema change retry backoff cap to 20 seconds",
@@ -118,5 +118,33 @@
     "label": "unrelated",
     "quote": "",
     "reason": "B decides something else about the same code."
+  },
+  "decision:9b97db3df47e8d28 -> decision:a86845128daa188a": {
+    "earlier": "rfc:20200909_transactional_schema_changes: Run each schema change statement of an explicit transaction in scrun.RunStatementPhase as a child transaction that commits before the user's transaction",
+    "later": "rfc:20210115_new_schema_changer: Execute the statement phase of a declarative schema change inside the user's transaction, in scrun.RunStatementPhase",
+    "label": "supersedes",
+    "quote": "`scrun.RunStatementPhase` executes the statement phase inside the user's transaction",
+    "reason": "B runs the statement phase inside the user's transaction instead of A's child transaction."
+  },
+  "decision:ce7724fe8d877c97 -> decision:4815a0cb327ff91e": {
+    "earlier": "pr:101200: Treat descriptor validation errors as permanent schema change errors",
+    "later": "pr:101450: Keep retrying schema change jobs on descriptor validation errors instead of treating them as permanent",
+    "label": "supersedes",
+    "quote": "treating validation errors as permanent failed jobs that would have succeeded on retry",
+    "reason": "B reverses A: validation errors are retried again."
+  },
+  "decision:ce7724fe8d877c97 -> decision:517e99f16e1b6232": {
+    "earlier": "pr:101200: Treat descriptor validation errors as permanent schema change errors",
+    "later": "pr:104500: Treat descriptor validation errors as permanent only once the cluster version is finalized; keep retrying them during an upgrade",
+    "label": "refines",
+    "quote": "This treats descriptor validation errors as permanent again once the cluster version is finalized",
+    "reason": "B brings back A's permanent validation errors, but only once the upgrade is finalized."
+  },
+  "decision:ce7724fe8d877c97 -> decision:097351658763a718": {
+    "earlier": "pr:101200: Treat descriptor validation errors as permanent schema change errors",
+    "later": "pr:127200: Lower the default schemachanger.job.max_retry_backoff cap from 20 seconds to 10 seconds",
+    "label": "unrelated",
+    "quote": "",
+    "reason": "B changes the retry backoff default, not which errors are permanent."
   }
 }

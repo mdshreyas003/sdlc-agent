@@ -71,11 +71,11 @@ class ScriptedJudge:
 
     def __init__(self, labels=None):
         self.labels = labels or {}
-        self.asked = []
+        self.pairs = []
 
     def judge(self, pair):
         from whycode.supersession import Judgment
 
-        self.asked.append((pair.earlier.quote, pair.later.quote))
+        self.pairs.append(pair)
         label, quote = self.labels.get((pair.earlier.quote, pair.later.quote), ("unrelated", ""))
         return Judgment(label=label, quote=quote, reason=f"scripted {label}")
