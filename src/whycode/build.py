@@ -20,6 +20,7 @@ from whycode.graph import DERIVED, STATED, Edge, Graph, Node
 from whycode.history.records import History
 from whycode.history.rfc import normalize_status, parse_header
 from whycode.linker import incident_labels, stated_links
+from whycode.supersession import explicit_supersessions
 
 DEPARTED_AFTER = dt.timedelta(days=365)
 """A Person with no activity in this long before the cutoff is shown as departed."""
@@ -55,6 +56,8 @@ class _Builder:
         for discussion in self.discussions:
             for decision in extract_decisions(discussion, proposer, self.code):
                 self._add_decision(discussion, decision, extractor)
+        for edge in explicit_supersessions(self.graph, self.history, self.discussions):
+            self.graph.add_edge(edge)
         self._add_stubs()
         return self.graph
 
