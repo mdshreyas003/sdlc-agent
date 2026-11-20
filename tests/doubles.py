@@ -15,14 +15,19 @@ DROPPED_SENTENCES = (CITES_FABRICATED_ID, RESTS_ON_PARAPHRASE, QUOTES_INVENTED_T
 
 
 class FaithfulComposer:
-    """Writes one sentence per Decision, citing the Decision and its Discussion with the real quote."""
+    """Writes one sentence per Decision, citing the Decision and its Discussion with the real quote, and for a
+    superseded or refined Decision also what superseded or refined it."""
 
     def compose(self, request: ComposeRequest) -> list[DraftSentence]:
-        return [
-            DraftSentence(text=f"{d.choice} ({d.date.isoformat()}).",
-                          cites=[DraftCite(node_id=d.id), DraftCite(node_id=d.discussion_id, quote=d.quote)])
-            for d in request.decisions
-        ]
+        out = []
+        for d in request.decisions:
+            cites = [DraftCite(node_id=d.id), DraftCite(node_id=d.discussion_id, quote=d.quote)]
+            text = f"{d.choice} ({d.date.isoformat()})."
+            if d.status != "live" and d.superseded_by:
+                cites.append(DraftCite(node_id=d.superseded_by))
+                text = f"{d.choice} ({d.date.isoformat()}), {d.status} on {d.superseded_at.isoformat()}."
+            out.append(DraftSentence(text=text, cites=cites))
+        return out
 
 
 class FabricatingComposer(FaithfulComposer):
@@ -39,6 +44,18 @@ class FabricatingComposer(FaithfulComposer):
             DraftSentence(text=QUOTES_INVENTED_TEXT, cites=[DraftCite(node_id=first.discussion_id)]),
             DraftSentence(text=f"See {INVENTED_URL} for the full design.", cites=[DraftCite(node_id=first.id)]),
         ]
+
+
+class StaleComposer(FaithfulComposer):
+    """The faithful sentences plus one that states every superseded Decision as if it still held."""
+
+    PRESENTS_AS_LIVE = "The schema changer currently follows this Decision."
+
+    def compose(self, request: ComposeRequest) -> list[DraftSentence]:
+        stale = [DraftSentence(text=self.PRESENTS_AS_LIVE,
+                               cites=[DraftCite(node_id=d.id), DraftCite(node_id=d.discussion_id, quote=d.quote)])
+                 for d in request.decisions if d.status == "superseded"]
+        return [*super().compose(request), *stale]
 
 
 class OnlyFabricationsComposer:

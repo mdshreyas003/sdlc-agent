@@ -59,6 +59,18 @@ MATCH (i:Incident)
 WHERE i.id IN $ids OR EXISTS { MATCH (c:Change)-[:CLOSES]->(i) WHERE c.id IN $ids }
 RETURN i {.id, .kind, .title, .url, .date, .text} AS incident
 ORDER BY incident.date, incident.id LIMIT $limit""",
+    # Decisions -> the SUPERSEDES / REFINES edges into them, the node that superseded or refined each, that
+    # node's Discussion (when it is a Decision), and the record whose text holds the edge's quote.
+    "supersession": f"""
+MATCH (x:Node)-[r:SUPERSEDES|REFINES]->(d:Decision)
+WHERE d.id IN $ids AND {_REAL.format(v="x")}
+OPTIONAL MATCH (xs:Discussion)-[:YIELDS]->(x)
+MATCH (src:Node {{id: r.source}})
+RETURN d.id AS decision, type(r) AS type, r.basis AS basis, r.observed_at AS at, r.quote AS quote,
+       x {{.id, .kind, .choice, .quote, .date, .title, .url, .text}} AS by,
+       xs {{.id, .kind, .title, .url, .date, .text}} AS by_discussion,
+       src {{.id, .kind, .title, .url, .date, .text}} AS source
+ORDER BY decision, at, by.id LIMIT $limit""",
     # Refusals: Changes that touched the anchor, what it contains, or what contains it.
     "nearest_changes": f"""
 MATCH (a:CodeEntity {{id: $id}})
@@ -132,6 +144,9 @@ class GraphReader:
 
     def incidents(self, record_ids: list[str]) -> list[dict[str, Any]]:
         return [r["incident"] for r in self._rows("incidents", ids=record_ids)]
+
+    def supersession(self, decision_ids: list[str]) -> list[dict[str, Any]]:
+        return self._rows("supersession", ids=decision_ids, limit=4 * ROW_LIMIT)
 
     def nearest_changes(self, entity_id: str) -> list[dict[str, Any]]:
         return [r["change"] for r in self._rows("nearest_changes", id=entity_id, limit=10)]

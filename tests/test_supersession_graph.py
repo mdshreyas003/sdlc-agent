@@ -138,7 +138,9 @@ def test_supersedes_written_in_a_pull_request_and_a_rejected_rfc_are_explicit_su
                                                                  "explicit")
 
 
-TWENTY_SECONDS_QUOTE = "Capping the backoff at 20 seconds keeps a stuck job visible in SHOW JOBS without hammering the cluster."
+TWENTY_SECONDS_QUOTE = (
+    "Capping the backoff at 20 seconds keeps a stuck job visible in SHOW JOBS without hammering the cluster."
+)
 TEN_SECONDS_QUOTE = "Lower the default cap to 10s because 20s left stuck jobs waiting too long after short outages."
 FINALIZED_QUOTE = (
     "This treats descriptor validation errors as permanent again once the cluster version is finalized; until then "

@@ -4,12 +4,14 @@ Not how sure the model sounds, but how the answer is grounded:
 - each Decision gets a strength from its governs link (hard: the implementing diff touched the code;
   soft: only named in text) and its source (a reviewed PR or a design RFC beats an issue comment), and
   whether a rationale was recorded;
-- the answer starts at its strongest Decision's level;
+- the answer starts at its strongest Decision that is not superseded (superseded Decisions are history, not
+  the reason the code is the way it is now); when every Decision is superseded, it is Low;
+- Supersession resting on model judgment caps it at Medium: when any Decision's status (superseded or refined)
+  comes from an inferred edge rather than one history states;
 - anything the verifier dropped lowers it one level;
 - a refusal is always Low.
 
-Ticket 04 adds Supersession (an inferred edge ranks below an explicit one). The thresholds are a first cut,
-to be calibrated on the dev split (ticket 03/06).
+The thresholds are a first cut, to be calibrated on the dev split (ticket 03/06).
 """
 
 from __future__ import annotations
@@ -27,6 +29,8 @@ class DecisionGrounding:
     link: str  # hard | soft
     source: str  # kind of the Discussion: pr | rfc | issue
     has_rationale: bool
+    status: str = "live"  # live | superseded | refined
+    supersession: str | None = None  # explicit | inferred: what the status rests on, when not live
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,9 +47,12 @@ def _strength(d: DecisionGrounding) -> int:
 
 
 def score_confidence(inputs: ConfidenceInputs) -> Confidence:
-    if inputs.refused or not inputs.decisions:
+    current = [d for d in inputs.decisions if d.status != "superseded"]
+    if inputs.refused or not current:
         return "Low"
-    level = max(_strength(d) for d in inputs.decisions)
+    level = max(_strength(d) for d in current)
+    if any(d.supersession == "inferred" for d in inputs.decisions):
+        level = min(level, 1)
     if inputs.dropped:
         level -= 1
     return _LEVELS[max(level, 0)]
