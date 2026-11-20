@@ -2,7 +2,8 @@
 
     graph = build_graph(load_history(source, cutoff), parse_go_tree(checkout), proposer, judge)
 
-Pure apart from the proposer's and the judge's model calls; the same inputs (and cached model responses) give the same graph.
+Pure apart from the proposer's and the judge's model calls; the same inputs (and cached model responses) give
+the same graph.
 Order matters: Stated Links are added before Decisions, because an issue's Decisions are implemented by the
 Changes that close it (their diffs give the hard governs links); Supersession comes last, since it relates
 Decisions through the Code Entities they govern (`whycode.supersession`).
@@ -177,10 +178,12 @@ class _Builder:
             "origin": DERIVED, "quote": decision.quote, "locator": decision.segment, "observed_at": when,
         }))
         for change_id in sorted(self.implemented_by[discussion.id]):
+            # A hard link holds from when the implementing Change merged (an issue's Decision may predate it).
+            since = max(when, self.graph.nodes[change_id].props["date"])
             for entity in self.touches[change_id]:
                 self.graph.add_edge(Edge(decision.id, "GOVERNS", entity.id, {
                     "origin": DERIVED, "link": "hard", "quote": decision.quote, "locator": f"touches:{change_id}",
-                    "observed_at": when,
+                    "observed_at": since, "change": change_id,
                 }))
         for entity in decision.mentions:
             self.graph.add_edge(Edge(decision.id, "GOVERNS", entity.id, {

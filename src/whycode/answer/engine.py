@@ -19,12 +19,13 @@ from __future__ import annotations
 import datetime as dt
 import re
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
 from whycode.answer.compose import Composer, ComposeRequest, EvidenceNode
 from whycode.answer.confidence import ConfidenceInputs, DecisionGrounding, score_confidence
-from whycode.answer.patterns import GraphReader
+from whycode.answer.patterns import ALL_HISTORY, GraphReader
 from whycode.answer.verify import Superseded, verify
 from whycode.contract import Anchor, Answer, DecisionView, EvidenceItem, IncidentRef, PersonView
 
@@ -89,21 +90,24 @@ class AnswerEngine:
         self.composer = composer
         self.supersession = supersession
 
-    def why(self, anchor: str) -> Answer:
+    def why(self, anchor: str, as_of: dt.date | None = None, exclude: Iterable[str] = ()) -> Answer:
+        """The Answer for an Anchor. `as_of` and `exclude` are the scoreboard's view of history: nothing dated
+        after `as_of` (None: all of it) and none of the `exclude`d records, nor what rests on them, is seen."""
+        scope = {"as_of": as_of.isoformat() if as_of else ALL_HISTORY, "exclude": sorted(set(exclude))}
         entity = self._resolve(anchor)
         if entity is None:
             return Answer(anchor=None, refused=True, confidence="Low")
         target = Anchor(kind=entity["kind"], id=entity["key"])
-        rows = self.reader.governing(entity["id"])
+        rows = self.reader.governing(entity["id"], **scope)
         if not rows:
-            return self._refusal(target, entity["id"])
+            return self._refusal(target, entity["id"], scope)
 
         evidence = _Evidence()
         decisions: list[DecisionView] = []
         grounding: list[DecisionGrounding] = []
         discussions: dict[str, dict[str, Any]] = {}
         speakers: list[str] = []
-        statuses = self._statuses({r["decision"]["id"]: r["discussion"]["id"] for r in rows})
+        statuses = self._statuses({r["decision"]["id"]: r["discussion"]["id"] for r in rows}, scope)
         superseded: dict[str, Superseded] = {}
         for row in rows:
             d, s = row["decision"], row["discussion"]
@@ -137,11 +141,11 @@ class AnswerEngine:
                                                      witnesses=frozenset(witnesses))
 
         issues = [i for i, s in discussions.items() if s["kind"] == "issue"]
-        closers = self.reader.closers(issues) if issues else []
+        closers = self.reader.closers(issues, **scope) if issues else []
         for change in closers:
             evidence.add(_node(change))
         changes = [i for i, s in discussions.items() if s["kind"] == "pr"] + [c["id"] for c in closers]
-        incident_rows = self.reader.incidents(changes + list(discussions))
+        incident_rows = self.reader.incidents(changes + list(discussions), **scope)
         for incident in incident_rows:
             evidence.add(_node(incident, kind="incident"))
         reviewed = [i for i, s in discussions.items() if s["kind"] in ("pr", "rfc")]
@@ -165,13 +169,13 @@ class AnswerEngine:
             sentences=verified.sentences,
         )
 
-    def _statuses(self, own_record: dict[str, str]) -> dict[str, _Status]:
+    def _statuses(self, own_record: dict[str, str], scope: dict[str, Any]) -> dict[str, _Status]:
         """Decision id -> its Supersession status, for the Decisions that are not live."""
         if not self.supersession or not own_record:
             return {}
-        rows = self.reader.supersession(sorted(own_record))
+        rows = self.reader.supersession(sorted(own_record), **scope)
         refiners = sorted({r["by"]["id"] for r in rows if r["type"] == "REFINES"})
-        dead_refiners = {r["decision"] for r in (self.reader.supersession(refiners) if refiners else [])
+        dead_refiners = {r["decision"] for r in (self.reader.supersession(refiners, **scope) if refiners else [])
                          if r["type"] == "SUPERSEDES"}
         edges: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for r in rows:
@@ -224,12 +228,12 @@ class AnswerEngine:
                                                                  active=bool(r["active"])))
         return sorted(seen.values(), key=lambda p: (not p.active, p.role != "author", p.handle))
 
-    def _refusal(self, target: Anchor, entity_id: str) -> Answer:
+    def _refusal(self, target: Anchor, entity_id: str, scope: dict[str, Any]) -> Answer:
         evidence = _Evidence()
-        changes = self.reader.nearest_changes(entity_id)
+        changes = self.reader.nearest_changes(entity_id, **scope)
         for change in changes:
             evidence.add(_node(change))
-        nearby = self.reader.nearby_decisions(entity_id)
+        nearby = self.reader.nearby_decisions(entity_id, **scope)
         for row in nearby:
             d, s = row["decision"], row["discussion"]
             evidence.add(EvidenceNode(id=d["id"], kind="decision", title=d["choice"], url=s.get("url"),
