@@ -18,7 +18,7 @@ class CheckoutError(RuntimeError):
 
 
 def _git(cwd: Path, *args: str) -> str:
-    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    result = subprocess.run(["git", *args], check=False, cwd=cwd, capture_output=True, text=True)
     if result.returncode != 0:
         raise CheckoutError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
     return result.stdout.strip()
