@@ -10,9 +10,11 @@ from __future__ import annotations
 import json
 import re
 import shlex
+import shutil
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlsplit
 
+from whycode.fixtures import FIXTURE_DIR
 from whycode.history.github import HttpRequest, HttpResponse
 
 API = "https://api.github.com"
@@ -146,3 +148,54 @@ class FakeGitHub:
         history = {"totalCount": len(nodes), "nodes": chunk,
                    "pageInfo": {"hasNextPage": has_next, "endCursor": str(start + first) if has_next else None}}
         return _json(200, {"data": {"repository": {"object": {"history": history}}}})
+
+
+# --- the miniature history as GitHub would serve it ---------------------------------------------------
+
+
+def miniature_checkout(root: Path) -> Path:
+    """The miniature's Go code and RFC files laid out as in a CockroachDB checkout."""
+    shutil.copytree(FIXTURE_DIR / "code", root)
+    (root / "docs/RFCS").mkdir(parents=True)
+    for rfc in (FIXTURE_DIR / "rfcs").glob("*.md"):
+        shutil.copy(rfc, root / "docs/RFCS" / rfc.name)
+    return root
+
+
+def user(login):
+    return {"login": login}
+
+
+def pull(number, title, merged_at, files, base="master", login="someone"):
+    return {
+        "pull": {"number": number, "title": title, "body": "", "user": user(login),
+                 "html_url": f"https://github.com/cockroachdb/cockroach/pull/{number}",
+                 "created_at": merged_at, "merged_at": merged_at, "base": {"ref": base}, "labels": []},
+        "files": [{"filename": f, "status": "modified", "patch": "@@ -1 +1 @@\n-a\n+b"} for f in files],
+        "commits": [{"sha": f"{number:x}".rjust(40, "a"), "author": user(login),
+                     "commit": {"message": title, "author": {"date": merged_at}}}],
+        "reviews": [], "review_comments": [], "issue_comments": [],
+    }
+
+
+def miniature_github() -> FakeGitHub:
+    """The miniature history, plus records the slice must leave out (and the RFC pull requests)."""
+    fake = FakeGitHub.from_fixture(FIXTURE_DIR, page_size=1)
+    # RFC PRs: they name the RFCs' authors, but touch no scoped code.
+    fake.add_pull(pull(2842, "RFC: online schema change", "2015-10-20T00:00:00Z",
+                       ["docs/RFCS/20151014_online_schema_change.md"], login="vivekmenezes"))
+    fake.add_pull(pull(59288, "RFC: declarative schema changer", "2021-03-01T00:00:00Z",
+                       ["docs/RFCS/20210115_new_schema_changer.md"], login="ajwerner"))
+    # A backport into a release branch and a pull request outside the scoped code.
+    fake.add_pull(pull(98200, "release-23.1: sql: add exponential backoff to schema change job retries",
+                       "2023-03-25T00:00:00Z", ["pkg/sql/schema_changer.go"], base="release-23.1"))
+    fake.add_pull(pull(99000, "kv: unrelated", "2023-04-01T00:00:00Z", ["pkg/kv/kv.go"]))
+    # #98100 says "Informs #97000"; 97000 is a pull request outside the scope, not an issue.
+    fake.add_pull(pull(97000, "kv: something #98100 mentions", "2023-02-01T00:00:00Z", ["pkg/kv/kv.go"]))
+    # An A-schema issue nothing links to.
+    fake.add_issue({"issue": {
+        "number": 99500, "title": "schema: ALTER TABLE is slow on wide tables", "body": "Repro inside.",
+        "user": user("annrpom"), "html_url": "https://github.com/cockroachdb/cockroach/issues/99500",
+        "created_at": "2023-02-01T00:00:00Z", "closed_at": None, "labels": [{"name": "A-schema-descriptors"}],
+    }, "comments": []})
+    return fake

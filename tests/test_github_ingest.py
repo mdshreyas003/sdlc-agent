@@ -4,16 +4,14 @@ leave out) through the real client, cache and source; assertions on the graph bu
 from __future__ import annotations
 
 import datetime as dt
-import shutil
 from pathlib import Path
 
 import pytest
-from fake_github import FakeGitHub
+from fake_github import miniature_checkout, miniature_github
 
 from whycode.build import build_graph
 from whycode.codeindex.go import parse_go_tree
 from whycode.decisions import NoDecisionProposer
-from whycode.fixtures import FIXTURE_DIR
 from whycode.history import load_history
 from whycode.history.github import CachedTransport, GitHubClient, GitHubHistorySource
 from whycode.history.scope import Scope
@@ -31,52 +29,9 @@ SCOPE = Scope(
 )
 
 
-def user(login):
-    return {"login": login}
-
-
-def pull(number, title, merged_at, files, base="master", login="someone"):
-    return {
-        "pull": {"number": number, "title": title, "body": "", "user": user(login),
-                 "html_url": f"https://github.com/cockroachdb/cockroach/pull/{number}",
-                 "created_at": merged_at, "merged_at": merged_at, "base": {"ref": base}, "labels": []},
-        "files": [{"filename": f, "status": "modified", "patch": "@@ -1 +1 @@\n-a\n+b"} for f in files],
-        "commits": [{"sha": f"{number:x}".rjust(40, "a"), "author": user(login),
-                     "commit": {"message": title, "author": {"date": merged_at}}}],
-        "reviews": [], "review_comments": [], "issue_comments": [],
-    }
-
-
-def fake_github() -> FakeGitHub:
-    fake = FakeGitHub.from_fixture(FIXTURE_DIR, page_size=1)
-    # RFC PRs: they name the RFCs' authors, but touch no scoped code.
-    fake.add_pull(pull(2842, "RFC: online schema change", "2015-10-20T00:00:00Z",
-                       ["docs/RFCS/20151014_online_schema_change.md"], login="vivekmenezes"))
-    fake.add_pull(pull(59288, "RFC: declarative schema changer", "2021-03-01T00:00:00Z",
-                       ["docs/RFCS/20210115_new_schema_changer.md"], login="ajwerner"))
-    # A backport into a release branch and a pull request outside the scoped code.
-    fake.add_pull(pull(98200, "release-23.1: sql: add exponential backoff to schema change job retries",
-                       "2023-03-25T00:00:00Z", ["pkg/sql/schema_changer.go"], base="release-23.1"))
-    fake.add_pull(pull(99000, "kv: unrelated", "2023-04-01T00:00:00Z", ["pkg/kv/kv.go"]))
-    # #98100 says "Informs #97000"; 97000 is a pull request outside the scope, not an issue.
-    fake.add_pull(pull(97000, "kv: something #98100 mentions", "2023-02-01T00:00:00Z", ["pkg/kv/kv.go"]))
-    # An A-schema issue nothing links to.
-    fake.add_issue({"issue": {
-        "number": 99500, "title": "schema: ALTER TABLE is slow on wide tables", "body": "Repro inside.",
-        "user": user("annrpom"), "html_url": "https://github.com/cockroachdb/cockroach/issues/99500",
-        "created_at": "2023-02-01T00:00:00Z", "closed_at": None, "labels": [{"name": "A-schema-descriptors"}],
-    }, "comments": []})
-    return fake
-
-
 @pytest.fixture
 def checkout(tmp_path) -> Path:
-    root = tmp_path / "checkout"
-    shutil.copytree(FIXTURE_DIR / "code", root)
-    (root / "docs/RFCS").mkdir(parents=True)
-    for rfc in (FIXTURE_DIR / "rfcs").glob("*.md"):
-        shutil.copy(rfc, root / "docs/RFCS" / rfc.name)
-    return root
+    return miniature_checkout(tmp_path / "checkout")
 
 
 def ingest(transport, checkout: Path, limit: int | None = None, sleep=lambda s: None, clock=None):
@@ -96,7 +51,7 @@ def links(graph, edge_type):
 
 def test_ingests_scoped_pull_requests_their_linked_issues_labelled_issues_and_rfcs_up_to_the_cutoff(
         tmp_path, checkout):
-    graph = ingest(CachedTransport(fake_github(), tmp_path / "cache"), checkout)
+    graph = ingest(CachedTransport(miniature_github(), tmp_path / "cache"), checkout)
 
     # Pull requests merged into master by the cutoff that touch the scoped code; not backports, not others,
     # not the RFC pull requests, not #127200 (merged 2024-07-15).
@@ -123,7 +78,7 @@ def test_ingests_scoped_pull_requests_their_linked_issues_labelled_issues_and_rf
 
 
 def test_a_rerun_reads_the_local_cache_and_makes_no_github_calls(tmp_path, checkout):
-    fake = fake_github()
+    fake = miniature_github()
     first = ingest(CachedTransport(fake, tmp_path / "cache"), checkout)
     calls = len(fake.calls)
 
@@ -137,7 +92,7 @@ def test_a_rerun_reads_the_local_cache_and_makes_no_github_calls(tmp_path, check
 
 
 def test_waits_out_a_rate_limit_and_never_stores_the_token(tmp_path, checkout):
-    fake = fake_github()
+    fake = miniature_github()
     fake.rate_limit_next(1)
     slept: list[float] = []
 
@@ -152,7 +107,7 @@ def test_waits_out_a_rate_limit_and_never_stores_the_token(tmp_path, checkout):
 
 
 def test_a_limit_keeps_the_most_recent_pull_requests_and_labelled_issues(tmp_path, checkout):
-    graph = ingest(CachedTransport(fake_github(), tmp_path / "cache"), checkout, limit=1)
+    graph = ingest(CachedTransport(miniature_github(), tmp_path / "cache"), checkout, limit=1)
 
     assert real(graph, "PullRequest") == {"pr:122400"}  # merged 2024-04-10
     assert real(graph, "Issue") == {"issue:101400"}  # opened 2023-05-08
