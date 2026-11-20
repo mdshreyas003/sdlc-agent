@@ -151,3 +151,17 @@ def test_report_prints_each_metric_per_question_type_with_intervals():
                   "Invented-answer rate", "Latency", "Cost", "Paired differences"):
         assert f"## {title}" in text
     assert "| vector-rag | +75 pts [+50, +100] n=2 |" in text  # paired correctness difference, ours minus vector-rag
+
+
+def test_a_derived_decision_in_the_evidence_chain_counts_when_its_quote_is_in_a_cited_record():
+    """Our system puts the Decision that superseded or refined another into the Evidence Chain, even when it
+    governs code outside the Anchor (so it is not among the answer's Decisions)."""
+    superseder = EvidenceItem(node_id="decision:abc", kind="decision", quote="their descriptors may already be gone")
+    invented = EvidenceItem(node_id="decision:def", kind="decision", quote="words no record holds")
+    answer = Answer(anchor=ZONE, refused=False, confidence="Medium",
+                    evidence_chain=[superseder, invented,
+                                    EvidenceItem(node_id="pr:121026", kind="pr", quote="Zone configuration")],
+                    sentences=[Sentence(text="Zones skip dropped indexes.", cites=["pr:121026"])])
+    row = score(LOOKUP, record("L", answer), CORPUS, JUDGE)
+
+    assert (row.cites, row.valid_cites) == (3, 2)
