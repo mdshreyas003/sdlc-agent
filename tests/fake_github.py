@@ -3,6 +3,8 @@
 It paginates like GitHub (`Link: <...>; rel="next"`), at most `page_size` items per page whatever `per_page`
 asks for, so every paginated endpoint is exercised across pages. Unknown paths are 404. Every request is
 recorded in `calls`. `rate_limit_next(n)` answers the next n requests with GitHub's primary rate-limit 403.
+`heads` maps a commit to when it was made: the commit history at that commit holds only the pull requests merged
+by then (a commit not in `heads` holds them all).
 """
 
 from __future__ import annotations
@@ -33,6 +35,7 @@ class FakeGitHub:
         self.pulls: dict[int, dict] = {}
         self.issues: dict[int, dict] = {}
         self.calls: list[HttpRequest] = []
+        self.heads: dict[str, str] = {}
         self._rate_limited = 0
 
     @classmethod
@@ -131,11 +134,14 @@ class FakeGitHub:
         if "history(" not in payload["query"]:
             return _json(200, {"errors": [{"message": "unsupported query"}]})
         path = variables["path"]
+        head = self.heads.get(variables.get("commit"), "9999")
         nodes = []
         pulls = sorted(self.pulls.values(), key=lambda b: b["pull"].get("merged_at") or "", reverse=True)
         for bundle in pulls:
             if not any(f["filename"] == path or f["filename"].startswith(path + "/") for f in bundle["files"]):
                 continue
+            if (bundle["pull"].get("merged_at") or "") > head:
+                continue  # merged after the commit: not in its history
             pull = bundle["pull"]
             associated = {"number": pull["number"], "baseRefName": pull["base"]["ref"],
                           "mergedAt": pull.get("merged_at")}

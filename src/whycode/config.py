@@ -23,7 +23,8 @@ The real slice (`--history github`, scope in `whycode.history.scope`):
     WHY_GITHUB_CACHE     .cache/github (one file per GitHub response; makes the backfill resumable)
     WHY_CHECKOUT         .cache/cockroach (sparse, blobless checkout of the scoped paths)
     WHY_CUTOFF_COMMIT    d13253527955eaa2da09394b8a2729627ab25c48 (last merge into master before WHY_CUTOFF;
-                         change both together)
+                         change both together). The code index is always read at this commit; a Held-out Window
+                         build (`--cutoff` past WHY_CUTOFF) passes `--window-commit` for pull request discovery
     WHY_CORPUS           data/corpus.jsonl (the scoreboard corpus written by `build --history github`)
 """
 

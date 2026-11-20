@@ -89,6 +89,9 @@ uv run whycode check-citations --sample 20   # every node id in 20 answers resol
 - `--limit N` bounds a run (the N most recently merged pull requests, the N most recent labelled issues, at most
   N linked issues); use the same `--limit` for `fetch` and `build` to stay on the cache. `--extractor none`
   builds the graph without Decisions (no Anthropic key needed).
+- A Held-out Window build (`--cutoff 2025-06-30 --window-commit <last commit by then>`) ingests history up to the
+  window's end, discovering pull requests through the window commit's history, while the code index and RFC texts
+  stay at `WHY_CUTOFF_COMMIT`; a `--cutoff` past `WHY_CUTOFF` without `--window-commit` is refused.
 - The build refuses to write a graph holding any date after the cutoff and prints `latest_date`. It writes the
   scoreboard corpus (`data/corpus.jsonl`, or `WHY_CORPUS`) and records the counts in `data/graph-counts.json`.
 - Known approximations: issue selection and Incident labels use the labels GitHub shows today (label-at-cutoff
@@ -214,7 +217,9 @@ always scripted in tests.
   `PersonView.ask_instead`, `PersonView.via`. Every interface builds its engine with `Settings.answer_engine(reader)`
   (composer plus entity matcher from the environment), so a new tool gets the same Anchor resolution.
 - **Scoreboard "ours" system, done.** `whycode.answer.systems:ours` and `:ours_without_supersession` (see
-  `eval/README.md`). Build the graph through the end of the Held-out Window (`whycode build --cutoff <window end>`)
-  and export the corpus from that graph; every pattern then filters by the query's `as_of` and `exclude` (record
+  `eval/README.md`). Build the graph through the end of the Held-out Window (`whycode build --history github
+  --cutoff <window end> --window-commit <last commit by then>`: pull requests are discovered from that commit's
+  history while the code index stays at the cutoff commit; the fixture needs only `--cutoff`) and export the corpus
+  from that graph; every pattern then filters by the query's `as_of` and `exclude` (record
   level, like the scoreboard's corpus). Our system reports the usage of every model call an answer took (entity
   matching, composing) for the cost column; a cached response reports what it cost to make.

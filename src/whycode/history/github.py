@@ -12,8 +12,9 @@ Three layers, each replaceable in tests ("same client, fake transport"):
 
 `GitHubHistorySource` decides what to fetch and maps the REST payloads to records through `github_rest`:
 
-- pull requests: the commit history of each scoped path at the cutoff commit (GraphQL, 100 commits per call)
-  gives the pull requests that merged those commits; kept when merged into `base_ref` by the cutoff and
+- pull requests: the commit history of each scoped path at `Scope.pr_history_commit` (the cutoff commit, or the
+  window's last commit for a Held-out Window build; GraphQL, 100 commits per call) gives the pull requests that
+  merged those commits; kept when merged into `base_ref` by the cutoff and
   their files touch a scoped path. Each one costs a detail call plus paginated files, commits, reviews,
   review comments and conversation comments;
 - issues: the scope's labels through the search API (sliced by creation date to stay under its 1000-result
@@ -371,12 +372,12 @@ class GitHubHistorySource:
             after = None
             while True:
                 data = self.client.graphql(HISTORY_QUERY, {
-                    "owner": owner, "name": name, "commit": self.scope.cutoff_commit, "path": path,
+                    "owner": owner, "name": name, "commit": self.scope.pr_history_commit, "path": path,
                     "first": 100, "after": after,
                 })
                 history = ((data.get("repository") or {}).get("object") or {}).get("history")
                 if history is None:
-                    raise GitHubError(f"no commit history for {path} at {self.scope.cutoff_commit}")
+                    raise GitHubError(f"no commit history for {path} at {self.scope.pr_history_commit}")
                 for node in history["nodes"]:
                     # A bors merge commit batches several pull requests but is associated with only one of
                     # them, not necessarily one that touched the path; the pull requests' own commits are.

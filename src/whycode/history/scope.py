@@ -1,12 +1,14 @@
 """The scoped slice of CockroachDB history (ADR-0002): which code, RFCs, pull requests and issues are ingested.
 
 - Pull requests: merged into `base_ref` on or before the cutoff, found through the commit history of
-  `pr_paths` at the cutoff commit (the schema-changer code).
+  `pr_paths` at `pr_history_commit` (the schema-changer code): the cutoff commit, or for a Held-out Window build
+  (cutoff at the window's end) the window's last commit, `history_commit`.
 - Issues: those carrying an `issue_labels` label (as GitHub labels them today; label-at-cutoff is not
   replayed), plus those the ingested pull requests and RFCs link to.
 - RFCs: `rfc_stems` under `rfc_dir`, read from the checkout at the cutoff commit.
-- Code index: `code_paths` (directories recursively, or single files) at the cutoff commit; a superset of
-  `pr_paths` with the neighbouring files that register schema-change cluster settings.
+- Code index: `code_paths` (directories recursively, or single files) at the cutoff commit, always (Code
+  Entities carry no date, so a window build must not move them); a superset of `pr_paths` with the neighbouring
+  files that register schema-change cluster settings.
 """
 
 from __future__ import annotations
@@ -24,6 +26,12 @@ class Scope:
     rfc_stems: tuple[str, ...]
     issue_labels: tuple[str, ...]
     base_ref: str = "master"
+    history_commit: str | None = None  # Held-out Window builds: the last commit on or before the window's end
+
+    @property
+    def pr_history_commit(self) -> str:
+        """The commit whose history pull requests are discovered from."""
+        return self.history_commit or self.cutoff_commit
 
     @property
     def checkout_paths(self) -> tuple[str, ...]:

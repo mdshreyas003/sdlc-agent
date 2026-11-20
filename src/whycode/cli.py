@@ -4,6 +4,7 @@
     uv run whycode build --extractor anthropic    # same, extracting Decisions with Sonnet 5.5 (cached)
     uv run whycode fetch [--limit N]              # real slice: fill the GitHub cache (resumable; re-run after a stop)
     uv run whycode build --history github         # real slice: cache -> graph -> Neo4j, corpus and counts files
+    uv run whycode build --history github --cutoff 2025-06-30 --window-commit <sha>   # through the Held-out Window
     uv run whycode why pkg/sql/schema_changer.go  # prints the Answer contract as JSON
     git diff | uv run whycode check-change        # prints the Fence Warnings (ChangeCheck contract) as JSON
     uv run whycode check-citations --sample 20    # every node id in 20 answers resolves (exit 1 if not)
@@ -31,11 +32,17 @@ log = logging.getLogger("whycode")
 
 
 def _github_source(settings: Settings, args: argparse.Namespace, cutoff: dt.date, transport):
+    """The real slice's history up to `cutoff`. The code index (and RFC texts) stay at WHY_CUTOFF_COMMIT; a cutoff
+    past WHY_CUTOFF is a Held-out Window build, whose pull requests come from the history of `--window-commit`."""
     from whycode.history.checkout import ensure_checkout
     from whycode.history.github import CachedTransport, GitHubClient, GitHubHistorySource, UrllibTransport
     from whycode.history.scope import SCHEMA_CHANGES
 
-    scope = dataclasses.replace(SCHEMA_CHANGES, cutoff_commit=settings.cutoff_commit)
+    if cutoff > settings.cutoff and not args.window_commit:
+        raise ConfigError(f"--cutoff {cutoff} is past WHY_CUTOFF ({settings.cutoff}): a Held-out Window build needs "
+                          "--window-commit, the last commit into master on or before that date (pull requests are "
+                          "found through its history; the code index stays at WHY_CUTOFF_COMMIT)")
+    scope = dataclasses.replace(SCHEMA_CHANGES, cutoff_commit=settings.cutoff_commit, history_commit=args.window_commit)
     ensure_checkout(settings.checkout, scope.repo_url, scope.cutoff_commit, scope.checkout_paths)
     inner = None if args.offline else (transport or UrllibTransport())
     if inner is not None and transport is None and not settings.github_token:
@@ -48,10 +55,11 @@ def _github_source(settings: Settings, args: argparse.Namespace, cutoff: dt.date
 def _fetch(settings: Settings, args: argparse.Namespace, transport=None) -> int:
     from whycode.history import load_history
 
-    source, cached, _ = _github_source(settings, args, settings.cutoff, transport)
-    history = load_history(source, settings.cutoff)
+    cutoff = dt.date.fromisoformat(args.cutoff) if args.cutoff else settings.cutoff
+    source, cached, _ = _github_source(settings, args, cutoff, transport)
+    history = load_history(source, cutoff)
     print(json.dumps({
-        "cutoff": settings.cutoff.isoformat(), "limit": args.limit, "rfcs": len(history.rfcs),
+        "cutoff": cutoff.isoformat(), "limit": args.limit, "rfcs": len(history.rfcs),
         "pull_requests": len(history.pull_requests), "issues": len(history.issues),
         "github_calls": cached.network_calls, "cache_hits": cached.cache_hits,
     }, indent=2))
@@ -115,7 +123,7 @@ def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
         corpus.parent.mkdir(parents=True, exist_ok=True)
         write_jsonl(corpus, corpus_records(graph))
         report |= {"limit": args.limit, "complete": args.limit is None, "cutoff_commit": settings.cutoff_commit,
-                   "github_calls": cached.network_calls, "corpus": str(corpus)}
+                   "window_commit": args.window_commit, "github_calls": cached.network_calls, "corpus": str(corpus)}
         counts_file = Path(args.counts_file)
         counts_file.parent.mkdir(parents=True, exist_ok=True)
         counts_file.write_text(json.dumps({k: v for k, v in report.items() if k != "corpus"}, indent=2) + "\n")
@@ -198,6 +206,10 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
         p.add_argument("--limit", type=int, help="bound the run: the N most recent pull requests and labelled "
                                                  "issues, at most N linked issues (default: everything)")
         p.add_argument("--offline", action="store_true", help="read only the cache; a missing response fails")
+        p.add_argument("--window-commit", metavar="SHA",
+                       help="github, Held-out Window build (--cutoff past WHY_CUTOFF): the last commit into master on "
+                            "or before --cutoff; pull requests are found through its history, while the code index "
+                            "stays at WHY_CUTOFF_COMMIT")
 
     build = sub.add_parser("build", help="build the graph into Neo4j (replaces what is there)")
     build.add_argument("--history", choices=["fixtures", "github"], default="fixtures")
@@ -214,6 +226,7 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
                        help="github: where to record the graph counts (default: %(default)s)")
     github_options(build)
     fetch = sub.add_parser("fetch", help="fetch the real slice into the GitHub cache, without building")
+    fetch.add_argument("--cutoff", help="YYYY-MM-DD; default: WHY_CUTOFF or 2024-06-30")
     github_options(fetch)
     why = sub.add_parser("why", help="print the Answer for an Anchor (function, file, package or setting)")
     why.add_argument("anchor")

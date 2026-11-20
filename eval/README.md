@@ -42,8 +42,12 @@ Our system (ticket 04): `ours=whycode.answer.systems:ours` and the ablation
 `ours-without-supersession=whycode.answer.systems:ours_without_supersession` (same graph and composer, every
 Decision treated as live). Both read Neo4j and the composer from the environment (`src/whycode/config.py`; set
 `ANTHROPIC_API_KEY` so the composer is Opus 5.5, the baselines' answering model). The graph must hold the Held-out
-Window: build it with `whycode build --cutoff <window end>` and write the corpus from that same graph
-(`whycode.graph.corpus`); `as_of` and `exclude` are applied in every query pattern. The supersession catch rate of
+Window. For the real slice, build it with `whycode build --history github --cutoff 2025-06-30 --window-commit <sha>`,
+where `<sha>` is the last commit into master on or before the window's end: pull requests and issues are then found up
+to the window's end, while the code index stays at `WHY_CUTOFF_COMMIT` (Code Entities carry no date, so they must
+not move). The build writes the corpus from that same graph (`whycode.graph.corpus`), so `labels --window-end
+2025-06-30` finds the window's questions; `as_of` and `exclude` are applied in every query pattern. (The fixture
+needs only `whycode build --cutoff 2025-06-30`.) The supersession catch rate of
 the two systems on `supersession` and `window-after` cases is the "with and without supersession" difference. A
 gold question without an `anchor` reaches our system as its words and goes through the entity-matching step (one
 Opus 5.5 call, or a refusal with `WHY_COMPOSER=template`). Our system returns `Answered` with the usage of every model

@@ -77,6 +77,35 @@ def test_fetch_fills_the_cache_and_a_build_from_it_makes_no_github_calls(env, ne
     assert json.loads(capsys.readouterr().out)["counts"] == built["counts"]
 
 
+def test_a_held_out_window_build_ingests_window_history_while_the_code_index_stays_at_the_cutoff(
+        env, neo4j_driver, capsys, monkeypatch):
+    # Upstream moves on after the cutoff: a window commit adds a function to the scoped code.
+    upstream = env / "upstream"
+    cutoff_sha = git(upstream, "rev-parse", "HEAD")
+    with (upstream / "pkg/sql/schema_changer.go").open("a") as f:
+        f.write("\nfunc addedInTheWindow() {}\n")
+    git(upstream, "-c", "user.email=t@example.com", "-c", "user.name=t", "commit", "-q", "-am", "window")
+    window_sha = git(upstream, "rev-parse", "HEAD")
+    fake = miniature_github()
+    fake.heads = {cutoff_sha: "2024-06-29T21:36:20Z", window_sha: "2025-06-29T12:00:00Z"}
+    monkeypatch.setenv("WHY_CUTOFF_COMMIT", cutoff_sha)
+    build = ["build", "--history", "github", "--extractor", "none", "--cutoff", "2025-06-30",
+             "--counts-file", str(env / "counts.json")]
+
+    # Pull requests are found through the commit history, so a window build needs the window's last commit.
+    assert main(build, github_transport=fake) == 2
+    assert "--window-commit" in capsys.readouterr().err
+
+    assert main([*build, "--window-commit", window_sha], github_transport=fake) == 0
+    built = json.loads(capsys.readouterr().out)
+    graph = GraphStore(neo4j_driver).snapshot()
+    assert {"pr:127200", "pr:128000", "issue:127000"} <= set(graph.nodes)  # the window's history
+    assert "function:pkg/sql.addedInTheWindow" not in graph.nodes  # the code index is still at the cutoff
+    assert (built["cutoff_commit"], built["window_commit"]) == (cutoff_sha, window_sha)
+    corpus = MemoryCorpus.from_jsonl(env / "corpus.jsonl")
+    assert corpus.get("pr:127200").date.isoformat() == "2024-07-15"  # for the window questions
+
+
 def test_check_citations_over_20_answers_on_the_fixture_graph(env, capsys):
     assert main(["build"]) == 0
     capsys.readouterr()

@@ -5,9 +5,10 @@
 
 Both answer `Query -> Answered` through `AnswerEngine.why`, with the usage of every model call the answer took
 (the entity-matching step, the composer; a cached response reports what it cost to make), honouring the whole
-query: `as_of` (history after it is
-invisible, so the graph must be built through the end of the Held-out Window, `whycode build --cutoff <window
-end>`) and `exclude` (those records, and everything that rests on them, are absent). The second is the ablation
+query: `as_of` (history after it is invisible, so the graph must be built through the end of the Held-out Window:
+`whycode build --cutoff <window end>` for the fixture, plus `--history github --window-commit <last commit by the
+window end>` for the real slice, whose code index stays at the cutoff commit) and `exclude` (those records, and
+everything that rests on them, are absent). The second is the ablation
 the spec asks for: the same engine, models and graph, with every Decision treated as live.
 
 Configuration (Neo4j, composer) comes from the environment, as for `why-mcp` (`whycode.config`).
