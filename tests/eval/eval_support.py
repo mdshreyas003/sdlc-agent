@@ -160,6 +160,16 @@ def ours_factory(ctx) -> System:
     return System("ours", why, {"answer": ctx.answer_model, "embedding": ctx.embedding_model})
 
 
+def ours_without_supersession_factory(ctx) -> System:
+    """Stands in for the ablation of our system: a less confident answer from the same record."""
+    def why(query: Query) -> Answer:
+        return Answer(anchor=query.anchor, refused=False, confidence="Medium",
+                      evidence_chain=[EvidenceItem(node_id="pr:121026", kind="pr")],
+                      sentences=[Sentence(text="Dropped indexes are skipped.", cites=["pr:121026"])])
+
+    return System("ours-without-supersession", why, {"answer": ctx.answer_model})
+
+
 # --- the real Anthropic SDK over a fake transport (never the network) -------------------------
 
 def anthropic_client(replies: Sequence[dict[str, Any]], requests: list[dict[str, Any]]):

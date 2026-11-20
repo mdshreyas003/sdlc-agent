@@ -2,7 +2,7 @@
 
     whycode-eval labels      --corpus C            write eval/gold/automatic.yaml from history
     whycode-eval check       --corpus C            gold check and counts; non-zero exit if a verified question fails
-    whycode-eval run         --corpus C --split dev|test [--systems vector-rag,git-agent,ours=pkg.module:factory]
+    whycode-eval run         --corpus C --split dev|test [--systems llm-alone,vector-rag,git-agent,ours=pkg.module:factory]
                              [--git-repo R --cutoff-rev SHA [--window-rev SHA]] [--resume DIR]
     whycode-eval judge-sheet --run DIR [--n 20]    sample answers into eval/judge_agreement/labels.yaml
     whycode-eval agreement                         judge vs hand labels, written to eval/judge_agreement/agreement.md
@@ -190,7 +190,12 @@ def _run(args: argparse.Namespace, deps: Deps) -> int:
     systems, names = [], [s.strip() for s in args.systems.split(",") if s.strip()]
     window_checkout = None
     for name in names:
-        if name == "vector-rag":
+        if name == "llm-alone":
+            from whycode.eval.llm_alone import LlmAlone
+
+            prompt = assets.load_prompt(args.eval_dir, "llm_alone.md")
+            systems.append(LlmAlone(corpus, deps.structured(args.answer_model), prompt, args.answer_model).system())
+        elif name == "vector-rag":
             from whycode.eval.rag import VectorIndex, VectorRag
 
             index = VectorIndex(corpus.records(), deps.embedder(args.embedding_model), cache_dir=CACHE_DIR)
@@ -214,7 +219,8 @@ def _run(args: argparse.Namespace, deps: Deps) -> int:
             systems.append(_external(label, target, SystemContext(corpus, args.cutoff, args.eval_dir,
                                                                   args.answer_model, args.embedding_model)))
         else:
-            raise ScoreboardError(f"unknown system {name!r}: use vector-rag, git-agent or name=module:factory")
+            raise ScoreboardError(f"unknown system {name!r}: use llm-alone, vector-rag, git-agent or "
+                                 "name=module:factory")
     judge = FactJudge(deps.structured(args.judge_model), assets.load_prompt(args.eval_dir, "judge.md"))
     result = run_eval(args.split, eval_dir=args.eval_dir, corpus=citation_corpus, systems=systems, judge=judge,
                       judge_model=args.judge_model, cutoff=args.cutoff, reference=args.reference,
