@@ -31,8 +31,16 @@ PATTERNS: dict[str, str] = {
     # Anchor -> Code Entity, by exact key or exact alias.
     "resolve": """
 MATCH (e:CodeEntity) WHERE e.key = $name OR $name IN e.aliases
-RETURN e.id AS id, e.kind AS kind, e.key AS key
+RETURN e.id AS id, e.kind AS kind, e.key AS key, e.file AS file
 ORDER BY e.id LIMIT $limit""",
+    # Free-form question -> a shortlist of Code Entities whose own names hold its words (for the matching step).
+    "candidates": """
+MATCH (e:CodeEntity)
+WITH e, [n IN [e.name, coalesce(e.receiver, "")] + coalesce(e.names, []) WHERE n <> "" | toLower(n)] AS names
+WITH e, size([w IN $words WHERE any(n IN names WHERE n CONTAINS w)]) AS hits
+WHERE hits > 0
+RETURN e.id AS id, e.kind AS kind, e.key AS key, e.file AS file
+ORDER BY hits DESC, size(e.key), e.id LIMIT $limit""",
     # Anchor -> governing Decisions (on the anchor or on entities it contains) -> their Discussions.
     "governing": f"""
 MATCH (a:CodeEntity {{id: $id}})-[:CONTAINS*0..2]->(e:CodeEntity)
@@ -92,6 +100,19 @@ WHERE {_REAL.format(v="c")} AND {_SEEN.format(v="c")}
 WITH DISTINCT c
 RETURN c {{.id, .kind, .title, .url, .date, .text}} AS change
 ORDER BY change.date DESC, change.id LIMIT $limit""",
+    # Person to Ask: active authors and approving reviewers of the latest Changes touching files under each area
+    # path prefix, the nearest area (lowest rank) first; each person once, with the Change that puts them there.
+    "area_people": f"""
+UNWIND range(0, size($prefixes) - 1) AS rank
+MATCH (c:Change)-[:TOUCHES]->(f:CodeEntity {{kind: "file"}})
+WHERE f.key STARTS WITH $prefixes[rank] AND {_REAL.format(v="c")} AND {_SEEN.format(v="c")}
+MATCH (p:Person)-[r:AUTHORED|REVIEWED]->(c)
+WHERE coalesce(p.active, false) AND (type(r) = 'AUTHORED' OR r.state = 'APPROVED')
+WITH p, rank, c, type(r) <> 'AUTHORED' AS approver
+ORDER BY rank, c.date DESC, approver, c.id
+WITH p, collect({{rank: rank, date: c.date, approver: approver, change: c.id}})[0] AS best
+RETURN p.handle AS handle, best.change AS via, CASE best.approver WHEN true THEN 'approver' ELSE 'author' END AS role
+ORDER BY best.rank, best.date DESC, best.approver, handle LIMIT $limit""",
     # Refusals: Decisions that govern what contains the anchor (nearby, but not governing it).
     "nearby_decisions": f"""
 MATCH (parent:CodeEntity)-[:CONTAINS]->(:CodeEntity {{id: $id}})
@@ -139,7 +160,8 @@ ORDER BY incident, change LIMIT $limit""",
 }
 
 _SAMPLE = {"name": "x", "id": "x", "ids": ["x"], "handles": ["x"], "limit": 1, "as_of": ALL_HISTORY,
-           "exclude": ["x"], "paths": ["x"], "packages": ["x"], "literals": ["x"]}
+           "exclude": ["x"], "words": ["x"], "prefixes": ["x"], "paths": ["x"], "packages": ["x"],
+           "literals": ["x"]}
 DIFF_ENTITY_LIMIT = 5000
 """check_change reads at most this many Code Entities for one diff (the files' functions and settings)."""
 
@@ -177,6 +199,11 @@ class GraphReader:
     def resolve(self, name: str) -> list[dict[str, Any]]:
         return self._rows("resolve", name=name)
 
+    def candidates(self, words: list[str], limit: int = 30) -> list[dict[str, Any]]:
+        """Code Entities whose own names (name, receiver, setting names) contain any of `words` (lower case),
+        the most words first."""
+        return self._rows("candidates", words=words, limit=limit)
+
     # Every traversal below takes the query's view of history: `as_of` (ISO date) and `exclude` (node ids).
 
     def governing(self, entity_id: str, as_of: str = ALL_HISTORY, exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
@@ -204,6 +231,11 @@ class GraphReader:
                         exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
         return [r["change"] for r in self._rows("nearest_changes", id=entity_id, as_of=as_of, exclude=list(exclude),
                                                 limit=10)]
+
+    def area_people(self, prefixes: list[str], as_of: str = ALL_HISTORY,
+                    exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
+        """Active people of the latest Changes touching files under each path prefix (nearest area first)."""
+        return self._rows("area_people", prefixes=prefixes, as_of=as_of, exclude=list(exclude), limit=10)
 
     def nearby_decisions(self, entity_id: str, as_of: str = ALL_HISTORY,
                          exclude: Sequence[str] = ()) -> list[dict[str, Any]]:

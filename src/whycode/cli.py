@@ -8,6 +8,7 @@
     git diff | uv run whycode check-change        # prints the Fence Warnings (ChangeCheck contract) as JSON
     uv run whycode check-citations --sample 20    # every node id in 20 answers resolves (exit 1 if not)
     uv run whycode supersession-report            # the supersession judge (Opus 5.5) vs explicit Supersession
+    uv run whycode serve [--port 8765]            # the human view: one page per Answer, and /why as JSON
 
 Configuration comes from the environment (`whycode.config`); the real slice's scope from `whycode.history.scope`.
 """
@@ -130,12 +131,11 @@ def _supersession_report(settings: Settings, args: argparse.Namespace, transport
 
 
 def _why(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.answer.engine import AnswerEngine
     from whycode.answer.patterns import GraphReader
 
     reader = GraphReader(settings.driver(), settings.neo4j_database)
     reader.selfcheck()
-    answer = AnswerEngine(reader, settings.composer_impl()).why(args.anchor)
+    answer = settings.answer_engine(reader).why(args.anchor)
     print(answer.model_dump_json(indent=2))
     return 0
 
@@ -152,18 +152,35 @@ def _check_change(settings: Settings, args: argparse.Namespace, transport=None) 
 
 
 def _check_citations(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.answer.engine import AnswerEngine
     from whycode.answer.patterns import GraphReader
     from whycode.audit import GraphResolver, audit_citations, sample_anchors
 
     driver = settings.driver()
     reader = GraphReader(driver, settings.neo4j_database)
     reader.selfcheck()
-    engine = AnswerEngine(reader, settings.composer_impl())
+    engine = settings.answer_engine(reader)
     anchors = sample_anchors(driver, args.sample, args.seed, settings.neo4j_database)
     audit = audit_citations(engine.why, anchors, GraphResolver(driver, settings.neo4j_database))
     print(json.dumps({**audit.report(), "anchors": anchors}, indent=2))
     return 0 if audit.ok else 1
+
+
+def _serve(settings: Settings, args: argparse.Namespace, transport=None) -> int:
+    from whycode.answer.patterns import GraphReader
+    from whycode.view import make_server
+
+    reader = GraphReader(settings.driver(), settings.neo4j_database)
+    reader.selfcheck()
+    server = make_server(settings.answer_engine(reader).why, args.host, args.port)
+    host, port = server.server_address[:2]
+    print(f"serving http://{host}:{port}/", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
 
 
 def main(argv: list[str] | None = None, *, github_transport=None) -> int:
@@ -201,9 +218,12 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
                                                         "in the built graph (precision, recall, disagreements)")
     report.add_argument("--judge", choices=["recorded", "anthropic"], default="anthropic")
     report.add_argument("--out", type=Path, help="also write the report (markdown) here")
+    serve = sub.add_parser("serve", help="serve the human view: one page per Answer, and /why?anchor= as JSON")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8765, help="0 picks a free port (default: %(default)s)")
     args = parser.parse_args(argv)
     commands = {"build": _build, "fetch": _fetch, "why": _why, "check-change": _check_change,
-                "check-citations": _check_citations, "supersession-report": _supersession_report}
+                "check-citations": _check_citations, "supersession-report": _supersession_report, "serve": _serve}
 
     from whycode.history.checkout import CheckoutError
     from whycode.history.github import GitHubError

@@ -44,7 +44,7 @@ def build_server(engine: AnswerEngine, checker: FenceChecker | None = None) -> M
         an Evidence Chain of verbatim quotes and node ids, a High/Medium/Low confidence, the Person to Ask
         (departed people have active=false), linked Incidents, or a refusal with the nearest evidence.
         Superseded Decisions come back with status=superseded and what superseded them; never treat them as live.
-        A free-form question works if it names exactly one Code Entity."""
+        A free-form question is matched to one Code Entity (anchor_matched=true) or refused."""
         return await anyio.to_thread.run_sync(engine.why, anchor)
 
     @server.tool(annotations=read_only)
@@ -68,7 +68,7 @@ def main() -> None:
     settings = Settings.from_env()
     reader = GraphReader(settings.driver(), settings.neo4j_database)
     reader.selfcheck()
-    build_server(AnswerEngine(reader, settings.composer_impl())).run()
+    build_server(settings.answer_engine(reader)).run()
 
 
 if __name__ == "__main__":
