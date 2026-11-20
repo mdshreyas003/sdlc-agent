@@ -66,7 +66,7 @@ All of them use the same answering model (`claude-opus-5-5`) and, for vector RAG
 
 ## Corpus format (ticket 02 writes it)
 
-One JSON object per line, a `whycode.eval.corpus.CorpusRecord`: `id`, `kind` (rfc, pr, issue, review, comment, commit), `title`, `text`, `url`, `date` (merge date for a Change, creation date otherwise; records after the cutoff are visible only to `@after` cases), `number`, `labels`, `paths`, `commits`. The `id` must be the node id the graph cites. The gold drafts assume `rfc:<file stem>`, `pr:<n>`, `issue:<n>`; the git-agent cites `commit:<full sha>`. Quotes are checked against `title` + `text`, word for word (whitespace collapsed, case ignored, nothing else forgiven: `whycode.eval.corpus.is_verbatim`).
+One JSON object per line, a `whycode.eval.corpus.CorpusRecord`: `id`, `kind` (rfc, pr, issue, review, comment, commit), `title`, `text`, `url`, `date` (merge date for a Change, creation date otherwise; records after the cutoff are visible only to `@after` cases), `number`, `labels`, `paths`, `commits`. The `id` must be the node id the graph cites. The gold drafts assume `rfc:<file stem>`, `pr:<n>`, `issue:<n>`; the git-agent cites `commit:<full sha>`. Quotes are checked against `title` + `text`, word for word (whitespace collapsed, case kept, nothing else forgiven: `whycode.eval.corpus.is_verbatim`).
 
 ## Gold question format
 

@@ -23,6 +23,9 @@ def test_decisions_exist_only_when_their_quote_is_verbatim_in_their_source(empty
     assert BACKOFF_QUOTE in quotes
     assert "We picked exponential backoff since fixed intervals are bad." not in quotes
     assert "Schema changes always run synchronously inside the issuing transaction." not in quotes
+    # Word for word means case too: a quote that differs from #101200's description only in case is rejected.
+    assert "the Schema Changer should stop retrying and fail the job instead of spinning until the backoff cap." \
+        not in quotes
 
     # A real quote proposed for the wrong Discussion is rejected: only #101200 yields it.
     yielders = {e.source for e in graph.edges("YIELDS") if graph.nodes[e.target].props["quote"] == VALIDATION_QUOTE}

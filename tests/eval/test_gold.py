@@ -33,9 +33,10 @@ def problems(*questions):
     return [(p.question_id, p.message) for p in check_gold(list(questions), CORPUS, cutoff=CUTOFF)]
 
 
-def test_verbatim_rule_forgives_only_whitespace_and_case():
+def test_verbatim_rule_forgives_only_whitespace():
     text = "Zone configuration now ignores indexes in the DROP state,\n  because their descriptors"
-    assert is_verbatim("ignores INDEXES in the drop state, because", text)
+    assert is_verbatim("ignores indexes in the DROP state, because", text)
+    assert not is_verbatim("ignores INDEXES in the drop state, because", text)  # case matters
     assert not is_verbatim("ignores indexes in the DROP state because", text)  # punctuation matters
     assert not is_verbatim("ignores indexes ... because", text)
     assert not is_verbatim("", text)

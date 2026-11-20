@@ -16,7 +16,7 @@ import hashlib
 import re
 from typing import Literal
 
-from whycode.quotes import normalize
+from whycode.quotes import squash
 
 NumberKind = Literal["pr", "issue"]
 
@@ -46,8 +46,9 @@ def person_id(login: str) -> str:
 
 
 def decision_id(discussion_id: str, quote: str) -> str:
-    """Derived from the Discussion and the (normalised) quote, never from model-chosen text."""
-    digest = hashlib.sha256(f"{discussion_id}\0{normalize(quote)}".encode()).hexdigest()
+    """Derived from the Discussion and the quote (whitespace collapsed and case folded, so ids stay stable across
+    rebuilds), never from model-chosen text."""
+    digest = hashlib.sha256(f"{discussion_id}\0{squash(quote).casefold()}".encode()).hexdigest()
     return f"decision:{digest[:16]}"
 
 

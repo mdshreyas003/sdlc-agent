@@ -68,6 +68,12 @@
       "rationale": "Validation errors cannot be fixed by retrying, so the job should fail instead of spinning until the backoff cap.",
       "alternatives_rejected": [],
       "quote": "Descriptor validation errors cannot be fixed by retrying, so the schema changer should stop retrying and fail the job instead of spinning until the backoff cap."
+    },
+    {
+      "choice": "Fail the job on descriptor validation errors",
+      "rationale": "not verbatim: the case differs from the description.",
+      "alternatives_rejected": [],
+      "quote": "the Schema Changer should stop retrying and fail the job instead of spinning until the backoff cap."
     }
   ],
   "pr:101450": [
