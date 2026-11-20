@@ -114,7 +114,8 @@ should be refused.
 verbatim statement or justification, the chain to what holds now when the superseder was itself superseded
 (`supersession_chain`), and whether history states it (explicit: reverts, RFC `Status:` headers,
 "supersedes #N") or the judge inferred it (Opus 5.5 over pairs of Decisions governing the same code). Rules:
-`src/whycode/supersession.py`; how answers use them: `src/whycode/answer/status.py` (the Live Decision rule) and
+`src/whycode/supersession/` (one module per job: explicit parsing, candidate pairs, the judge, its report); how
+answers use them: `src/whycode/answer/status.py` (the Live Decision rule) and
 `src/whycode/answer/engine.py`.
 
 ### Graph schema notes
@@ -181,7 +182,7 @@ always scripted in tests.
 | `linker.py` | Stated Links from written identifiers (closes, reverts, references) |
 | `discussions.py`, `decisions.py` | Discussions as authored segments; Decision extraction behind the `DecisionProposer` seam, kept only with a verbatim quote |
 | `build.py`, `graph/` | Graph building, the idempotent Neo4j store, and the export of citable records in the scoreboard's corpus format (`graph/corpus.py`) |
-| `supersession.py` | Supersession detector: explicit parsing, candidate pairs, the judge seam (`SupersessionJudge`), the judge report |
+| `supersession/` | Supersession detector: explicit parsing (`explicit.py`), candidate pairs and inferred edges (`pairs.py`), the judge seam and adapters (`judge.py`), the judge report (`report.py`) |
 | `answer/` | Fixed read-only query patterns (typed rows; all see history through a `HistoryView`), the Live Decision rule (`status.py`), composer seam, verifier, confidence scorer, `AnswerEngine`; `answer/fence.py` is `check_change` (diff parsing, Fence Warnings); `answer/systems.py` plugs it into the scoreboard |
 | `answer/resolve.py` | The entity-matching step for free-form questions (`EntityMatcher` seam) and its shortlist words |
 | `mcp_server.py`, `cli.py` | MCP server (`why-mcp`: `why`, `check_change`) and the `whycode` command |
@@ -197,7 +198,7 @@ always scripted in tests.
   cache. A setting's `WithName` / `WithRetiredName` names are in `CodeEntity.names` (stored on the node as
   `names`, and in `aliases`).
 - **04 (Supersession), done.** `SUPERSEDES` / `REFINES` edges (later node -> earlier Decision) carry `basis`,
-  `quote`, `source`, `observed_at` (`supersession.py` docstring). `build_graph(..., judge=None)` adds explicit
+  `quote`, `source`, `observed_at` (`whycode.supersession` docstring). `build_graph(..., judge=None)` adds explicit
   Supersession only; pass a `SupersessionJudge` for inferred edges (`whycode build --judge`, by default the same kind
   as the extractor: Opus 5.5 for the real slice; the recorded fixture judge only knows fixture pairs). Hard `GOVERNS` edges now name their
   implementing `change` and hold from its merge date. For `check_change` (05), a Live Decision is one whose
