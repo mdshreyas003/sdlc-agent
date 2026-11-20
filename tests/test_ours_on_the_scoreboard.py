@@ -210,7 +210,8 @@ def test_the_scoreboard_scores_ours_with_and_without_supersession_and_shows_the_
 
     systems = ("ours=whycode.answer.systems:ours,"
                "ours-without-supersession=whycode.answer.systems:ours_without_supersession")
-    code = cli.main(["run", "--split", "dev", "--corpus", str(corpus), "--eval-dir", str(lay_out_eval_dir(tmp_path / "eval")),
+    eval_dir = lay_out_eval_dir(tmp_path / "eval")
+    code = cli.main(["run", "--split", "dev", "--corpus", str(corpus), "--eval-dir", str(eval_dir),
                      "--cutoff", FIXTURE_CUTOFF.isoformat(), "--reference", "ours", "--systems", systems], deps)
 
     assert code == 0, out.getvalue()
