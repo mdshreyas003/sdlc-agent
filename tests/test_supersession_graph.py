@@ -53,13 +53,14 @@ def test_an_rfc_whose_status_says_superseded_is_superseded_by_the_rfc_that_repla
     old = decision_quoting(graph, CHILD_TXN_QUOTE)
     new = decision_quoting(graph, STATEMENT_PHASE_QUOTE)
     by = {source: e for (source, target), e in relations(graph, "SUPERSEDES").items() if target == old}
-    # The new RFC's Decision on the same function, and the old RFC's own Status header.
-    assert set(by) == {new, "rfc:20200909_transactional_schema_changes"}
-    for edge in by.values():
-        assert edge.props["basis"] == "explicit"
-        assert edge.props["quote"] == "superseded by #59288"
-        assert edge.props["source"] == "rfc:20200909_transactional_schema_changes"
-        assert edge.props["observed_at"] == "2021-01-15"  # when the superseding RFC was written
+    # The edge starts at the new RFC's Decision on the same function (a Decision, not a record); the old RFC's own
+    # Status header is where its quote comes from.
+    assert set(by) == {new}
+    edge = by[new]
+    assert edge.props["basis"] == "explicit"
+    assert edge.props["quote"] == "superseded by #59288"
+    assert edge.props["source"] == "rfc:20200909_transactional_schema_changes"
+    assert edge.props["observed_at"] == "2021-01-15"  # when the superseding RFC was written
     # Decisions of RFCs with a live status are untouched.
     assert not [e for e in graph.edges("SUPERSEDES") if graph.nodes[e.target].props["discussion_id"]
                 in ("rfc:20151014_online_schema_change", "rfc:20210115_new_schema_changer")]

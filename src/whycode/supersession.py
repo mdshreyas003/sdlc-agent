@@ -8,13 +8,15 @@ that states or justifies it, `source` (the record whose text holds that quote), 
 **Explicit** Supersession is parsed with no model (`origin: stated`):
 - a revert: Change R reverts Change P (`Revert "<title>"`, `This reverts commit <sha>`; see `whycode.linker`),
   so every Decision of P is superseded;
-- an RFC `Status:` of superseded, obsolete or rejected: every Decision of that RFC is superseded. The RFC itself
-  is always one superseding node (its own header says so); for `superseded by #N` the RFC whose `RFC PR` is N
-  (or the record N, when ingested) is another;
+- an RFC `Status:` of superseded, obsolete or rejected: every Decision of that RFC is superseded. For
+  `superseded by #N` the later record is the RFC whose `RFC PR` is N (or the record N, when ingested); otherwise
+  (obsolete, rejected, or a successor that was not ingested) the RFC itself declares its Decisions dead;
 - `supersedes #N` / `superseded by #N` written in a pull request's or issue's title or description.
 
-The superseding node of an explicit case is each Decision of the later record that governs a Code Entity the
-earlier Decision governs; when there is none, the later record itself.
+Edges start at Decisions whenever they can (the schema's Decision -> supersedes -> Decision): the superseding node
+of an explicit case is each Decision of the later record that governs a Code Entity the earlier Decision governs.
+A record starts the edge only when the later record yields no such Decision (a revert that records no Decision of
+its own, a successor whose Decisions are about other code), or when an RFC declares its own Decisions dead.
 
 **Inferred** Supersession (`origin: derived`): pairs of Decisions that govern the same Code Entity, where B took
 effect later than A and comes from another Discussion, are candidates (`candidate_pairs`: the most specific code
@@ -173,11 +175,10 @@ def _rfc_statuses(index: _Index, history: History) -> list[Edge]:
                         break
         at = index.date(later) if later else node.props["date"]
         for earlier in index.of_record.get(rid, ()):
-            out.append(_edge(rid, earlier, quote=quote, record=rid, locator=locator, at=at, via="rfc-status"))
-            if later:
-                for superseder in index.superseders(earlier, later):
-                    out.append(_edge(superseder, earlier, quote=quote, record=rid, locator=locator, at=at,
-                                     via="rfc-status"))
+            # With no ingested successor, the RFC itself is what declares its Decisions dead.
+            for superseder in index.superseders(earlier, later) if later else [rid]:
+                out.append(_edge(superseder, earlier, quote=quote, record=rid, locator=locator, at=at,
+                                 via="rfc-status"))
     return out
 
 

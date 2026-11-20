@@ -6,7 +6,8 @@ Schema (labels on nodes, types on edges):
 - Stated edges: CONTAINS, TOUCHES, CLOSES, REFERENCES, REVERTS, AUTHORED, REVIEWED. A pull request's TOUCHES
   edge to a file also carries `added` / `removed`: the distinct lines its diff added and removed there (trimmed).
 - Derived edges: YIELDS (Discussion -> Decision), GOVERNS (Decision -> CodeEntity, link hard|soft).
-  Ticket 04 adds SUPERSEDES / REFINES (Decision -> Decision, explicit|inferred).
+  SUPERSEDES / REFINES (later Decision -> earlier Decision, explicit|inferred; a record starts one only when it
+  yields no Decision on that code, see `whycode.supersession`).
 
 Every node and edge carries `origin` (stated | derived). Every edge carries a `locator` (where in the source
 it was found) and `observed_at` (a date from the source, never wall-clock time). Derived nodes and edges

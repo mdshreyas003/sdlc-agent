@@ -114,6 +114,19 @@ verbatim statement or justification, the chain to what holds now when the supers
 `src/whycode/supersession.py`; how answers use them: `src/whycode/answer/status.py` (the Live Decision rule) and
 `src/whycode/answer/engine.py`.
 
+### Graph schema notes
+
+- Nodes: Change (PullRequest, Commit), Discussion (PullRequest, Issue, Rfc), Incident, Person, Decision, Code
+  Entity (Package, File, Function, Setting), and Stub (referenced, never ingested, never cited).
+- Stated edges: CONTAINS, TOUCHES, CLOSES, REFERENCES, REVERTS, AUTHORED, REVIEWED. Derived edges: YIELDS
+  (Discussion -> Decision), GOVERNS (Decision -> Code Entity, hard or soft), SUPERSEDES / REFINES.
+- SUPERSEDES / REFINES go from the later node to the earlier Decision and start at a Decision whenever one
+  applies: a Decision of the superseding record that governs code the earlier Decision governs. A record starts
+  the edge only when the superseding record yields no such Decision (a revert that records no Decision of its own,
+  a successor whose Decisions are about other code), or when an RFC's `Status:` declares its own Decisions dead
+  (obsolete, rejected, or superseded by something not ingested). `why` reports such a record as `superseded_by`,
+  or None when it is the Decision's own record.
+
 ```sh
 uv run whycode supersession-report --out eval/results/supersession-judge.md   # judge precision/recall vs explicit cases
 ```
