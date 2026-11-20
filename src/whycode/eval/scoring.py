@@ -75,7 +75,7 @@ def score(case: Case, record: AnswerRecord, corpus: Corpus, judge: Judge) -> Ite
             row.correctness = sum(verdict.covered) / len(case.gold_facts) if verdict and case.gold_facts else 0.0
         if case.superseded_facts:
             row.supersession_caught = float(bool(verdict) and verdict.reports_change
-                                            and not any(verdict.presented_as_current))
+                                            and not any(verdict.presented_as_live))
         row.verdict = verdict
     return row
 

@@ -55,10 +55,10 @@ def _strength(d: DecisionGrounding) -> int:
 
 
 def score_confidence(inputs: ConfidenceInputs) -> Confidence:
-    current = [d for d in inputs.decisions if d.status != "superseded"]
-    if inputs.refused or not current:
+    live = [d for d in inputs.decisions if d.status != "superseded"]  # Live Decisions, refined ones included
+    if inputs.refused or not live:
         return "Low"
-    level = max(_strength(d) for d in current)
+    level = max(_strength(d) for d in live)
     if inputs.anchor_matched or any(d.supersession == "inferred" for d in inputs.decisions):
         level = min(level, 1)
     if inputs.dropped:

@@ -49,7 +49,7 @@ UNANSWERABLE = case("U", "unanswerable", answerable=False, facts=())
 TRAP = case("T", "trap", answerable=False, facts=())
 JUDGE = ScriptedJudge({
     "question L?": Verdict(covered=[True, False]),
-    "question S?": Verdict(covered=[True], presented_as_current=[False], reports_change=True),
+    "question S?": Verdict(covered=[True], presented_as_live=[False], reports_change=True),
 })
 OPUS_CALL = Usage(calls=[ModelCall(model="claude-opus-5-5", input_tokens=1000, output_tokens=100)])
 
@@ -74,7 +74,7 @@ def test_superseded_decision_reported_as_superseded_is_caught():
 
 
 def test_dead_decision_presented_as_live_is_not_caught():
-    judge = ScriptedJudge({"question S?": Verdict(covered=[True], presented_as_current=[True], reports_change=True)})
+    judge = ScriptedJudge({"question S?": Verdict(covered=[True], presented_as_live=[True], reports_change=True)})
     row = score(SUPERSEDED, record("S", answered("It runs declaratively.")), CORPUS, judge)
 
     assert row.supersession_caught == 0.0

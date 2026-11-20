@@ -236,9 +236,9 @@ in time). `whycode build --judge-max-later N` changes it (0: no bound); the buil
 
 
 class Judgment(BaseModel):
-    label: Label = Field(description="supersedes: B overrides A, so A no longer holds. refines: B narrows or extends "
-                                     "A, so A still partly holds. unrelated: anything else, including B restating or "
-                                     "implementing A.")
+    label: Label = Field(description="supersedes: B supersedes A, so A no longer holds. refines: B narrows or "
+                                     "extends A, so A still partly holds. unrelated: anything else, including B "
+                                     "restating or implementing A.")
     quote: str = Field(description="For supersedes or refines: a passage copied character for character from B's "
                                    "discussion that shows how B changes A. Empty for unrelated.")
     reason: str = Field(description="One sentence explaining the label.")
@@ -418,7 +418,8 @@ class RecordedSupersessionJudge:
 JUDGE_SYSTEM = """You judge whether a later Decision changes an earlier one in the CockroachDB SQL schema \
 changer. Both Decisions govern the same code. Label the pair:
 
-- supersedes: B overrides A. After B, A no longer holds (B reverses it, replaces it, or contradicts it).
+- supersedes: B supersedes A. After B, A no longer holds (B undoes it, chooses differently on the same subject, \
+or contradicts it).
 - refines: B narrows or extends A. A still holds in part (B adds an exception, changes a default or a limit, or \
 covers a case A left open).
 - unrelated: B does not change A. This includes B restating A, implementing A as proposed, or deciding \

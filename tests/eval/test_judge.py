@@ -37,12 +37,12 @@ def test_agreement_counts_only_complete_human_labels():
     items = [
         labelled("a", ["f1", "f2"], [True, False]),
         labelled("b", ["f1"], [True], superseded_facts=["dead"],
-                 labels=HandLabels(covered=[True], presented_as_current=[False], reports_change=True)),
+                 labels=HandLabels(covered=[True], presented_as_live=[False], reports_change=True)),
         labelled("c", ["f1"], [True], human=False),  # a draft: never counted
         labelled("d", ["f1", "f2"], [True]),  # incomplete labels: never counted
     ]
     verdicts = {"q a?": Verdict(covered=[True, True]),
-                "q b?": Verdict(covered=[True], presented_as_current=[False], reports_change=False)}
+                "q b?": Verdict(covered=[True], presented_as_live=[False], reports_change=False)}
 
     result = agreement(items, lambda item: verdicts[item.question])
 
@@ -59,7 +59,7 @@ def test_fact_judge_pads_a_short_verdict_to_one_entry_per_fact():
 
     verdict = judge(JudgeInput("Why?", "Because.", ("f1", "f2", "f3"), ("dead",)))
 
-    assert verdict == Verdict(covered=[True, False, False], presented_as_current=[False], reports_change=False)
+    assert verdict == Verdict(covered=[True, False, False], presented_as_live=[False], reports_change=False)
 
 
 def test_rendered_answer_shows_decision_status_for_the_judge():

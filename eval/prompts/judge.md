@@ -6,5 +6,5 @@ Judge only what the answer says. Do not use your own knowledge of CockroachDB, a
 
 Return:
 - covered: one entry per required fact, in order. True when the answer states the fact or clearly implies it; a paraphrase counts, a related but different claim does not. An answer that refuses, or says the reason is unknown, covers no fact.
-- presented_as_current: one entry per superseded fact, in order. True when the answer presents that fact as how things work now, for example as a live Decision, or in the present tense without saying it changed. Mentioning it as past, reverted, superseded or narrowed is false.
+- presented_as_live: one entry per superseded fact, in order. True when the answer presents that fact as still live, that is as how things work now: for example as a live Decision, or in the present tense without saying it changed. Mentioning it as past, reverted, superseded or narrowed is false.
 - reports_change: true when the answer says that an earlier choice was reversed, replaced, reverted or narrowed by a later one. With no superseded facts, return false.

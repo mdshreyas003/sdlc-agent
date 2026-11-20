@@ -33,7 +33,7 @@ Semantics every producer and consumer can rely on:
   otherwise one entity-matching model step over a shortlist of Code Entities. A match the step is unsure of, or
   one outside the shortlist, is refused (`anchor` None); a confident match sets `anchor_matched` and caps
   confidence at Medium, since the Anchor itself rests on model judgment.
-- Supersession (ticket 04): a Decision's `status` is `superseded` when a later Decision (or record) overrides
+- Supersession (ticket 04): a Decision's `status` is `superseded` when a later Decision (or record) supersedes
   it, `refined` when a later, itself not superseded, Decision narrows or extends it (partly live), else `live`.
   For the first two, `superseded_by` is the superseding or refining Decision, or the record when no Decision of
   it applies (None when the Decision's own record declares it dead, e.g. an RFC `Status: obsolete`);

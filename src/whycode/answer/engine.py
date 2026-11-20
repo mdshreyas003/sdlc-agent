@@ -75,6 +75,10 @@ class _Resolved:
     entity: EntityRow
     matched: bool  # chosen by the entity-matching model step, not by an exact name
 
+    @property
+    def anchor(self) -> Anchor:
+        return Anchor(kind=self.entity.kind, id=self.entity.key)
+
 
 def _node(record: Record, kind: str | None = None, text: str | None = None) -> EvidenceNode:
     return EvidenceNode(id=record.id, kind=kind or record.kind, title=record.title, url=record.url, date=record.date,
@@ -145,10 +149,9 @@ class AnswerEngine:
         if resolved is None:
             return Answer(anchor=None, refused=True, confidence="Low", refusal_reason="unresolved")
         entity, matched = resolved.entity, resolved.matched
-        target = Anchor(kind=entity.kind, id=entity.key)
         rows = self.reader.governing(entity.id, view)
         if not rows:
-            return self._refusal(target, entity, view, matched)
+            return self._refusal(resolved, view)
 
         evidence = _Evidence()
         decisions: list[DecisionView] = []
@@ -182,7 +185,7 @@ class AnswerEngine:
         reviewed = [i for i, s in discussions.items() if s.kind in ("pr", "rfc")]
         people = self._people(reviewed, speakers, entity, view)
         if all(row.decision.id in superseded for row in rows):  # no Live Decision: refuse, showing the history
-            return Answer(anchor=target, refused=True, confidence="Low", refusal_reason="superseded",
+            return Answer(anchor=resolved.anchor, refused=True, confidence="Low", refusal_reason="superseded",
                           anchor_matched=matched, decisions=decisions, evidence_chain=list(evidence.items.values()),
                           people=people)
 
@@ -195,17 +198,17 @@ class AnswerEngine:
         for incident in incident_rows:
             evidence.add(_node(incident, kind="incident"))
 
-        request = ComposeRequest(anchor=target, decisions=decisions, evidence=list(evidence.nodes.values()),
+        request = ComposeRequest(anchor=resolved.anchor, decisions=decisions, evidence=list(evidence.nodes.values()),
                                  people=people)
         verified = verify(self.composer.compose(request), list(evidence.nodes.values()), superseded)
         incidents = [IncidentRef(id=i.id, url=i.url) for i in incident_rows]
         if not verified.sentences:
-            return Answer(anchor=target, refused=True, confidence="Low", refusal_reason="unverified",
+            return Answer(anchor=resolved.anchor, refused=True, confidence="Low", refusal_reason="unverified",
                           anchor_matched=matched, evidence_chain=list(evidence.items.values()), people=people,
                           incidents=incidents)
         grounded = tuple(grounding(row, statuses.get(row.decision.id)) for row in rows)
         return Answer(
-            anchor=target,
+            anchor=resolved.anchor,
             refused=False,
             anchor_matched=matched,
             confidence=score_confidence(ConfidenceInputs(grounded, dropped=verified.dropped, anchor_matched=matched)),
@@ -278,7 +281,10 @@ class AnswerEngine:
             people = [best, *people]
         return [p if p.active else p.model_copy(update={"ask_instead": best.handle}) for p in people]
 
-    def _refusal(self, target: Anchor, entity: EntityRow, view: HistoryView, matched: bool) -> Answer:
+    def _refusal(self, resolved: _Resolved, view: HistoryView) -> Answer:
+        """No Decision reaches the Anchor: the nearest evidence (Changes that touched it or its surroundings, Decisions
+        governing what contains it) and the people of those records."""
+        entity = resolved.entity
         evidence = _Evidence()
         changes = self.reader.nearest_changes(entity.id, view)
         for change in changes:
@@ -288,6 +294,6 @@ class AnswerEngine:
             evidence.add_decision(decision, discussion, discussion_text="")
         records = [c.id for c in changes] + [discussion.id for _, discussion in nearby
                                              if discussion.kind in ("pr", "rfc")]
-        return Answer(anchor=target, refused=True, confidence="Low", refusal_reason="ungoverned",
-                      anchor_matched=matched, evidence_chain=list(evidence.items.values()),
+        return Answer(anchor=resolved.anchor, refused=True, confidence="Low", refusal_reason="ungoverned",
+                      anchor_matched=resolved.matched, evidence_chain=list(evidence.items.values()),
                       people=self._people(list(dict.fromkeys(records)), [], entity, view))

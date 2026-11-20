@@ -184,7 +184,7 @@ class FactJudgeModel:
 
         text = user.split("\nAnswer:\n", 1)[1]
         verdict = Verdict(covered=[FACT_CHECKS[f](text) for f in facts("Required facts")],
-                          presented_as_current=[FACT_CHECKS[f](text) for f in facts("Superseded facts")],
+                          presented_as_live=[FACT_CHECKS[f](text) for f in facts("Superseded facts")],
                           reports_change=bool(_lines(text, "superseded")))
         return Parsed(output.model_validate(verdict.model_dump()), Usage())
 

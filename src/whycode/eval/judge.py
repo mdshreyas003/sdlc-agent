@@ -24,13 +24,13 @@ MIN_LABELLED = 15  # ticket 03: agreement is reported against at least 15 hand-l
 
 class Verdict(BaseModel):
     covered: list[bool]  # one per required fact, in order
-    presented_as_current: list[bool] = []  # one per superseded fact, in order
+    presented_as_live: list[bool] = []  # one per superseded fact, in order
     reports_change: bool = False  # the answer says an earlier choice was reversed, replaced or narrowed
 
     def fitted(self, n_facts: int, n_superseded: int) -> Verdict:
         """Pad with False or truncate so each list has one entry per fact."""
         return Verdict(covered=(self.covered + [False] * n_facts)[:n_facts],
-                       presented_as_current=(self.presented_as_current + [False] * n_superseded)[:n_superseded],
+                       presented_as_live=(self.presented_as_live + [False] * n_superseded)[:n_superseded],
                        reports_change=self.reports_change)
 
 
@@ -81,7 +81,7 @@ class HandLabels(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     covered: list[bool] | None = None
-    presented_as_current: list[bool] | None = None
+    presented_as_live: list[bool] | None = None
     reports_change: bool | None = None
 
 
@@ -104,7 +104,7 @@ class LabelledAnswer(BaseModel):
         if lab.covered is None or len(lab.covered) != len(self.gold_facts):
             return False
         if self.superseded_facts:
-            return (lab.presented_as_current is not None and len(lab.presented_as_current) == len(self.superseded_facts)
+            return (lab.presented_as_live is not None and len(lab.presented_as_live) == len(self.superseded_facts)
                     and lab.reports_change is not None)
         return True
 
@@ -156,7 +156,7 @@ def agreement(items: Sequence[LabelledAnswer], judge: Judge) -> Agreement:
         lab = item.labels
         pairs += zip(verdict.covered, lab.covered or [], strict=True)
         if item.superseded_facts:
-            pairs += zip(verdict.presented_as_current, lab.presented_as_current or [], strict=True)
+            pairs += zip(verdict.presented_as_live, lab.presented_as_live or [], strict=True)
             pairs.append((verdict.reports_change, bool(lab.reports_change)))
         n = len(item.gold_facts) or 1
         errors.append(abs(sum(verdict.covered) - sum(lab.covered or [])) / n)

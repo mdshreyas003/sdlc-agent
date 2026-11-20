@@ -29,7 +29,7 @@ INSTRUCTIONS = (
     "as unknown, not as permission. Before you finish a change, call "
     "`check_change` with your diff (`git diff` output): each Fence Warning names a Live Decision your diff "
     "reverses or may contradict, with its quote and the Incidents it prevented. Change course, or say in your "
-    "summary why the override is justified."
+    "summary why going against that Decision is justified."
 )
 
 

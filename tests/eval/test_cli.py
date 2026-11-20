@@ -46,7 +46,7 @@ QUESTIONS = [
 
 def reply(output, system, user):
     if output is Verdict:
-        return Verdict(covered=[True] * 5, presented_as_current=[False] * 5, reports_change=True)
+        return Verdict(covered=[True] * 5, presented_as_live=[False] * 5, reports_change=True)
     passage = re.search(r'<passage node_id="([^"]+)"', user)
     if passage is None:  # the LLM alone sees no records
         return BaselineAnswer(refused=True, confidence="Low", decisions=[], evidence=[], sentences=[])
@@ -166,7 +166,7 @@ def test_judge_sheet_and_agreement_close_the_loop(workspace, repo):
     assert len(sheet) == 3 and not any(item.human_labelled for item in sheet)
     labelled = [item.model_copy(update={"human_labelled": True, "labels": HandLabels(
         covered=[True] * len(item.gold_facts),
-        presented_as_current=[False] * len(item.superseded_facts) if item.superseded_facts else None,
+        presented_as_live=[False] * len(item.superseded_facts) if item.superseded_facts else None,
         reports_change=True if item.superseded_facts else None)}) for item in sheet]
     save_labels(root / "judge_agreement" / "labels.yaml", labelled)
 
