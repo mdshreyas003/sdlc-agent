@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from doubles import ScriptedJudge
 
 from whycode.fixtures import fixture_graph
@@ -30,15 +29,6 @@ STATEMENT_PHASE_QUOTE = (
 )
 
 
-@pytest.fixture
-def fixture_env(neo4j_uri_auth, neo4j_driver, monkeypatch):
-    """The `whycode` command pointed at the test database (wiped), offline."""
-    uri, (user, password) = neo4j_uri_auth
-    for name, value in {"NEO4J_URI": uri, "NEO4J_USERNAME": user, "NEO4J_PASSWORD": password}.items():
-        monkeypatch.setenv(name, value)
-    neo4j_driver.execute_query("MATCH (n) DETACH DELETE n")
-
-
 def test_precision_and_recall_of_the_judge_against_explicit_supersession():
     judge = ScriptedJudge({
         (VALIDATION_QUOTE, KEEP_RETRYING_QUOTE): ("supersedes", "treating validation errors as permanent failed jobs"),
@@ -64,7 +54,7 @@ def test_a_supersedes_label_whose_quote_is_not_verbatim_does_not_count():
     assert report.true_positives == 0 and report.false_negatives == 2
 
 
-def test_the_command_reports_on_the_built_graph_with_the_recorded_judge(fixture_env, tmp_path, capsys):
+def test_the_command_reports_on_the_built_graph_with_the_recorded_judge(whycode_env, tmp_path, capsys):
     from whycode.cli import main
 
     assert main(["build"]) == 0

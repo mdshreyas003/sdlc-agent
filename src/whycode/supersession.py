@@ -21,7 +21,8 @@ its own, a successor whose Decisions are about other code), or when an RFC decla
 **Inferred** Supersession (`origin: derived`): pairs of Decisions that govern the same Code Entity, where B took
 effect later than A and comes from another Discussion, are candidates (`candidate_pairs`: the most specific code
 both govern, so two Decisions on different functions of one file are not paired; at most `MAX_LATER` later
-Decisions per Decision). The judge (Opus 5.5
+Decisions per Decision, configurable). The build reports how many pairs the judge was asked about and how many it
+was not, by reason (`PairingReport`). The judge (Opus 5.5
 behind the `SupersessionJudge` seam) labels it supersedes / refines / unrelated with a quote; the model proposes,
 code decides: a label becomes an edge only when its quote has at least `MIN_DECISION_QUOTE_WORDS` words and is
 verbatim in B's Discussion. Pairs that need no judgment are skipped: those already linked explicitly, and those
@@ -77,12 +78,18 @@ class _Index:
         self.of_record: dict[str, list[str]] = defaultdict(list)
         for e in graph.edges("YIELDS"):
             self.of_record[e.source].append(e.target)
-        self.governs: dict[str, set[str]] = defaultdict(set)
+        self.governs_any: dict[str, set[str]] = defaultdict(set)  # Decision -> every Code Entity it governs
+        self.governs: dict[str, set[str]] = defaultdict(set)  # the same without packages (too wide to share)
         for e in graph.edges("GOVERNS"):
-            if not e.target.startswith("package:"):
+            self.governs_any[e.source].add(e.target)
+            if "Package" not in graph.nodes[e.target].labels:
                 self.governs[e.source].add(e.target)
         self.pr_of_commit = {e.target: e.source for e in graph.edges("CONTAINS")
-                             if e.target.startswith("commit:") and e.source.startswith("pr:")}
+                             if "Commit" in graph.nodes[e.target].labels and self.is_pr(e.source)}
+
+    def is_pr(self, node_id: str) -> bool:
+        node = self.graph.nodes.get(node_id)
+        return node is not None and "PullRequest" in node.labels
 
     def real(self, node_id: str) -> bool:
         node = self.graph.nodes.get(node_id)
@@ -135,9 +142,9 @@ def _quote_at(history: History, record: str, locator: str) -> str | None:
 
 def _reverts(index: _Index, history: History) -> list[Edge]:
     statements: dict[tuple[str, str], tuple[str, str, str]] = {}  # (R, P) -> (record, locator, quote)
-    for e in sorted(index.graph.edges("REVERTS"), key=lambda e: (not e.source.startswith("pr:"), e.props["locator"])):
-        reverting = e.source if e.source.startswith("pr:") else index.pr_of_commit.get(e.source)
-        reverted = e.target if e.target.startswith("pr:") else index.pr_of_commit.get(e.target)
+    for e in sorted(index.graph.edges("REVERTS"), key=lambda e: (not index.is_pr(e.source), e.props["locator"])):
+        reverting = e.source if index.is_pr(e.source) else index.pr_of_commit.get(e.source)
+        reverted = e.target if index.is_pr(e.target) else index.pr_of_commit.get(e.target)
         if not (reverting and reverted) or reverting == reverted or not index.real(reverted):
             continue
         quote = _quote_at(history, e.source, e.props["locator"])
@@ -224,7 +231,8 @@ def _statements(index: _Index, discussions: Iterable[Discussion]) -> list[Edge]:
 Label = Literal["supersedes", "refines", "unrelated"]
 EDGE_TYPE = {"supersedes": "SUPERSEDES", "refines": "REFINES"}
 MAX_LATER = 5
-"""Each Decision is judged against at most this many later Decisions (the nearest in time)."""
+"""The judge's default cost bound: each Decision is judged against at most this many later Decisions (the nearest
+in time). `whycode build --judge-max-later N` changes it (0: no bound); the build reports what it left out."""
 
 
 class Judgment(BaseModel):
@@ -266,15 +274,24 @@ def summary(graph: Graph, decision_id: str) -> DecisionSummary:
                            choice=d["choice"], rationale=d["rationale"], quote=d["quote"], date=d["date"])
 
 
-def candidate_pairs(graph: Graph, max_later: int | None = None) -> list[tuple[str, str, tuple[str, ...]]]:
-    """(earlier, later, shared entities) for the pairs of Decisions to judge, oldest later Decision first.
+@dataclass(frozen=True, slots=True)
+class CandidatePairs:
+    """The pairs to judge, (earlier, later, shared Code Entities), oldest later Decision first; and how many pairs
+    of Decisions governing the same Code Entity were left out, by reason."""
 
-    A pair shares a Code Entity among the most specific ones each Decision governs (a file counts only for a
-    Decision that governs nothing inside it), the later one is from another Discussion and strictly later.
-    Each earlier Decision is paired with its `max_later` nearest later Decisions (default `MAX_LATER`), which
+    pairs: list[tuple[str, str, tuple[str, ...]]]
+    over_max_later: int  # past the cost bound
+    share_only_containing_code: int  # share only a file or package that holds the code each one governs
+
+
+def candidate_pairs(graph: Graph, max_later: int | None = MAX_LATER) -> CandidatePairs:
+    """The pairs of Decisions to judge.
+
+    A pair shares a Code Entity among the most specific ones each Decision governs (a file or package counts only
+    for a Decision that governs nothing inside it), the later one is from another Discussion and strictly later.
+    Each earlier Decision is paired with its `max_later` nearest later Decisions (None: all of them), which
     bounds the judge's cost at that many calls per Decision.
     """
-    max_later = MAX_LATER if max_later is None else max_later
     index = _Index(graph)
     parent = {e.target: e.source for e in graph.edges("CONTAINS")
               if "CodeEntity" in graph.nodes[e.source].labels and "CodeEntity" in graph.nodes[e.target].labels}
@@ -285,32 +302,56 @@ def candidate_pairs(graph: Graph, max_later: int | None = None) -> list[tuple[st
             out.add(entity)
         return out
 
-    governed_by: dict[str, set[str]] = defaultdict(set)
-    for decision, entities in index.governs.items():
-        inside = set().union(*(ancestors(e) for e in entities))
-        for entity in entities - inside:
-            governed_by[entity].add(decision)
-    shared: dict[tuple[str, str], set[str]] = defaultdict(set)
-    for entity, decisions in governed_by.items():
-        for a in decisions:
-            for b in decisions:
-                pa, pb = index.decisions[a].props, index.decisions[b].props
-                if pa["discussion_id"] != pb["discussion_id"] and pa["date"] < pb["date"]:
-                    shared[(a, b)].add(entity)
-
     def when(decision: str) -> str:
         return index.decisions[decision].props["date"]
 
+    def sharing(governs: dict[str, set[str]]) -> dict[tuple[str, str], set[str]]:
+        """(earlier, later) -> the entities both govern, for Decisions of different Discussions."""
+        governed_by: dict[str, set[str]] = defaultdict(set)
+        for decision, entities in governs.items():
+            for entity in entities:
+                governed_by[entity].add(decision)
+        out: dict[tuple[str, str], set[str]] = defaultdict(set)
+        for entity, decisions in governed_by.items():
+            for a in decisions:
+                for b in decisions:
+                    pa, pb = index.decisions[a].props, index.decisions[b].props
+                    if pa["discussion_id"] != pb["discussion_id"] and pa["date"] < pb["date"]:
+                        out[(a, b)].add(entity)
+        return out
+
+    specific = {d: es - set().union(*(ancestors(e) for e in es)) for d, es in index.governs_any.items()}
+    shared = sharing(specific)
     nearest: dict[str, list[str]] = defaultdict(list)
     for a, b in sorted(shared, key=lambda pair: (when(pair[1]), pair[1])):
         nearest[a].append(b)
     keep = {(a, b) for a, laters in nearest.items() for b in laters[:max_later]}
-    return [(a, b, tuple(sorted(shared[(a, b)]))) for a, b in
-            sorted(keep, key=lambda pair: (when(pair[1]), when(pair[0]), pair))]
+    pairs = [(a, b, tuple(sorted(shared[(a, b)]))) for a, b in
+             sorted(keep, key=lambda pair: (when(pair[1]), when(pair[0]), pair))]
+    return CandidatePairs(pairs, over_max_later=len(shared) - len(keep),
+                          share_only_containing_code=len(set(sharing(index.governs_any)) - set(shared)))
+
+
+@dataclass(frozen=True, slots=True)
+class PairingReport:
+    """What the judge was asked, and every candidate pair it was not asked about, by reason (the build prints it)."""
+
+    max_later: int | None
+    judged: int
+    over_max_later: int
+    share_only_containing_code: int
+    explicitly_linked: int  # history already states the Supersession
+    already_superseded: int  # the earlier Decision was explicitly superseded before the later one took effect
+
+    def as_dict(self) -> dict:
+        return {"max_later": self.max_later, "judged": self.judged, "skipped": {
+            "over_max_later": self.over_max_later, "share_only_containing_code": self.share_only_containing_code,
+            "explicitly_linked": self.explicitly_linked, "already_superseded": self.already_superseded}}
 
 
 def inferred_supersessions(graph: Graph, discussions: Iterable[Discussion], explicit: Iterable[Edge],
-                           judge: SupersessionJudge) -> list[Edge]:
+                           judge: SupersessionJudge,
+                           max_later: int | None = MAX_LATER) -> tuple[list[Edge], PairingReport]:
     by_id = {d.id: d for d in discussions}
     linked, dead_since = set(), {}
     for e in explicit:
@@ -318,11 +359,17 @@ def inferred_supersessions(graph: Graph, discussions: Iterable[Discussion], expl
         if e.type == "SUPERSEDES":
             dead_since[e.target] = min(e.props["observed_at"], dead_since.get(e.target, e.props["observed_at"]))
     name = getattr(judge, "name", type(judge).__name__)
-    out = []
-    for earlier, later, shared in candidate_pairs(graph):
+    candidates = candidate_pairs(graph, max_later)
+    out, judged, explicitly_linked, already_superseded = [], 0, 0, 0
+    for earlier, later, shared in candidates.pairs:
         b = summary(graph, later)
-        if (earlier, later) in linked or dead_since.get(earlier, "9999") <= b.date:
+        if (earlier, later) in linked:
+            explicitly_linked += 1
             continue
+        if dead_since.get(earlier, "9999") <= b.date:
+            already_superseded += 1
+            continue
+        judged += 1
         discussion = by_id[b.discussion_id]
         judgment = judge.judge(CandidatePair(summary(graph, earlier), b, shared, discussion.text))
         if judgment.label not in EDGE_TYPE:
@@ -336,15 +383,21 @@ def inferred_supersessions(graph: Graph, discussions: Iterable[Discussion], expl
         out.append(_edge(later, earlier, type_=EDGE_TYPE[judgment.label], basis=INFERRED, quote=quote,
                          record=b.discussion_id, locator=segment.locator, at=b.date, via="judge", judge=name,
                          reason=judgment.reason))
-    return out
+    report = PairingReport(max_later, judged, candidates.over_max_later, candidates.share_only_containing_code,
+                           explicitly_linked, already_superseded)
+    log.info("supersession judge: %s", report.as_dict())
+    return out, report
 
 
-def supersessions(graph: Graph, history: History, discussions: Iterable[Discussion],
-                  judge: SupersessionJudge | None) -> list[Edge]:
-    """Explicit Supersession always; inferred Supersession when a judge is given."""
+def supersessions(graph: Graph, history: History, discussions: Iterable[Discussion], judge: SupersessionJudge | None,
+                  max_later: int | None = MAX_LATER) -> tuple[list[Edge], PairingReport | None]:
+    """Explicit Supersession always; inferred Supersession when a judge is given (with what it was asked)."""
     discussions = list(discussions)
     explicit = explicit_supersessions(graph, history, discussions)
-    return explicit + (inferred_supersessions(graph, discussions, explicit, judge) if judge else [])
+    if judge is None:
+        return explicit, None
+    inferred, report = inferred_supersessions(graph, discussions, explicit, judge, max_later)
+    return explicit + inferred, report
 
 
 class RecordedSupersessionJudge:
@@ -516,10 +569,11 @@ def judge_report(graph: Graph, judge: SupersessionJudge) -> JudgeReport:
     superseded, superseders = {a for a, _ in gold}, {b for _, b in gold}
     unjudgeable = len({e.target for e in explicit} - superseded)
     pairs = dict.fromkeys(sorted(gold, key=lambda p: (index.decisions[p[1]].props["date"], p)))
-    for a, b, _ in candidate_pairs(graph):
+    candidates = candidate_pairs(graph).pairs
+    for a, b, _ in candidates:
         if a in superseded or b in superseders:
             pairs.setdefault((a, b))
-    shared = {(a, b): s for a, b, s in candidate_pairs(graph)}
+    shared = {(a, b): s for a, b, s in candidates}
     cases = []
     for a, b in pairs:
         earlier, later = summary(graph, a), summary(graph, b)

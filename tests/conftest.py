@@ -52,3 +52,14 @@ def empty_store(neo4j_driver):
 
     neo4j_driver.execute_query("MATCH (n) DETACH DELETE n")
     return GraphStore(neo4j_driver)
+
+
+@pytest.fixture
+def whycode_env(neo4j_uri_auth, neo4j_driver, monkeypatch):
+    """The `whycode` command pointed at the test database (wiped), offline."""
+    uri, (user, password) = neo4j_uri_auth
+    for name, value in {"NEO4J_URI": uri, "NEO4J_USERNAME": user, "NEO4J_PASSWORD": password}.items():
+        monkeypatch.setenv(name, value)
+    for name in ("WHY_EXTRACTOR", "WHY_CUTOFF"):
+        monkeypatch.delenv(name, raising=False)
+    neo4j_driver.execute_query("MATCH (n) DETACH DELETE n")

@@ -1,6 +1,7 @@
 """Graph building: history + code index + a Decision proposer -> a `Graph` ready for `GraphStore.replace`.
 
     graph = build_graph(load_history(source, cutoff), parse_go_tree(checkout), proposer, judge)
+    built = build(..., judge, max_later=10)    # the same, with what the supersession judge was asked
 
 Pure apart from the proposer's and the judge's model calls; the same inputs (and cached model responses) give
 the same graph.
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections import defaultdict
+from dataclasses import dataclass
 
 from whycode import discussions as disc
 from whycode import ids
@@ -22,16 +24,28 @@ from whycode.graph import DERIVED, STATED, Edge, Graph, Node
 from whycode.history.records import History
 from whycode.history.rfc import normalize_status, parse_header
 from whycode.linker import incident_labels, stated_links
-from whycode.supersession import SupersessionJudge, supersessions
+from whycode.supersession import MAX_LATER, PairingReport, SupersessionJudge, supersessions
 
 DEPARTED_AFTER = dt.timedelta(days=365)
 """A Person with no activity in this long before the cutoff is shown as departed."""
 
 
+@dataclass(frozen=True)
+class Built:
+    graph: Graph
+    pairing: PairingReport | None  # what the supersession judge was asked (None without a judge)
+
+
+def build(history: History, code: CodeIndex, proposer: DecisionProposer, judge: SupersessionJudge | None = None,
+          max_later: int | None = MAX_LATER) -> Built:
+    """Without a judge, only explicit Supersession is added (no model). `max_later` bounds the judge's calls
+    (`whycode.supersession.candidate_pairs`)."""
+    return _Builder(history, code).build(proposer, judge, max_later)
+
+
 def build_graph(history: History, code: CodeIndex, proposer: DecisionProposer,
                 judge: SupersessionJudge | None = None) -> Graph:
-    """Without a judge, only explicit Supersession is added (no model)."""
-    return _Builder(history, code).build(proposer, judge)
+    return build(history, code, proposer, judge).graph
 
 
 _DATE_PROPS = ("date", "merged_at", "closed_at", "last_active_at")
@@ -74,7 +88,7 @@ class _Builder:
         self.implemented_by: dict[str, set[str]] = defaultdict(set)  # Discussion id -> implementing Change ids
         self.last_active: dict[str, dt.date] = {}
 
-    def build(self, proposer: DecisionProposer, judge: SupersessionJudge | None = None) -> Graph:
+    def build(self, proposer: DecisionProposer, judge: SupersessionJudge | None, max_later: int | None) -> Built:
         self._add_code()
         self._add_records()
         self._add_links()
@@ -83,10 +97,11 @@ class _Builder:
         for discussion in self.discussions:
             for decision in extract_decisions(discussion, proposer, self.code):
                 self._add_decision(discussion, decision, extractor)
-        for edge in supersessions(self.graph, self.history, self.discussions, judge):
+        edges, pairing = supersessions(self.graph, self.history, self.discussions, judge, max_later)
+        for edge in edges:
             self.graph.add_edge(edge)
         self._add_stubs()
-        return self.graph
+        return Built(self.graph, pairing)
 
     def _edge(self, source: str, type_: str, target: str, locator: str, at: dt.date, **props) -> None:
         self.graph.add_edge(Edge(source, type_, target, {

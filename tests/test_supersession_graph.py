@@ -221,12 +221,30 @@ def test_decisions_are_paired_on_the_most_specific_code_they_govern_not_merely_t
     assert (BACKOFF_QUOTE, VALIDATION_QUOTE) not in asked  # exec vs isPermanentSchemaChangeError: same file only
 
 
-def test_each_decision_is_judged_against_at_most_a_few_later_ones():
-    from whycode.supersession import candidate_pairs
+def build_report(capsys, *args):
+    import json
 
-    graph = fixture_graph()
-    later_per_earlier = {}
-    for earlier, later, _ in candidate_pairs(graph, max_later=1):
-        later_per_earlier.setdefault(earlier, []).append(later)
+    from whycode.cli import main
 
-    assert later_per_earlier and all(len(v) == 1 for v in later_per_earlier.values())
+    assert main(["build", *args]) == 0
+    return json.loads(capsys.readouterr().out)
+
+
+def test_the_build_reports_how_many_candidate_pairs_were_judged_and_why_the_others_were_skipped(
+        whycode_env, capsys):
+    # The fixture's Decisions on schema_changer.go make 14 pairs (B later, another Discussion); 5 of them share the
+    # function or setting each governs, 9 share only the file. With the RFC pair there are 6 candidates: 2 already
+    # linked explicitly (the revert, the RFC status), 1 whose earlier Decision was already reverted, 3 judged.
+    assert build_report(capsys)["inferred_supersession"] == {
+        "max_later": 5, "judged": 3,
+        "skipped": {"over_max_later": 0, "share_only_containing_code": 9, "explicitly_linked": 2,
+                    "already_superseded": 1},
+    }
+    # The cost bound is explicit and configurable: each Decision against at most one later one leaves out two.
+    assert build_report(capsys, "--judge-max-later", "1")["inferred_supersession"] == {
+        "max_later": 1, "judged": 2,
+        "skipped": {"over_max_later": 2, "share_only_containing_code": 9, "explicitly_linked": 2,
+                    "already_superseded": 0},
+    }
+    unbounded = build_report(capsys, "--judge-max-later", "0")["inferred_supersession"]
+    assert (unbounded["max_later"], unbounded["skipped"]["over_max_later"]) == (None, 0)

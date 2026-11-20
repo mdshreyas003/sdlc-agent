@@ -135,7 +135,10 @@ It reads the built graph and asks the judge (default `--judge anthropic`, cached
 explicit Decision-to-Decision Supersession with the explicit statement masked, plus the candidate pairs around
 those cases, then prints precision, recall and every disagreement for a human to check. On the real slice,
 `whycode build --history github` judges inferred Supersession with Opus 5.5 (one cached call per candidate pair;
-`--judge none` keeps explicit Supersession only). Not run on real data yet: it needs the Anthropic key.
+`--judge none` keeps explicit Supersession only). The judge's cost is bounded: each Decision is judged against its
+5 nearest later Decisions (`--judge-max-later N`, 0 for no bound), and the build output's `inferred_supersession`
+says how many pairs were judged and how many were not, by reason (past the bound, sharing only a containing file or
+package, already linked explicitly, earlier Decision already superseded). Not run on real data yet: it needs the Anthropic key.
 
 ## `check_change` and Fence Warnings
 

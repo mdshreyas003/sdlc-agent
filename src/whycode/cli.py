@@ -59,7 +59,8 @@ def _fetch(settings: Settings, args: argparse.Namespace, transport=None) -> int:
 
 
 def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
-    from whycode.build import build_graph, latest_date
+    from whycode.build import build, latest_date
+    from whycode.supersession import MAX_LATER
     from whycode.graph.store import GraphStore
     from whycode.history import load_history
 
@@ -91,7 +92,9 @@ def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
         history = load_history(FixtureHistorySource(FIXTURE_DIR, repo=FIXTURE_REPO), cutoff)
         code = fixture_code_index()
 
-    graph = build_graph(history, code, proposer, judge)
+    max_later = MAX_LATER if args.judge_max_later is None else (args.judge_max_later or None)
+    built = build(history, code, proposer, judge, max_later)
+    graph = built.graph
     latest = latest_date(graph)
     if latest and latest > cutoff.isoformat():
         raise RuntimeError(f"the graph holds a date after the cutoff ({latest} > {cutoff}); nothing was written")
@@ -102,6 +105,8 @@ def _build(settings: Settings, args: argparse.Namespace, transport=None) -> int:
         "counts": {name: raw.get(label, 0) for name, label in PITCH_LABELS.items()},
         "latest_date": latest, "graph": raw,
     }
+    if built.pairing is not None:
+        report["inferred_supersession"] = built.pairing.as_dict()
     if cached is not None:
         from whycode.eval.corpus import write_jsonl
         from whycode.graph.corpus import corpus_records
@@ -201,6 +206,9 @@ def main(argv: list[str] | None = None, *, github_transport=None) -> int:
     build.add_argument("--cutoff", help="YYYY-MM-DD; default: WHY_CUTOFF or 2024-06-30")
     build.add_argument("--judge", choices=JUDGES,
                        help="supersession judge; default: the same kind as the extractor")
+    build.add_argument("--judge-max-later", type=int, metavar="N",
+                       help="judge each Decision against at most its N nearest later Decisions (0: no bound; "
+                            "default: whycode.supersession.MAX_LATER, 5); the output reports the pairs left out")
     build.add_argument("--corpus", help="github: where to write the scoreboard corpus (default: WHY_CORPUS)")
     build.add_argument("--counts-file", default="data/graph-counts.json",
                        help="github: where to record the graph counts (default: %(default)s)")
