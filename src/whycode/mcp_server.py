@@ -24,8 +24,9 @@ INSTRUCTIONS = (
     "package or a cluster setting (schemachanger.job.max_retry_backoff) and returns the Decisions that govern "
     "it, each with a verbatim quote, its Discussion, date, Incidents and the Person to Ask. Each Decision has a "
     "status: `superseded` Decisions are dead history (do not restore what they chose), `refined` ones still hold "
-    "in part, and `superseded_by` / `superseded_at` say by what and when. `refused: true` means no recorded "
-    "Decision reaches that code: treat it as unknown, not as permission. Before you finish a change, call "
+    "in part, and `superseded_by` / `superseded_at` say by what and when. `refused: true` means no Live "
+    "Decision reaches that code (with `refusal_reason: superseded`, `decisions` holds only dead history): treat it "
+    "as unknown, not as permission. Before you finish a change, call "
     "`check_change` with your diff (`git diff` output): each Fence Warning names a Live Decision your diff "
     "reverses or may contradict, with its quote and the Incidents it prevented. Change course, or say in your "
     "summary why the override is justified."
@@ -42,7 +43,8 @@ def build_server(engine: AnswerEngine, checker: FenceChecker | None = None) -> M
     async def why(anchor: str) -> Answer:
         """Return the Decisions that govern a Code Entity (function, file, package or cluster setting), with
         an Evidence Chain of verbatim quotes and node ids, a High/Medium/Low confidence, the Person to Ask
-        (departed people have active=false), linked Incidents, or a refusal with the nearest evidence.
+        (departed people have active=false), linked Incidents, or a refusal with the nearest evidence when no
+        Live Decision governs it.
         Superseded Decisions come back with status=superseded and what superseded them; never treat them as live.
         A free-form question is matched to one Code Entity (anchor_matched=true) or refused."""
         return await anyio.to_thread.run_sync(engine.why, anchor)

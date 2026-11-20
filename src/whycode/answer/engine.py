@@ -5,7 +5,9 @@
    over a shortlist of Code Entities found from the question's words. Unsure, off the shortlist, or no matcher:
    refuse, never guess. A matched Anchor rests on model judgment, so its answer is at most Medium confidence.
 2. Traverse fixed read-only patterns: Anchor -> governing Decisions -> Supersession -> Discussions -> closing
-   Changes -> People and Incidents. No planning, no model-written queries.
+   Changes -> People and Incidents. No planning, no model-written queries. When no Live Decision reaches the
+   Anchor, refuse: `ungoverned` when no Decision does, `superseded` when every one that does is superseded (they
+   come back as the superseded history, with their evidence and the Person to Ask; no model is asked).
 3. Compose sentences from the retrieved nodes only (the `Composer` seam).
 4. Verify in code, then score confidence from graph properties and what verification dropped.
 
@@ -161,6 +163,12 @@ class AnswerEngine:
             evidence.add_superseder(status)
             if status.superseded:
                 superseded[decision_id] = Superseded(quote=quotes[decision_id], witnesses=status.witnesses)
+        reviewed = [i for i, s in discussions.items() if s.kind in ("pr", "rfc")]
+        people = self._people(reviewed, speakers, entity, view)
+        if len(superseded) == len(rows):  # no Live Decision reaches the Anchor: refuse, showing the dead history
+            return Answer(anchor=target, refused=True, confidence="Low", refusal_reason="superseded",
+                          anchor_matched=matched, decisions=decisions, evidence_chain=list(evidence.items.values()),
+                          people=people)
 
         issues = [i for i, s in discussions.items() if s.kind == "issue"]
         closers = self.reader.closers(issues, view) if issues else []
@@ -170,8 +178,6 @@ class AnswerEngine:
         incident_rows = self.reader.incidents(changes + list(discussions), view)
         for incident in incident_rows:
             evidence.add(_node(incident, kind="incident"))
-        reviewed = [i for i, s in discussions.items() if s.kind in ("pr", "rfc")]
-        people = self._people(reviewed, speakers, entity, view)
 
         request = ComposeRequest(anchor=target, decisions=decisions, evidence=list(evidence.nodes.values()),
                                  people=people)

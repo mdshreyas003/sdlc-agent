@@ -19,9 +19,11 @@ Semantics every producer and consumer can rely on:
   each quote is verbatim in the Discussion named by `discussion_id`.
 - Every sentence cites at least one node id, and every cited id is in `evidence_chain`. Quotes in
   `evidence_chain` are verbatim in that node's source text (rule: `whycode.quotes.is_verbatim`).
-- `refused` is True when no Decision reaches the Anchor, or nothing the composer wrote survived
-  verification. A refusal still carries the nearest evidence (`evidence_chain`) and `people` to ask, but
-  no `decisions` and no `sentences`. Its confidence is Low. `refusal_reason` says which case it is.
+- `refused` is True when no Live Decision reaches the Anchor (no Decision at all, or only superseded ones), or
+  nothing the composer wrote survived verification. A refusal still carries the nearest evidence
+  (`evidence_chain`) and `people` to ask, but no `sentences`, and no `decisions` except the superseded history
+  when every Decision reaching the Anchor is superseded. Its confidence is Low. `refusal_reason` says which case
+  it is.
 - Person to Ask (ticket 06): `people` lists the authors and approvers of the Decisions' records, active first. A
   departed person's `ask_instead` names the next-best active person: an active person already in `people`, else
   the author or approver of the latest Change touching the nearest enclosing area of the code (the Anchor's
@@ -55,7 +57,7 @@ DecisionStatus = Literal["live", "superseded", "refined"]
 SupersessionOrigin = Literal["explicit", "inferred"]
 GovernsLink = Literal["hard", "soft"]
 PersonRole = Literal["author", "approver"]
-RefusalReason = Literal["unresolved", "ungoverned", "unverified"]
+RefusalReason = Literal["unresolved", "ungoverned", "superseded", "unverified"]
 
 
 class _Contract(BaseModel):
@@ -149,8 +151,8 @@ class Answer(_Contract):
     check that it is the code you meant."""
     refusal_reason: RefusalReason | None = None
     """Why `refused` is True: `unresolved` (no Code Entity matched the question, or the match was unsure),
-    `ungoverned` (no Decision reaches the Anchor), `unverified` (nothing the composer wrote survived
-    verification)."""
+    `ungoverned` (no Decision reaches the Anchor), `superseded` (every Decision that reaches it is superseded: they
+    are in `decisions`, as history only), `unverified` (nothing the composer wrote survived verification)."""
 
 
 FenceKind = Literal["reverses", "changes"]

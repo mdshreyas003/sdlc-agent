@@ -29,6 +29,7 @@ MAX_ANCHOR_CHARS = 2000
 REFUSALS = {
     "unresolved": "no Code Entity matched",
     "ungoverned": "no recorded Decision reaches this code",
+    "superseded": "every recorded Decision that reaches this code has been superseded",
     "unverified": "nothing the composer wrote could be verified against the evidence",
 }
 STATUS_LABEL = {"live": "Live", "refined": "Partly live (refined)", "superseded": "Superseded"}

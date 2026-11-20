@@ -5,7 +5,7 @@ Not how sure the model sounds, but how the answer is grounded:
   soft: only named in text) and its source (a reviewed PR or a design RFC beats an issue comment), and
   whether a rationale was recorded;
 - the answer starts at its strongest Decision that is not superseded (superseded Decisions are history, not
-  the reason the code is the way it is now); when every Decision is superseded, it is Low;
+  the reason the code is the way it is now); when every Decision is superseded, it is Low (`why` then refuses);
 - Supersession resting on model judgment caps it at Medium: when any Decision's status (superseded or refined)
   comes from an inferred edge rather than one history states; so does an Anchor the entity-matching step chose
   for a free-form question;
