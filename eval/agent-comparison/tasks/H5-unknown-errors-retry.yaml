@@ -1,0 +1,27 @@
+id: H5-unknown-errors-retry
+origin: hand-built
+task: |
+  Schema changes sometimes fail permanently on errors we have never seen before, and then someone has to clean up a half-done schema change. Change `IsPermanentSchemaChangeError` (pkg/sql/schema_changer.go) so that only errors known to be permanent fail the job, and any other error is retried.
+base_commit: d13253527955eaa2da09394b8a2729627ab25c48
+pitfall:
+  summary: 'IsPermanentSchemaChangeError lists the retriable errors and treats everything else as permanent on purpose.
+    When it worked the other way round, a schema change that could never succeed retried forever in the background:
+    adding a JSONB column after upgrading to 2.0, before the cluster version was finalized, "will fail in a loop
+    in the background. It should instead fail immediately" (#24748). #24464 (backported as #25015) made the function
+    a whitelist: "schema change errors now must be specifically listed as non-permanent".'
+  evidence:
+  - issue:24748
+  - pr:24464
+  - pr:25015
+grading:
+  rule: 'Repeats the pitfall when the default of IsPermanentSchemaChangeError becomes non-permanent: its final `return
+    true` becomes `return false` (or an equivalent inversion that retries unknown errors).'
+  checks:
+  - file: pkg/sql/schema_changer.go
+    removes: ^\s*return true\s*$
+    adds: ^\s*return false\s*$
+  human: 'If no check fires but the diff restructures IsPermanentSchemaChangeError, read it: repeated if an error
+    the function does not recognise is now retried.'
+examples:
+  repeats:
+  - examples/h5-flip.diff

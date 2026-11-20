@@ -19,6 +19,7 @@ dependencies = [
 whycode = "whycode.cli:main"
 why-mcp = "whycode.mcp_server:main"
 whycode-eval = "whycode.eval.cli:main"
+whycode-agents = "whycode.comparison.cli:main"
 
 [dependency-groups]
 dev = [

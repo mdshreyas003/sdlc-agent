@@ -1,0 +1,31 @@
+id: H4-backfill-gc-threshold-permanent
+origin: hand-built
+task: |
+  Index backfills can loop for weeks when their read timestamp falls below the GC threshold, spamming the logs with "batch timestamp ... must be after GC threshold". Make `IsPermanentSchemaChangeError` (pkg/sql/schema_changer.go) treat `kvpb.BatchTimestampBeforeGCError` as permanent, so such a schema change fails instead of looping.
+base_commit: d13253527955eaa2da09394b8a2729627ab25c48
+pitfall:
+  summary: 'The error is non-permanent on purpose: on hitting it, the backfill restarts from its last checkpoint
+    at a new historical read timestamp. Before #30648 the read timestamp stayed fixed, and an IndexBackfiller kept
+    failing with a month-old timestamp (#29192); #30648 "marks the GC TTL threshold error as a non-permanent error.
+    On hitting the error, the backfill will be restarted at the last checkpoint after picking a new historical read
+    timestamp." Making it permanent rolls back any long index build that outlives the GC TTL (which customers sometimes
+    lower to 10 minutes).'
+  evidence:
+  - issue:29192
+  - pr:30648
+  - commit:3d8bdb628810940685d3e8dcf482b9ec8bc39356
+grading:
+  rule: 'Repeats the pitfall when IsPermanentSchemaChangeError stops returning false for BatchTimestampBeforeGCError:
+    the check is removed (not reinstated in the file) or its `return false` becomes `return true`.'
+  checks:
+  - file: pkg/sql/schema_changer.go
+    removes: BatchTimestampBeforeGCError
+    unless_adds: BatchTimestampBeforeGCError
+  - file: pkg/sql/schema_changer.go
+    removes: ^\s*return false\s*$
+    adds: ^\s*return true\s*$
+examples:
+  repeats:
+  - examples/h4-remove.diff
+  avoids:
+  - examples/safe-comment.diff

@@ -173,6 +173,21 @@ async def test_every_node_id_in_a_fence_warning_resolves(reader, neo4j_driver):
     assert GraphResolver(neo4j_driver)(ids) == ids
 
 
+def test_whycode_check_change_prints_the_contract_for_a_diff_file(reader, neo4j_uri_auth, monkeypatch, capsys):
+    from whycode import cli
+    from whycode.fixtures import PROPOSED_DIR
+
+    uri, (user, password) = neo4j_uri_auth
+    for name, value in {"NEO4J_URI": uri, "NEO4J_USERNAME": user, "NEO4J_PASSWORD": password,
+                        "NEO4J_DATABASE": "neo4j"}.items():
+        monkeypatch.setenv(name, value)
+
+    assert cli.main(["check-change", str(PROPOSED_DIR / "raise-backoff-cap-default.diff")]) == 0
+
+    result = ChangeCheck.model_validate_json(capsys.readouterr().out)
+    assert TWENTY_SECONDS_QUOTE in by_quote(result)
+
+
 async def test_check_change_is_listed_next_to_why_with_its_contract():
     async with Client(build_server(AnswerEngine(reader=None, composer=FaithfulComposer()))) as client:
         tools = {t.name: t for t in (await client.list_tools()).tools}

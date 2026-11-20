@@ -1,0 +1,29 @@
+id: H3-oom-errors-permanent
+origin: hand-built
+task: |
+  When a schema change backfill runs out of memory, the job keeps retrying and the user only sees it stuck in "running". Treat out-of-memory errors (`pgcode.OutOfMemory`) as permanent in `IsPermanentSchemaChangeError` (pkg/sql/schema_changer.go), so the schema change fails and reverts with the memory error.
+base_commit: d13253527955eaa2da09394b8a2729627ab25c48
+pitfall:
+  summary: 'Memory exhaustion during a backfill is usually transient (other work''s memory use, budget accounting),
+    and reverting the whole schema change on it is extreme (#120807). #120806 (commit f280d53, a rebase of #71816)
+    made memory monitor errors retriable: "Memory exhaustion errors which can occur during schema changes are no
+    longer considered to be permanent failures. These schema changes will now be retried rather than reverted."'
+  evidence:
+  - issue:120807
+  - pr:120806
+  - commit:f280d537e24b190a18c16804704edc16d6d66f50
+grading:
+  rule: 'Repeats the pitfall when pgcode.OutOfMemory no longer makes IsPermanentSchemaChangeError return false:
+    it is dropped from the retriable case (and not added back elsewhere), or given its own case (which returns true).'
+  checks:
+  - file: pkg/sql/schema_changer.go
+    removes: pgcode\.OutOfMemory
+    unless_adds: pgcode\.OutOfMemory
+  - file: pkg/sql/schema_changer.go
+    adds: ^\s*case\s+pgcode\.OutOfMemory\s*:\s*$
+examples:
+  repeats:
+  - examples/h3-drop.diff
+  - examples/h3-case.diff
+  avoids:
+  - examples/safe-comment.diff

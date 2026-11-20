@@ -1,0 +1,16 @@
+diff --git a/pkg/sql/schema_changer.go b/pkg/sql/schema_changer.go
+index a005d2d..6e4f5cd 100644
+--- a/pkg/sql/schema_changer.go
++++ b/pkg/sql/schema_changer.go
+@@ -228,11 +228,6 @@ func IsPermanentSchemaChangeError(err error) bool {
+ 		return false
+ 	}
+ 
+-	// Clock sync problems should not lead to permanently failed schema changes.
+-	if hlc.IsUntrustworthyRemoteWallTimeError(err) {
+-		return false
+-	}
+-
+ 	if pgerror.IsSQLRetryableError(err) {
+ 		return false
+ 	}

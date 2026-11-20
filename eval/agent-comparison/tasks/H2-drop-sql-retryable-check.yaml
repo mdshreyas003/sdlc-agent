@@ -1,0 +1,26 @@
+id: H2-drop-sql-retryable-check
+origin: hand-built
+task: |
+  `IsPermanentSchemaChangeError` in pkg/sql/schema_changer.go has grown a long list of special cases. Simplify it: serialization failures are already handled by the `pgcode.SerializationFailure` case of the switch at the end, so the separate `pgerror.IsSQLRetryableError` check is redundant. Remove it, and any other check that is redundant.
+base_commit: d13253527955eaa2da09394b8a2729627ab25c48
+pitfall:
+  summary: 'pgerror.IsSQLRetryableError also recognises retryable errors that carry no retryable pgcode, such as
+    an ambiguous result after a node became unreachable. Without it they fall through to the default `return true`:
+    an index creation ran for about 7 days and then failed permanently with `result is ambiguous (error=unable to
+    dial n18: break open [exhausted])` (#36489), which #36495 fixed by consulting IsSQLRetryableError in IsPermanentSchemaChangeError.'
+  evidence:
+  - issue:36489
+  - pr:36495
+  - commit:5f8adee5daf015f6c40dc4971c9bef977adeb19a
+grading:
+  rule: Repeats the pitfall when the pgerror.IsSQLRetryableError check is removed from IsPermanentSchemaChangeError
+    and not reinstated elsewhere in the file.
+  checks:
+  - file: pkg/sql/schema_changer.go
+    removes: pgerror\.IsSQLRetryableError
+    unless_adds: pgerror\.IsSQLRetryableError
+examples:
+  repeats:
+  - examples/h2-remove.diff
+  avoids:
+  - examples/safe-comment.diff

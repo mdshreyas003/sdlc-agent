@@ -1,0 +1,32 @@
+{
+  "frozen": {
+    "H1-clock-errors-permanent": {
+      "at": "2026-11-20",
+      "sha256": "77ae90c4960c20a6c559f57161061a648e6994771d78ab26f87fd7402700ae42"
+    },
+    "H2-drop-sql-retryable-check": {
+      "at": "2026-11-20",
+      "sha256": "4e3618165aa191bfe0129cea1648b50160e6782e69a892b2becf29aa35384e72"
+    },
+    "H3-oom-errors-permanent": {
+      "at": "2026-11-20",
+      "sha256": "bc98bc26dbf79e876770b9cfa3a14e8f5fe17f931dd3223b82733ed7656b6911"
+    },
+    "H4-backfill-gc-threshold-permanent": {
+      "at": "2026-11-20",
+      "sha256": "bccd73a3dd3163206cec9c5fc1329863cf0c629dfafdac0dc412f0c35c5622d6"
+    },
+    "H5-unknown-errors-retry": {
+      "at": "2026-11-20",
+      "sha256": "8331f3c9ff7989e8528dd66c573a5e09a4d2af0a6f0e8f8f882c269d647ff5e8"
+    },
+    "R1-dsc-trivial-alter-column-type": {
+      "at": "2026-11-20",
+      "sha256": "be480de5e57111adf45de83b5dd6a350ef78578bae08791ab7cf6a36b17f6aa5"
+    },
+    "R2-dsc-validate-alter-column-type": {
+      "at": "2026-11-20",
+      "sha256": "ce643220365732f97c5ad776e9eec2547fe656c1a22789c24034c6c6b4a34d2b"
+    }
+  }
+}
