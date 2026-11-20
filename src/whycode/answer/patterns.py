@@ -6,25 +6,35 @@ Guards (ported from the legacy query harness, see notes: legacy-query-safety.md)
 - every query runs with read routing (the server rejects writes) and a server-side timeout;
 - every pattern caps its rows with `LIMIT $limit`;
 - stubs are never returned;
-- every pattern sees history only as of `$as_of` (an ISO date; records, Decisions and edges dated after it are
-  absent) and treats the node ids in `$exclude` as absent, with everything that rests on them (a scoreboard
-  query's `as_of` and `exclude`);
+- every traversal sees history through a `HistoryView`: only as of `$as_of` (an ISO date; records, Decisions and
+  edges dated after it are absent), with the node ids in `$exclude` absent along with everything that rests on
+  them (a scoreboard query's `as_of` and `exclude`);
 - `selfcheck()` EXPLAINs every pattern and requires a read-only plan; run it at startup to fail fast.
+
+Rows come back typed (`Record`, `DecisionRow`, `Governing`, `SupersessionRow`, `EntityRow`), never as raw dicts.
 """
 
 from __future__ import annotations
 
+import datetime as dt
 import re
-from collections.abc import Sequence
-from typing import Any
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from neo4j import Driver, Query, RoutingControl
+
+from whycode.contract import GovernsLink, SupersessionOrigin
+from whycode.graph import day
 
 TIMEOUT_S = 10.0
 ROW_LIMIT = 50
 _WRITE = re.compile(r"\b(CREATE|MERGE|DELETE|SET|REMOVE|DROP|LOAD|FOREACH|CALL|DETACH)\b", re.IGNORECASE)
 _REAL = "NOT coalesce({v}.stub, false)"
 _SEEN = "{v}.date <= $as_of AND NOT {v}.id IN $exclude"  # dated on or before as_of, and not excluded
+# A Decision `d`, its Discussion `s` and its GOVERNS edge `g` are all visible (an excluded implementing Change hides g).
+_GOVERNS_SEEN = (f"{_REAL.format(v='s')} AND {_SEEN.format(v='s')} AND {_SEEN.format(v='d')}\n"
+                 "  AND g.observed_at <= $as_of AND NOT coalesce(g.change, \"\") IN $exclude")
 ALL_HISTORY = "9999-12-31"
 
 PATTERNS: dict[str, str] = {
@@ -46,8 +56,7 @@ ORDER BY hits DESC, size(e.key), e.id LIMIT $limit""",
 MATCH (a:CodeEntity {{id: $id}})-[:CONTAINS*0..2]->(e:CodeEntity)
 MATCH (d:Decision)-[g:GOVERNS]->(e)
 MATCH (s:Discussion)-[:YIELDS]->(d)
-WHERE {_REAL.format(v="s")} AND {_SEEN.format(v="s")} AND {_SEEN.format(v="d")}
-  AND g.observed_at <= $as_of AND NOT coalesce(g.change, "") IN $exclude
+WHERE {_GOVERNS_SEEN}
 WITH d, s, collect(DISTINCT {{entity: e.id, link: g.link}}) AS governs
 RETURN d {{.id, .choice, .rationale, .quote, .date, .alternatives_rejected, .speaker}} AS decision,
        s {{.id, .kind, .title, .url, .date, .text}} AS discussion, governs
@@ -118,8 +127,7 @@ ORDER BY best.rank, best.date DESC, best.approver, handle LIMIT $limit""",
 MATCH (parent:CodeEntity)-[:CONTAINS]->(:CodeEntity {{id: $id}})
 MATCH (d:Decision)-[g:GOVERNS]->(parent)
 MATCH (s:Discussion)-[:YIELDS]->(d)
-WHERE {_REAL.format(v="s")} AND {_SEEN.format(v="s")} AND {_SEEN.format(v="d")}
-  AND g.observed_at <= $as_of AND NOT coalesce(g.change, "") IN $exclude
+WHERE {_GOVERNS_SEEN}
 WITH DISTINCT d, s
 RETURN d {{.id, .choice, .quote, .date}} AS decision, s {{.id, .kind, .title, .url}} AS discussion
 ORDER BY decision.date DESC, decision.id LIMIT $limit""",
@@ -139,8 +147,7 @@ ORDER BY entity.kind, entity.key LIMIT $limit""",
 MATCH (d:Decision)-[g:GOVERNS]->(e:CodeEntity)
 WHERE e.id IN $ids
 MATCH (s:Discussion)-[:YIELDS]->(d)
-WHERE {_REAL.format(v="s")} AND {_SEEN.format(v="s")} AND {_SEEN.format(v="d")}
-  AND g.observed_at <= $as_of AND NOT coalesce(g.change, "") IN $exclude
+WHERE {_GOVERNS_SEEN}
 WITH d, s, collect(DISTINCT {{entity: e.id, link: g.link, change: g.change}}) AS governs
 RETURN d {{.id, .choice, .rationale, .quote, .date}} AS decision,
        s {{.id, .kind, .title, .url, .date}} AS discussion, governs
@@ -166,6 +173,165 @@ DIFF_ENTITY_LIMIT = 5000
 """check_change reads at most this many Code Entities for one diff (the files' functions and settings)."""
 
 
+@dataclass(frozen=True, slots=True)
+class HistoryView:
+    """A query's view of history: nothing dated after `as_of` (None: all of it), and none of the `exclude`d records,
+    nor what rests on them."""
+
+    as_of: dt.date | None = None
+    exclude: frozenset[str] = frozenset()
+
+    @classmethod
+    def of(cls, as_of: dt.date | None = None, exclude: Iterable[str] = ()) -> HistoryView:
+        return cls(as_of, frozenset(exclude))
+
+    def params(self) -> dict[str, Any]:
+        return {"as_of": self.as_of.isoformat() if self.as_of else ALL_HISTORY, "exclude": sorted(self.exclude)}
+
+
+ALL = HistoryView()
+"""All of history, nothing excluded."""
+
+
+@dataclass(frozen=True, slots=True)
+class Record:
+    """A history record (Discussion, Change, Incident) as a pattern returns it."""
+
+    id: str
+    kind: str
+    title: str | None = None
+    url: str | None = None
+    date: str | None = None  # ISO, as stored
+    text: str = ""
+
+    @classmethod
+    def of(cls, row: Mapping[str, Any]) -> Record:
+        return cls(id=row["id"], kind=row.get("kind") or "record", title=row.get("title"), url=row.get("url"),
+                   date=row.get("date"), text=row.get("text") or "")
+
+    @property
+    def day(self) -> dt.date | None:
+        return day(self.date)
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionRow:
+    id: str
+    choice: str
+    quote: str
+    date: str  # ISO, as stored
+    rationale: str = ""
+    alternatives_rejected: tuple[str, ...] = ()
+    speaker: str | None = None
+
+    @classmethod
+    def of(cls, row: Mapping[str, Any]) -> DecisionRow:
+        return cls(id=row["id"], choice=row["choice"], quote=row["quote"], date=row["date"],
+                   rationale=row.get("rationale") or "",
+                   alternatives_rejected=tuple(row.get("alternatives_rejected") or ()), speaker=row.get("speaker"))
+
+    @property
+    def day(self) -> dt.date:
+        return day(self.date)
+
+
+@dataclass(frozen=True, slots=True)
+class Governs:
+    """One GOVERNS edge: the Code Entity, its link, and (hard) the Change implementing the Decision there."""
+
+    entity: str
+    link: GovernsLink
+    change: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Governing:
+    """A Decision, the Discussion it came from, and the Code Entities (in the query's scope) it governs."""
+
+    decision: DecisionRow
+    discussion: Record
+    governs: tuple[Governs, ...]
+
+    @classmethod
+    def of(cls, row: Mapping[str, Any]) -> Governing:
+        return cls(DecisionRow.of(row["decision"]), Record.of(row["discussion"]),
+                   tuple(Governs(g["entity"], g["link"], g.get("change")) for g in row["governs"]))
+
+    @property
+    def link(self) -> GovernsLink:
+        """`hard` when the Change implementing the Decision touched any governed entity, else `soft`."""
+        return "hard" if self.hard_entities else "soft"
+
+    @property
+    def entities(self) -> frozenset[str]:
+        return frozenset(g.entity for g in self.governs)
+
+    @property
+    def hard_entities(self) -> frozenset[str]:
+        return frozenset(g.entity for g in self.governs if g.link == "hard")
+
+    @property
+    def implementing(self) -> frozenset[str]:
+        """The Changes implementing the Decision (their diffs made the hard links)."""
+        return frozenset(g.change for g in self.governs if g.link == "hard" and g.change)
+
+
+SupersessionType = Literal["SUPERSEDES", "REFINES"]
+
+
+@dataclass(frozen=True, slots=True)
+class SupersessionRow:
+    """A SUPERSEDES or REFINES edge into `decision`: what superseded or refined it (`by`, a Decision with its
+    Discussion, or a record), when, on what basis, and the verbatim `quote` in the `source` record."""
+
+    decision: str
+    type: SupersessionType
+    basis: SupersessionOrigin
+    at: str  # ISO, as stored
+    quote: str
+    by: DecisionRow | Record
+    by_discussion: Record | None  # when `by` is a Decision
+    source: Record
+
+    @classmethod
+    def of(cls, row: Mapping[str, Any]) -> SupersessionRow:
+        x = row["by"]
+        by = DecisionRow.of(x) if x.get("choice") is not None else Record.of(x)
+        home = row.get("by_discussion")
+        return cls(decision=row["decision"], type=row["type"], basis=row["basis"], at=row["at"], quote=row["quote"],
+                   by=by, by_discussion=Record.of(home) if home else None, source=Record.of(row["source"]))
+
+    @property
+    def by_decision(self) -> bool:
+        return isinstance(self.by, DecisionRow)
+
+    @property
+    def day(self) -> dt.date:
+        return day(self.at)
+
+
+@dataclass(frozen=True, slots=True)
+class EntityRow:
+    """A Code Entity as `resolve`, `candidates` and the Anchor need it."""
+
+    id: str
+    kind: str
+    key: str
+    file: str | None = None
+
+    @classmethod
+    def of(cls, row: Mapping[str, Any]) -> EntityRow:
+        return cls(id=row["id"], kind=row["kind"], key=row["key"], file=row.get("file"))
+
+
+@dataclass(frozen=True, slots=True)
+class PersonRow:
+    handle: str
+    active: bool
+    role: str = "author"  # author | approver
+    via: str | None = None  # area_people: the Change that puts them in the area
+
+
 class GraphReader:
     def __init__(self, driver: Driver, database: str | None = None, timeout: float = TIMEOUT_S):
         self.driver = driver
@@ -182,7 +348,9 @@ class GraphReader:
             routing_=RoutingControl.READ, database_=self.database,
         )
 
-    def _rows(self, pattern: str, **params: Any) -> list[dict[str, Any]]:
+    def _rows(self, pattern: str, view: HistoryView | None = None, **params: Any) -> list[dict[str, Any]]:
+        if view is not None:
+            params |= view.params()
         return [record.data() for record in self._run(pattern, **params).records]
 
     def selfcheck(self) -> None:
@@ -196,64 +364,61 @@ class GraphReader:
             if summary.query_type != "r":
                 raise RuntimeError(f"query pattern {name} is not read-only ({summary.query_type})")
 
-    def resolve(self, name: str) -> list[dict[str, Any]]:
-        return self._rows("resolve", name=name)
+    def resolve(self, name: str) -> list[EntityRow]:
+        return [EntityRow.of(r) for r in self._rows("resolve", name=name)]
 
-    def candidates(self, words: list[str], limit: int = 30) -> list[dict[str, Any]]:
+    def candidates(self, words: list[str], limit: int = 30) -> list[EntityRow]:
         """Code Entities whose own names (name, receiver, setting names) contain any of `words` (lower case),
         the most words first."""
-        return self._rows("candidates", words=words, limit=limit)
+        return [EntityRow.of(r) for r in self._rows("candidates", words=words, limit=limit)]
 
-    # Every traversal below takes the query's view of history: `as_of` (ISO date) and `exclude` (node ids).
+    # Every traversal below sees history through a `HistoryView`.
 
-    def governing(self, entity_id: str, as_of: str = ALL_HISTORY, exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return self._rows("governing", id=entity_id, as_of=as_of, exclude=list(exclude))
+    def governing(self, entity_id: str, view: HistoryView = ALL) -> list[Governing]:
+        return [Governing.of(r) for r in self._rows("governing", view, id=entity_id)]
 
-    def closers(self, discussion_ids: list[str], as_of: str = ALL_HISTORY,
-                exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return [r["change"] for r in self._rows("closers", ids=discussion_ids, as_of=as_of, exclude=list(exclude))]
+    def closers(self, discussion_ids: list[str], view: HistoryView = ALL) -> list[Record]:
+        return [Record.of(r["change"]) for r in self._rows("closers", view, ids=discussion_ids)]
 
-    def people(self, record_ids: list[str]) -> list[dict[str, Any]]:
-        return self._rows("people", ids=record_ids)
+    def people(self, record_ids: list[str]) -> list[PersonRow]:
+        return [PersonRow(r["handle"], bool(r["active"]), r["role"]) for r in self._rows("people", ids=record_ids)]
 
-    def people_by_handle(self, handles: list[str]) -> list[dict[str, Any]]:
-        return self._rows("people_by_handle", handles=handles)
+    def people_by_handle(self, handles: list[str]) -> list[PersonRow]:
+        return [PersonRow(r["handle"], bool(r["active"])) for r in self._rows("people_by_handle", handles=handles)]
 
-    def incidents(self, record_ids: list[str], as_of: str = ALL_HISTORY,
-                  exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return [r["incident"] for r in self._rows("incidents", ids=record_ids, as_of=as_of, exclude=list(exclude))]
+    def incidents(self, record_ids: list[str], view: HistoryView = ALL) -> list[Record]:
+        return [Record.of(r["incident"]) for r in self._rows("incidents", view, ids=record_ids)]
 
-    def supersession(self, decision_ids: list[str], as_of: str = ALL_HISTORY,
-                     exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return self._rows("supersession", ids=decision_ids, as_of=as_of, exclude=list(exclude), limit=4 * ROW_LIMIT)
+    def supersession(self, decision_ids: list[str], view: HistoryView = ALL) -> list[SupersessionRow]:
+        return [SupersessionRow.of(r) for r in self._rows("supersession", view, ids=decision_ids,
+                                                           limit=4 * ROW_LIMIT)]
 
-    def nearest_changes(self, entity_id: str, as_of: str = ALL_HISTORY,
-                        exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return [r["change"] for r in self._rows("nearest_changes", id=entity_id, as_of=as_of, exclude=list(exclude),
-                                                limit=10)]
+    def nearest_changes(self, entity_id: str, view: HistoryView = ALL) -> list[Record]:
+        return [Record.of(r["change"]) for r in self._rows("nearest_changes", view, id=entity_id, limit=10)]
 
-    def area_people(self, prefixes: list[str], as_of: str = ALL_HISTORY,
-                    exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
+    def area_people(self, prefixes: list[str], view: HistoryView = ALL) -> list[PersonRow]:
         """Active people of the latest Changes touching files under each path prefix (nearest area first)."""
-        return self._rows("area_people", prefixes=prefixes, as_of=as_of, exclude=list(exclude), limit=10)
+        return [PersonRow(r["handle"], True, r["role"], r["via"])
+                for r in self._rows("area_people", view, prefixes=prefixes, limit=10)]
 
-    def nearby_decisions(self, entity_id: str, as_of: str = ALL_HISTORY,
-                         exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return self._rows("nearby_decisions", id=entity_id, as_of=as_of, exclude=list(exclude), limit=10)
+    def nearby_decisions(self, entity_id: str, view: HistoryView = ALL) -> list[tuple[DecisionRow, Record]]:
+        return [(DecisionRow.of(r["decision"]), Record.of(r["discussion"]))
+                for r in self._rows("nearby_decisions", view, id=entity_id, limit=10)]
 
     # check_change (`whycode.answer.fence`).
 
     def diff_entities(self, paths: list[str], packages: list[str], literals: list[str]) -> list[dict[str, Any]]:
+        """Every stored field of the Code Entities of a diff's files (to rebuild a `CodeIndex`)."""
         return [r["entity"] for r in self._rows("diff_entities", paths=paths, packages=packages, literals=literals,
                                                 limit=DIFF_ENTITY_LIMIT)]
 
-    def governing_exact(self, entity_ids: list[str], as_of: str = ALL_HISTORY,
-                        exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return self._rows("governing_exact", ids=entity_ids, as_of=as_of, exclude=list(exclude), limit=4 * ROW_LIMIT)
+    def governing_exact(self, entity_ids: list[str], view: HistoryView = ALL) -> list[Governing]:
+        return [Governing.of(r) for r in self._rows("governing_exact", view, ids=entity_ids, limit=4 * ROW_LIMIT)]
 
     def change_lines(self, change_ids: list[str], paths: list[str]) -> list[dict[str, Any]]:
         return self._rows("change_lines", ids=change_ids, paths=paths, limit=4 * ROW_LIMIT)
 
-    def incident_links(self, record_ids: list[str], as_of: str = ALL_HISTORY,
-                       exclude: Sequence[str] = ()) -> list[dict[str, Any]]:
-        return self._rows("incident_links", ids=record_ids, as_of=as_of, exclude=list(exclude), limit=4 * ROW_LIMIT)
+    def incident_links(self, record_ids: list[str], view: HistoryView = ALL) -> list[tuple[str, str]]:
+        """(Change, Incident) pairs: which Change closed which Incident, for these Changes and Discussions."""
+        return [(r["change"], r["incident"]) for r in self._rows("incident_links", view, ids=record_ids,
+                                                                  limit=4 * ROW_LIMIT)]

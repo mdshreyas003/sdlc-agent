@@ -110,7 +110,8 @@ should be refused.
 `why` labels every Decision `live`, `superseded` or `refined` (partly live), with what superseded it, when, the
 verbatim statement or justification, and whether history states it (explicit: reverts, RFC `Status:` headers,
 "supersedes #N") or the judge inferred it (Opus 5.5 over pairs of Decisions governing the same code). Rules:
-`src/whycode/supersession.py`; how answers use them: `src/whycode/answer/engine.py`.
+`src/whycode/supersession.py`; how answers use them: `src/whycode/answer/status.py` (the Live Decision rule) and
+`src/whycode/answer/engine.py`.
 
 ```sh
 uv run whycode supersession-report --out eval/results/supersession-judge.md   # judge precision/recall vs explicit cases
@@ -161,7 +162,7 @@ always scripted in tests.
 | `discussions.py`, `decisions.py` | Discussions as authored segments; Decision extraction behind the `DecisionProposer` seam, kept only with a verbatim quote |
 | `build.py`, `graph/` | Graph building, the idempotent Neo4j store, and the export of citable records in the scoreboard's corpus format (`graph/corpus.py`) |
 | `supersession.py` | Supersession detector: explicit parsing, candidate pairs, the judge seam (`SupersessionJudge`), the judge report |
-| `answer/` | Fixed read-only query patterns (all honour `as_of` / `exclude`), composer seam, verifier, confidence scorer, `AnswerEngine`; `answer/fence.py` is `check_change` (diff parsing, Fence Warnings); `answer/systems.py` plugs it into the scoreboard |
+| `answer/` | Fixed read-only query patterns (typed rows; all see history through a `HistoryView`), the Live Decision rule (`status.py`), composer seam, verifier, confidence scorer, `AnswerEngine`; `answer/fence.py` is `check_change` (diff parsing, Fence Warnings); `answer/systems.py` plugs it into the scoreboard |
 | `answer/resolve.py` | The entity-matching step for free-form questions (`EntityMatcher` seam) and its shortlist words |
 | `mcp_server.py`, `cli.py` | MCP server (`why-mcp`: `why`, `check_change`) and the `whycode` command |
 | `view.py` | The human view behind `whycode serve`: `/why` (JSON) and one server-rendered page per Answer |
@@ -188,7 +189,7 @@ always scripted in tests.
   `removed` (the lines their diff wrote there), which is how `reverses` is decided; `CodeIndex.changed_lines` maps
   each changed line to its enclosing function or setting registration (so `touched_by`, and hard GOVERNS links, no
   longer credit the function a hunk header names when the change is in the next one). `supersession_statuses` in
-  `answer/engine.py` is the shared Live Decision rule. The human view (`whycode serve`) does not show Fence
+  `answer/status.py` is the shared Live Decision rule. The human view (`whycode serve`) does not show Fence
   Warnings yet.
   Agent comparison: `eval/agent-comparison/README.md`.
 - **06 (demo polish), done.** Scoreboard: `llm-alone` baseline and `whycode-eval calibration` (`eval/README.md`).

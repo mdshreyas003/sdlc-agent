@@ -19,19 +19,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from whycode.contract import Confidence
+from whycode.contract import Confidence, DecisionStatus, GovernsLink, SupersessionOrigin
 
-_LEVELS: tuple[Confidence, ...] = ("Low", "Medium", "High")
+LEVELS: tuple[Confidence, ...] = ("Low", "Medium", "High")
+"""Confidence levels, weakest first."""
 _REVIEWED_SOURCES = frozenset({"pr", "rfc"})
+
+
+def lower(confidence: Confidence, by: int = 1) -> Confidence:
+    """`confidence` lowered `by` levels, never below Low."""
+    return LEVELS[max(LEVELS.index(confidence) - by, 0)]
 
 
 @dataclass(frozen=True, slots=True)
 class DecisionGrounding:
-    link: str  # hard | soft
+    link: GovernsLink
     source: str  # kind of the Discussion: pr | rfc | issue
     has_rationale: bool
-    status: str = "live"  # live | superseded | refined
-    supersession: str | None = None  # explicit | inferred: what the status rests on, when not live
+    status: DecisionStatus = "live"
+    supersession: SupersessionOrigin | None = None  # what the status rests on, when not live
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,4 +63,4 @@ def score_confidence(inputs: ConfidenceInputs) -> Confidence:
         level = min(level, 1)
     if inputs.dropped:
         level -= 1
-    return _LEVELS[max(level, 0)]
+    return LEVELS[max(level, 0)]

@@ -31,11 +31,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
-from whycode.answer.confidence import ConfidenceInputs, DecisionGrounding, score_confidence
-from whycode.answer.engine import supersession_statuses
-from whycode.answer.patterns import ALL_HISTORY, GraphReader
-from whycode.codeindex import ChangedLine, CodeEntity, CodeIndex
-from whycode.contract import ChangeCheck, Confidence, FenceWarning
+from whycode.answer.confidence import LEVELS, ConfidenceInputs, lower, score_confidence
+from whycode.answer.patterns import GraphReader, Governing, HistoryView
+from whycode.answer.status import SupersessionStatus, grounding, supersession_statuses
+from whycode.codeindex import ChangedLine, CodeEntity, CodeIndex, split_entity_id
+from whycode.contract import ChangeCheck, FenceKind, FenceWarning, GovernsLink
 from whycode.history.records import FileChange
 
 MAX_WARNINGS = 10
@@ -43,7 +43,6 @@ MAX_DIFF_CHARS = 2_000_000
 MAX_FILES = 200
 MAX_LITERALS = 200
 MAX_REVERSED_LINES = 10
-_LEVELS: tuple[Confidence, ...] = ("Low", "Medium", "High")
 _LITERAL = re.compile(r'"([^"\\\n]{1,200})"')
 _IDENT = re.compile(r"[A-Za-z_]\w{2,}")
 _IMPORT_SPEC = re.compile(r'^(?:[\w.]+\s+)?"[^"]*"$')
@@ -145,8 +144,9 @@ def _entity(row: dict[str, Any]) -> CodeEntity:
                       go_var=row.get("go_var"), names=tuple(row.get("names") or ()))
 
 
-def _key(entity_id: str) -> str:
-    return entity_id.split(":", 1)[1]
+def _kind_rank(entity_id: str) -> int:
+    """Functions first, then settings, then files: the most specific Code Entity names a warning."""
+    return _KIND_ORDER.get(split_entity_id(entity_id)[0], len(_KIND_ORDER))
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,7 +170,7 @@ class FenceChecker:
 
     def check(self, diff: str, as_of: dt.date | None = None, exclude: Iterable[str] = ()) -> ChangeCheck:
         """Fence Warnings for a proposed diff. `as_of` and `exclude` are the same view of history as for `why`."""
-        scope = {"as_of": as_of.isoformat() if as_of else ALL_HISTORY, "exclude": sorted(set(exclude))}
+        view = HistoryView.of(as_of, exclude)
         changes = parse_diff(diff)
         if not changes:
             return ChangeCheck()
@@ -185,28 +185,27 @@ class FenceChecker:
                       if any(not line.entities and _significant(line.text) for line in t.lines)}
         if not specific | file_level:
             return ChangeCheck(touched=entity_ids)
-        rows = self.reader.governing_exact(sorted(specific | file_level), **scope)
-        statuses = (supersession_statuses(self.reader, {r["decision"]["id"]: r["discussion"]["id"] for r in rows},
-                                          scope) if self.supersession and rows else {})
-        rows = [r for r in rows if getattr(statuses.get(r["decision"]["id"]), "status", None) != "superseded"]
+        rows = self.reader.governing_exact(sorted(specific | file_level), view)
+        statuses = (supersession_statuses(self.reader, {r.decision.id: r.discussion.id for r in rows}, view)
+                    if self.supersession and rows else {})
+        live = [r for r in rows if not (r.decision.id in statuses and statuses[r.decision.id].superseded)]
 
-        implementing = sorted({g["change"] for r in rows for g in r["governs"] if g["link"] == "hard" and g["change"]})
+        implementing = sorted(set().union(*(r.implementing for r in live)))
         written: dict[tuple[str, str], tuple[set[str], set[str]]] = {}
         if implementing:
             for w in self.reader.change_lines(implementing, sorted(touched)):
                 written[(w["change"], w["path"])] = (set(w["added"]), set(w["removed"]))
-        records = {r["decision"]["id"]: self._records(r) for r in rows}
-        links = self.reader.incident_links(sorted(set().union(*records.values())), **scope) if records else []
+        records = {r.decision.id: {r.discussion.id} | r.implementing for r in live}
+        links = self.reader.incident_links(sorted(set().union(*records.values())), view) if records else []
 
         warnings = []
-        for row in rows:
-            decision_id = row["decision"]["id"]
-            incidents = sorted({link["incident"] for link in links
-                                if link["change"] in records[decision_id] or link["incident"] in records[decision_id]})
-            warning = self._warning(row, statuses.get(decision_id), touched, written, incidents)
+        for row in live:
+            mine = records[row.decision.id]
+            incidents = sorted({incident for change, incident in links if change in mine or incident in mine})
+            warning = self._warning(row, statuses.get(row.decision.id), touched, written, incidents)
             if warning is not None:
                 warnings.append(warning)
-        warnings.sort(key=lambda w: (w.kind != "reverses", -_LEVELS.index(w.confidence), w.status != "live",
+        warnings.sort(key=lambda w: (w.kind != "reverses", -LEVELS.index(w.confidence), w.status != "live",
                                      -(w.date or dt.date.min).toordinal(), w.decision_id))
         return ChangeCheck(touched=entity_ids, warnings=warnings[: self.max_warnings],
                            omitted=max(0, len(warnings) - self.max_warnings))
@@ -228,49 +227,41 @@ class FenceChecker:
             out[file.key] = _Touched(file.id, lines)
         return out
 
-    @staticmethod
-    def _records(row: dict[str, Any]) -> set[str]:
-        """The Decision's Discussion and the Changes implementing it (where its Incidents are closed)."""
-        return {row["discussion"]["id"]} | {g["change"] for g in row["governs"] if g["link"] == "hard" and g["change"]}
-
-    def _warning(self, row: dict[str, Any], status, touched: dict[str, _Touched],
+    def _warning(self, row: Governing, status: SupersessionStatus | None, touched: dict[str, _Touched],
                  written: dict[tuple[str, str], tuple[set[str], set[str]]], incidents: list[str]) -> FenceWarning | None:
-        d, s = row["decision"], row["discussion"]
-        governed = {g["entity"] for g in row["governs"]}
-        hard = {g["entity"] for g in row["governs"] if g["link"] == "hard"}
+        decision, discussion = row.decision, row.discussion
+        governed, hard = row.entities, row.hard_entities
         undone_by_change: dict[str, list[_Undone]] = defaultdict(list)
-        for change in sorted({g["change"] for g in row["governs"] if g["link"] == "hard" and g["change"]}):
+        for change in sorted(row.implementing):
             for path, t in touched.items():
                 if (change, path) in written:
                     undone_by_change[change] += _undone(t, governed, *written[(change, path)])
         undone_by_change = {c: u for c, u in undone_by_change.items() if u}
 
-        kind, entity, change_id, undone = "changes", None, None, []
+        kind: FenceKind = "changes"
+        change_id, undone = None, []
         if undone_by_change:
             kind = "reverses"
             change_id = max(sorted(undone_by_change), key=lambda c: len(undone_by_change[c]))
             undone = undone_by_change[change_id]
             counts = Counter(u.entity for u in undone)
-            entity = min(counts, key=lambda e: (-counts[e], _KIND_ORDER.get(e.split(":", 1)[0], 3), e))
+            entity = min(counts, key=lambda e: (-counts[e], _kind_rank(e), e))
         else:
             edited = {e.id for t in touched.values() for line in t.lines for e in line.entities} & governed
             if not edited:
                 return None
-            entity = min(edited, key=lambda e: (e not in hard, _KIND_ORDER.get(e.split(":", 1)[0], 3), e))
+            entity = min(edited, key=lambda e: (e not in hard, _kind_rank(e), e))
 
-        link = "hard" if kind == "reverses" or entity in hard else "soft"
-        grounding = DecisionGrounding(link=link, source=s["kind"], has_rationale=bool(d.get("rationale")),
-                                      status=status.status if status else "live",
-                                      supersession=status.edge["basis"] if status else None)
-        confidence = score_confidence(ConfidenceInputs((grounding,)))
+        link: GovernsLink = "hard" if kind == "reverses" or entity in hard else "soft"
+        confidence = score_confidence(ConfidenceInputs((grounding(row, status, link),)))
         if kind == "changes":
-            confidence = _LEVELS[max(_LEVELS.index(confidence) - 1, 0)]
+            confidence = lower(confidence)
         return FenceWarning(
-            decision_id=d["id"], entity_id=entity, quote=d["quote"], incident_ids=incidents, confidence=confidence,
-            kind=kind, choice=d["choice"], status=status.status if status else "live", discussion_id=s["id"],
-            url=s.get("url"), date=dt.date.fromisoformat(d["date"][:10]) if d.get("date") else None,
-            change_id=change_id, reversed_lines=list(dict.fromkeys(u.line for u in undone))[:MAX_REVERSED_LINES],
-            reason=_reason(kind, entity, link, s["id"], change_id, undone, status, incidents),
+            decision_id=decision.id, entity_id=entity, quote=decision.quote, incident_ids=incidents,
+            confidence=confidence, kind=kind, choice=decision.choice, status=status.status if status else "live",
+            discussion_id=discussion.id, url=discussion.url, date=decision.day, change_id=change_id,
+            reversed_lines=list(dict.fromkeys(u.line for u in undone))[:MAX_REVERSED_LINES],
+            reason=_reason(kind, entity, link, discussion.id, change_id, undone, status, incidents),
         )
 
 
@@ -289,9 +280,9 @@ def _undone(touched: _Touched, governed: set[str], added: set[str], removed: set
     return out
 
 
-def _reason(kind: str, entity: str, link: str, discussion: str, change: str | None, undone: list[_Undone],
-            status, incidents: list[str]) -> str:
-    where = _key(entity)
+def _reason(kind: FenceKind, entity: str, link: GovernsLink, discussion: str, change: str | None,
+            undone: list[_Undone], status: SupersessionStatus | None, incidents: list[str]) -> str:
+    where = split_entity_id(entity)[1]
     if kind == "reverses":
         removed = list(dict.fromkeys(u.line for u in undone if not u.restores))
         restored = list(dict.fromkeys(u.line for u in undone if u.restores))
@@ -308,8 +299,8 @@ def _reason(kind: str, entity: str, link: str, discussion: str, change: str | No
         text = (f"This diff edits {where}, which this Decision governs ({how}); check that the edit does not "
                 f"contradict it.")
     if status is not None and status.status == "refined":
-        by = status.by or status.edge["source"]["id"]
-        text += (f" The Decision is partly live: {by} refined it on {status.edge['at'][:10]}; what that did not "
+        by = status.by or status.source
+        text += (f" The Decision is partly live: {by} refined it on {status.at.isoformat()}; what that did not "
                  f"change still holds.")
     if incidents:
         text += f" Incidents it prevented: {', '.join(incidents)}."

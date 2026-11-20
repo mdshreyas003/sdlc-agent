@@ -81,6 +81,12 @@ def entity_id(kind: str, key: str) -> str:
     return f"{kind}:{key}"
 
 
+def split_entity_id(node_id: str) -> tuple[str, str]:
+    """(kind, key) of a Code Entity node id: the inverse of `entity_id`."""
+    kind, _, key = node_id.partition(":")
+    return kind, key
+
+
 _FUNC = re.compile(
     r"\bfunc\s+(?:\(\s*(?:[A-Za-z_]\w*\s+)?(\*?)\s*([A-Za-z_]\w*)(?:\[[^\]]*\])?\s*\)\s*)?([A-Za-z_]\w*)\s*[\[(]"
 )

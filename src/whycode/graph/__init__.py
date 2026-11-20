@@ -15,6 +15,7 @@ also carry the verbatim `quote` they rest on.
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -22,6 +23,11 @@ from typing import Any
 
 STATED = "stated"
 DERIVED = "derived"
+
+
+def day(value: str | None) -> dt.date | None:
+    """The day of a date or timestamp the graph stores as ISO text (None stays None)."""
+    return dt.date.fromisoformat(value[:10]) if value else None
 
 EDGE_TYPES = frozenset({
     "CONTAINS", "TOUCHES", "CLOSES", "REFERENCES", "REVERTS", "AUTHORED", "REVIEWED",

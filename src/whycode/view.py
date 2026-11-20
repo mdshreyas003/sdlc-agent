@@ -20,6 +20,7 @@ from collections.abc import Callable
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from whycode.codeindex import split_entity_id
 from whycode.contract import Answer, DecisionView, EvidenceItem, PersonView
 
 log = logging.getLogger(__name__)
@@ -45,10 +46,6 @@ def _slug(node_id: str) -> str:
 
 def _view_href(anchor: str) -> str:
     return "/?" + urllib.parse.urlencode({"anchor": anchor})
-
-
-def _entity_key(entity_id: str) -> str:
-    return entity_id.split(":", 1)[1] if ":" in entity_id else entity_id
 
 
 class _Page:
@@ -149,7 +146,7 @@ class _Page:
                            if d.supersession_quote else "") + "</div>")
         if d.governs:
             rows.append('<p class="governs">Governs: ' + ", ".join(
-                f'<a href="{e(_view_href(_entity_key(g)))}"><code>{e(_entity_key(g))}</code></a>'
+                f'<a href="{e(_view_href(split_entity_id(g)[1]))}"><code>{e(split_entity_id(g)[1])}</code></a>'
                 for g in d.governs) + "</p>")
         return f'<article class="decision status-{e(d.status)}">\n' + "\n".join(rows) + "\n</article>"
 

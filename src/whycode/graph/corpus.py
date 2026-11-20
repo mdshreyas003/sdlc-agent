@@ -7,11 +7,10 @@ is checked against the same text the answer verifier used. Ticket 02 writes the 
 
 from __future__ import annotations
 
-import datetime as dt
 from collections import defaultdict
 
 from whycode.eval.corpus import CorpusRecord
-from whycode.graph import Graph
+from whycode.graph import Graph, day
 
 CITABLE_KINDS = frozenset({"rfc", "pr", "issue", "commit"})
 
@@ -35,7 +34,7 @@ def corpus_records(graph: Graph) -> list[CorpusRecord]:
         date = merged.get(node.id) or props.get("date")
         out.append(CorpusRecord(
             id=node.id, kind=props["kind"], title=props.get("title") or "", text=props.get("text") or "",
-            url=props.get("url"), date=dt.date.fromisoformat(date[:10]) if date else None,
+            url=props.get("url"), date=day(date),
             number=props.get("number"), labels=list(props.get("github_labels") or []),
             paths=sorted(paths[node.id]) or ([props["path"]] if props.get("path") else []),
             commits=sorted(commits[node.id]),
