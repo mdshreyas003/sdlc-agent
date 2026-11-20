@@ -7,16 +7,18 @@ Incidents and the Person to Ask, or an explicit refusal. Spec: `.scratch/why-mvp
 
 ## `why` on the fixture history
 
-The fixture (`src/whycode/fixtures/miniature/`) is a hand-built miniature of CockroachDB history: two RFCs, PRs
-with diffs and reviews, a regression fixed by a PR, a revert, cluster settings, and records after the
-2024-06-30 cutoff that must never be ingested. Its recorded extraction responses let the graph build offline.
+The fixture (`src/whycode/fixtures/miniature/`) is a hand-built miniature of CockroachDB history: RFCs (one
+superseded by another), PRs with diffs and reviews, a regression fixed by a PR, a revert and a later refinement,
+cluster settings, and records after the 2024-06-30 cutoff (the Held-out Window) that must never be ingested at
+the default cutoff. Its recorded extraction and supersession-judge responses let the graph build offline.
 
 ```sh
 # 1. A local Neo4j (or point NEO4J_URI/NEO4J_USERNAME/NEO4J_PASSWORD at AuraDB instead)
 docker run -d --name whycode-neo4j -p 7687:7687 -e NEO4J_AUTH=neo4j/whycode-local neo4j:5
 export NEO4J_PASSWORD=whycode-local
 
-# 2. Build the fixture graph (recorded extractions; add --extractor anthropic to extract with Sonnet 5.5)
+# 2. Build the fixture graph (recorded extractions and judgments; --extractor anthropic extracts with Sonnet 5.5
+#    and then judges inferred Supersession with Opus 5.5; --judge none keeps explicit Supersession only)
 uv run whycode build
 
 # 3. Ask from the shell (WHY_COMPOSER=template answers without a model)
@@ -30,6 +32,21 @@ tool on `pkg/sql.(*SchemaChanger).exec` before changing its retry loop."
 
 Configuration (all environment variables) is documented in `src/whycode/config.py`. Model responses are
 cached in `.cache/models` so rebuilds are reproducible.
+
+## Supersession
+
+`why` labels every Decision `live`, `superseded` or `refined` (partly live), with what superseded it, when, the
+verbatim statement or justification, and whether history states it (explicit: reverts, RFC `Status:` headers,
+"supersedes #N") or the judge inferred it (Opus 5.5 over pairs of Decisions governing the same code). Rules:
+`src/whycode/supersession.py`; how answers use them: `src/whycode/answer/engine.py`.
+
+```sh
+uv run whycode supersession-report --out eval/results/supersession-judge.md   # judge precision/recall vs explicit cases
+```
+
+It reads the built graph and asks the judge (default `--judge anthropic`, cached in `.cache/models`) about every
+explicit Decision-to-Decision Supersession with the explicit statement masked, plus the candidate pairs around
+those cases, then prints precision, recall and every disagreement for a human to check.
 
 ## Tests
 
@@ -46,7 +63,8 @@ always scripted in tests.
 | `linker.py` | Stated Links from written identifiers (closes, reverts, references) |
 | `discussions.py`, `decisions.py` | Discussions as authored segments; Decision extraction behind the `DecisionProposer` seam, kept only with a verbatim quote |
 | `build.py`, `graph/` | Graph building, the idempotent Neo4j store, and the export of citable records in the scoreboard's corpus format (`graph/corpus.py`) |
-| `answer/` | Fixed read-only query patterns, composer seam, verifier, confidence scorer, `AnswerEngine` |
+| `supersession.py` | Supersession detector: explicit parsing, candidate pairs, the judge seam (`SupersessionJudge`), the judge report |
+| `answer/` | Fixed read-only query patterns (all honour `as_of` / `exclude`), composer seam, verifier, confidence scorer, `AnswerEngine`; `answer/systems.py` plugs it into the scoreboard |
 | `mcp_server.py`, `cli.py` | MCP server (`why-mcp`) and the `whycode` command |
 | `quotes.py`, `ids.py` | The one verbatim rule and the node id convention, shared with the scoreboard |
 
@@ -58,14 +76,18 @@ always scripted in tests.
   setting keys only (add same-package consts and `WithName` aliases there). Add `--history github` to `cli.py`.
   Write the scoreboard corpus with `write_jsonl(path, corpus_records(graph))` (`graph/corpus.py`) so ids and texts
   match what `why` cites. Bare-name mention rules for soft links live in `CodeIndex.mentions`.
-- **04 (Supersession).** Explicit inputs already in the graph: `REVERTS` edges (PR -> PR by exact `Revert "<title>"`,
-  PR or commit -> commit by full SHA; a commit's PR is its `CONTAINS` source) and RFC `status` / `status_raw` node
-  properties plus `REFERENCES` edges with locator `header:Status#...`. `SUPERSEDES` / `REFINES` are already allowed
-  edge types (`graph/__init__.py`). Surface them in the `governing` pattern (`answer/patterns.py`), fill
-  `DecisionView.status` / `superseded_by` / `explicit_or_inferred` in `answer/engine.py`, and add a supersession
-  field to `DecisionGrounding` (`answer/confidence.py`). Judge model id: `llm.JUDGE_MODEL`.
+- **04 (Supersession), done.** `SUPERSEDES` / `REFINES` edges (later node -> earlier Decision) carry `basis`,
+  `quote`, `source`, `observed_at` (`supersession.py` docstring). `build_graph(..., judge=None)` adds explicit
+  Supersession only; pass a `SupersessionJudge` for inferred edges (ticket 02: `AnthropicSupersessionJudge` over
+  the real slice; the recorded fixture judge only knows fixture pairs). Hard `GOVERNS` edges now name their
+  implementing `change` and hold from its merge date. For `check_change` (05), a Live Decision is one whose
+  `DecisionView.status` is not `superseded`. Known limits: a revert of a revert does not restore the original
+  Decision; an RFC's status is read from its text as of the build, so a status set inside the Held-out Window is
+  visible to `as_of` queries; `Person.active` is relative to the build cutoff.
 - **05 (`check_change`).** `CodeIndex.touched_by(FileChange)` maps a diff to Code Entities; every `CodeEntity` field
   is stored on its graph node, so the server can rebuild a `CodeIndex` from the nodes of the diff's files.
   `FenceWarning` is in `contract.py`; register the tool next to `why` in `mcp_server.py`.
-- **Scoreboard "ours" system.** `AnswerEngine` does not yet honour `Query.as_of` or `Query.exclude`; both need
-  filters in the query patterns before our system can run window and ablation questions honestly.
+- **Scoreboard "ours" system, done.** `whycode.answer.systems:ours` and `:ours_without_supersession` (see
+  `eval/README.md`). Build the graph through the end of the Held-out Window (`whycode build --cutoff <window end>`)
+  and export the corpus from that graph; every pattern then filters by the query's `as_of` and `exclude` (record
+  level, like the scoreboard's corpus). Our system reports no model usage yet, so its cost column is empty.

@@ -22,6 +22,11 @@ behind the `SupersessionJudge` seam) labels it supersedes / refines / unrelated 
 code decides: a label becomes an edge only when its quote has at least `MIN_DECISION_QUOTE_WORDS` words and is
 verbatim in B's Discussion. Pairs that need no judgment are skipped: those already linked explicitly, and those
 whose A was already explicitly superseded when B took effect.
+
+`judge_report` scores the judge against the explicit cases (`whycode supersession-report`).
+
+Known limits: a revert of a revert does not bring the reverted Decisions back; an RFC's status comes from its
+text as of the build, so the status edge is dated by the superseding RFC (or, failing that, the RFC itself).
 """
 
 from __future__ import annotations
