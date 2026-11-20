@@ -2,10 +2,11 @@
 
     whycode-eval labels      --corpus C            write eval/gold/automatic.yaml from history
     whycode-eval check       --corpus C            gold check and counts; non-zero exit if a verified question fails
-    whycode-eval run         --corpus C --split dev|test [--systems llm-alone,vector-rag,git-agent,ours=pkg.module:factory]
+    whycode-eval run         --corpus C --split dev|test [--systems llm-alone,vector-rag,git-agent,ours=pkg.mod:factory]
                              [--git-repo R --cutoff-rev SHA [--window-rev SHA]] [--resume DIR]
     whycode-eval judge-sheet --run DIR [--n 20]    sample answers into eval/judge_agreement/labels.yaml
     whycode-eval agreement                         judge vs hand labels, written to eval/judge_agreement/agreement.md
+    whycode-eval calibration --run DIR             confidence vs correctness: DIR/calibration.md and calibration.svg
 
 An external system (our `why`) is named `name=module:attribute`; the attribute is called with a
 `SystemContext` and returns a `System` or a plain `Query -> Answer` callable.
@@ -147,6 +148,10 @@ def _parser() -> argparse.ArgumentParser:
     sheet.add_argument("--seed", type=int, default=0)
     agree = command("agreement", _agreement, "judge agreement with hand labels", corpus=False)
     agree.add_argument("--judge-model", default=JUDGE_MODEL)
+    calib = command("calibration", _calibration, "plot confidence against correctness for one run", corpus=False)
+    calib.add_argument("--run", type=Path, required=True, help="a results directory written by `run`")
+    calib.add_argument("--systems", default=None, help="comma-separated system names (default: every system)")
+    calib.add_argument("--out", type=Path, default=None, help="where to write the files (default: the run directory)")
     return p
 
 
@@ -271,6 +276,22 @@ def _agreement(args: argparse.Namespace, deps: Deps) -> int:
     (args.eval_dir / "judge_agreement" / "agreement.md").write_text(summary + "\n", encoding="utf-8")
     print(summary, file=deps.out)
     return 0 if result.enough else 1
+
+
+def _calibration(args: argparse.Namespace, deps: Deps) -> int:
+    from whycode.eval.calibration import calibration
+
+    if not (args.run / "scores.jsonl").exists():
+        raise ScoreboardError(f"{args.run} holds no scores.jsonl: point --run at a directory written by `run`")
+    systems = [s.strip() for s in args.systems.split(",") if s.strip()] if args.systems else None
+    result = calibration(args.run, systems)
+    out = args.out or args.run
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "calibration.svg").write_text(result.svg(), encoding="utf-8")
+    (out / "calibration.md").write_text(result.markdown(), encoding="utf-8")
+    print(result.markdown(plot=None), file=deps.out)
+    print(f"wrote {out / 'calibration.md'} and {out / 'calibration.svg'}", file=deps.out)
+    return 0
 
 
 if __name__ == "__main__":
