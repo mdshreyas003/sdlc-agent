@@ -136,3 +136,72 @@ def test_supersedes_written_in_a_pull_request_and_a_rejected_rfc_are_explicit_su
     (by,) = [e for e in graph.edges("SUPERSEDES") if e.target == rejected]
     assert (by.source, by.props["quote"], by.props["basis"]) == ("rfc:20190301_async_schema_changes", "rejected",
                                                                  "explicit")
+
+
+TWENTY_SECONDS_QUOTE = "Capping the backoff at 20 seconds keeps a stuck job visible in SHOW JOBS without hammering the cluster."
+TEN_SECONDS_QUOTE = "Lower the default cap to 10s because 20s left stuck jobs waiting too long after short outages."
+FINALIZED_QUOTE = (
+    "This treats descriptor validation errors as permanent again once the cluster version is finalized; until then "
+    "the schema changer keeps retrying them"
+)
+BACKOFF_QUOTE = (
+    "We chose a capped exponential backoff rather than a fixed retry interval because a fixed interval either "
+    "retries too aggressively during long outages or too slowly after short ones."
+)
+
+
+def window_graph(judge):
+    from whycode.fixtures import FIXTURE_WINDOW_END
+
+    return fixture_graph(cutoff=FIXTURE_WINDOW_END, judge=judge)
+
+
+def test_the_judges_labels_become_supersedes_and_refines_edges_tagged_derived(empty_store):
+    from doubles import ScriptedJudge
+
+    judge = ScriptedJudge({
+        (TWENTY_SECONDS_QUOTE, TEN_SECONDS_QUOTE): ("supersedes", "Lower the default cap to 10s"),
+        (KEEP_RETRYING_QUOTE, FINALIZED_QUOTE): ("refines", "until then the schema changer keeps retrying them"),
+        # Asked only if the judge sees a pair it should not: already linked by the revert.
+        (VALIDATION_QUOTE, KEEP_RETRYING_QUOTE): ("refines", "treating validation errors as permanent failed jobs"),
+    })
+    empty_store.replace(window_graph(judge))
+    graph = empty_store.snapshot()
+
+    twenty, ten = decision_quoting(graph, TWENTY_SECONDS_QUOTE), decision_quoting(graph, TEN_SECONDS_QUOTE)
+    keep, finalized = decision_quoting(graph, KEEP_RETRYING_QUOTE), decision_quoting(graph, FINALIZED_QUOTE)
+    supersedes, refines = relations(graph, "SUPERSEDES"), relations(graph, "REFINES")
+
+    edge = supersedes[(ten, twenty)]
+    assert (edge.props["origin"], edge.props["basis"]) == ("derived", "inferred")
+    assert (edge.props["quote"], edge.props["source"]) == ("Lower the default cap to 10s", "pr:127200")
+    assert edge.props["observed_at"] == "2024-07-15"
+    edge = refines[(finalized, keep)]
+    assert (edge.props["origin"], edge.props["basis"], edge.props["source"]) == ("derived", "inferred", "pr:104500")
+    # "unrelated" makes no edge, and a pair already explicitly linked is not judged again.
+    backoff = decision_quoting(graph, BACKOFF_QUOTE)
+    assert (ten, backoff) not in supersedes and (ten, backoff) not in refines
+    validation = decision_quoting(graph, VALIDATION_QUOTE)
+    assert (keep, validation) not in refines and supersedes[(keep, validation)].props["basis"] == "explicit"
+
+
+def test_a_judgment_whose_quote_is_not_verbatim_in_the_later_discussion_makes_no_edge(empty_store):
+    from doubles import ScriptedJudge
+
+    judge = ScriptedJudge({(TWENTY_SECONDS_QUOTE, TEN_SECONDS_QUOTE): ("supersedes", "The 20s default was a mistake")})
+    empty_store.replace(window_graph(judge))
+    graph = empty_store.snapshot()
+
+    twenty = decision_quoting(graph, TWENTY_SECONDS_QUOTE)
+    assert not [e for e in graph.edges() if e.type in ("SUPERSEDES", "REFINES") and e.target == twenty]
+
+
+def test_a_revert_that_records_no_decision_makes_the_reverting_change_the_superseding_node(empty_store):
+    from whycode.fixtures import FIXTURE_WINDOW_END
+
+    empty_store.replace(fixture_graph(cutoff=FIXTURE_WINDOW_END))  # #128000 reverts #104500 in the window
+    graph = empty_store.snapshot()
+
+    finalized = decision_quoting(graph, FINALIZED_QUOTE)
+    (edge,) = [e for e in graph.edges("SUPERSEDES") if e.target == finalized]
+    assert (edge.source, edge.props["basis"], edge.props["observed_at"]) == ("pr:128000", "explicit", "2024-08-05")

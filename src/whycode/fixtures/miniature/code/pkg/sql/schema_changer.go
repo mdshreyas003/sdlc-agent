@@ -12,6 +12,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/cockroach/pkg/clusterversion"
 	"github.com/cockroachdb/cockroach/pkg/settings"
 	"github.com/cockroachdb/cockroach/pkg/sql/catalog"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
@@ -42,6 +43,9 @@ func isPermanentSchemaChangeError(err error) bool {
 		return false
 	}
 	if errors.Is(err, catalog.ErrDescriptorNotFound) {
+		return true
+	}
+	if catalog.HasValidationError(err) && clusterversion.IsFinalized(err) {
 		return true
 	}
 	return false

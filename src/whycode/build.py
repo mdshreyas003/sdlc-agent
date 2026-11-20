@@ -1,10 +1,11 @@
 """Graph building: history + code index + a Decision proposer -> a `Graph` ready for `GraphStore.replace`.
 
-    graph = build_graph(load_history(source, cutoff), parse_go_tree(checkout), proposer)
+    graph = build_graph(load_history(source, cutoff), parse_go_tree(checkout), proposer, judge)
 
-Pure apart from the proposer's model calls; the same inputs (and cached model responses) give the same graph.
-Order matters only in one place: Stated Links are added before Decisions, because an issue's Decisions are
-implemented by the Changes that close it (their diffs give the hard governs links).
+Pure apart from the proposer's and the judge's model calls; the same inputs (and cached model responses) give the same graph.
+Order matters: Stated Links are added before Decisions, because an issue's Decisions are implemented by the
+Changes that close it (their diffs give the hard governs links); Supersession comes last, since it relates
+Decisions through the Code Entities they govern (`whycode.supersession`).
 """
 
 from __future__ import annotations
@@ -20,14 +21,16 @@ from whycode.graph import DERIVED, STATED, Edge, Graph, Node
 from whycode.history.records import History
 from whycode.history.rfc import normalize_status, parse_header
 from whycode.linker import incident_labels, stated_links
-from whycode.supersession import explicit_supersessions
+from whycode.supersession import SupersessionJudge, supersessions
 
 DEPARTED_AFTER = dt.timedelta(days=365)
 """A Person with no activity in this long before the cutoff is shown as departed."""
 
 
-def build_graph(history: History, code: CodeIndex, proposer: DecisionProposer) -> Graph:
-    return _Builder(history, code).build(proposer)
+def build_graph(history: History, code: CodeIndex, proposer: DecisionProposer,
+                judge: SupersessionJudge | None = None) -> Graph:
+    """Without a judge, only explicit Supersession is added (no model)."""
+    return _Builder(history, code).build(proposer, judge)
 
 
 def _discussion_node(d: disc.Discussion, node_labels: set[str], **props) -> Node:
@@ -47,7 +50,7 @@ class _Builder:
         self.implemented_by: dict[str, set[str]] = defaultdict(set)  # Discussion id -> implementing Change ids
         self.last_active: dict[str, dt.date] = {}
 
-    def build(self, proposer: DecisionProposer) -> Graph:
+    def build(self, proposer: DecisionProposer, judge: SupersessionJudge | None = None) -> Graph:
         self._add_code()
         self._add_records()
         self._add_links()
@@ -56,7 +59,7 @@ class _Builder:
         for discussion in self.discussions:
             for decision in extract_decisions(discussion, proposer, self.code):
                 self._add_decision(discussion, decision, extractor)
-        for edge in explicit_supersessions(self.graph, self.history, self.discussions):
+        for edge in supersessions(self.graph, self.history, self.discussions, judge):
             self.graph.add_edge(edge)
         self._add_stubs()
         return self.graph

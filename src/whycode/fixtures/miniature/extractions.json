@@ -84,6 +84,14 @@
       "quote": "Descriptor validation errors cannot be fixed by retrying, so the schema changer should stop retrying and fail the job instead of spinning until the backoff cap."
     }
   ],
+  "pr:104500": [
+    {
+      "choice": "Treat descriptor validation errors as permanent only once the cluster version is finalized; keep retrying them during an upgrade",
+      "rationale": "Validation fails transiently only while the cluster version gate is being crossed, so after finalization retrying cannot help.",
+      "alternatives_rejected": ["Always retry validation errors", "Always treat validation errors as permanent"],
+      "quote": "This treats descriptor validation errors as permanent again once the cluster version is finalized; until then the schema changer keeps retrying them"
+    }
+  ],
   "pr:110500": [
     {
       "choice": "Run the strict planning sanity check only when sql.schemachanger.strict_planning_sanity_check.enabled is set, off by default in production",
