@@ -63,7 +63,7 @@ The four baselines (spec user story 32):
 | `git-agent` | A tool-use agent over a git checkout at the cutoff (`prompts/git_agent.md`; needs `--git-repo`) |
 | `ours-without-supersession=whycode.answer.systems:ours_without_supersession` | Our system with every Decision treated as live |
 
-All of them use the same answering model (`claude-opus-5-5`) and, for vector RAG, the same embedding model (`BAAI/bge-small-en-v1.5`) as our system; the report warns when declared models differ.
+All of them use the same answering model as our system (`claude-opus-5-5`); the embedding model (`BAAI/bge-small-en-v1.5`) is the vector RAG baseline's own (our system uses no embeddings: its entity matching is one Opus 5.5 call over a shortlist found by name). The report warns when declared models differ.
 
 ## Calibration plot
 
