@@ -34,6 +34,16 @@ def build_graph(history: History, code: CodeIndex, proposer: DecisionProposer,
     return _Builder(history, code).build(proposer, judge)
 
 
+_DATE_PROPS = ("date", "merged_at", "closed_at", "last_active_at")
+
+
+def latest_date(graph: Graph) -> str | None:
+    """The latest day (ISO) any node or edge of the graph carries: proof that nothing after the cutoff got in."""
+    days = [str(n.props[p])[:10] for n in graph.nodes.values() for p in _DATE_PROPS if n.props.get(p)]
+    days += [str(e.props["observed_at"])[:10] for e in graph.edges() if e.props.get("observed_at")]
+    return max(days, default=None)
+
+
 def _discussion_node(d: disc.Discussion, node_labels: set[str], **props) -> Node:
     return Node(d.id, frozenset(node_labels), {
         "kind": d.kind, "title": d.title, "url": d.url, "date": d.date.isoformat(), "text": d.text,
@@ -80,7 +90,8 @@ class _Builder:
                 # Every CodeEntity field, so a CodeIndex can be rebuilt from the graph (e.g. for check_change).
                 "kind": e.kind, "key": e.key, "name": e.name, "aliases": list(e.aliases), "parent": e.parent,
                 "package": e.package, "package_name": e.package_name, "file": e.file, "receiver": e.receiver,
-                "pointer_receiver": e.pointer_receiver, "go_var": e.go_var, "origin": STATED,
+                "pointer_receiver": e.pointer_receiver, "go_var": e.go_var, "names": list(e.names),
+                "origin": STATED,
             }))
             if e.parent and (parent := self.code.get(e.parent)):
                 self._edge(parent.id, "CONTAINS", e.id, "code", self.history.cutoff)

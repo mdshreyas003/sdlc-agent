@@ -88,6 +88,15 @@ def extract_decisions(discussion: Discussion, proposer: DecisionProposer, code: 
     return list(out.values())
 
 
+class NoDecisionProposer:
+    """Proposes nothing: builds only the Stated part of the graph (no model, no key; for counts and smoke runs)."""
+
+    name = "none"
+
+    def propose(self, discussion: Discussion) -> list[DecisionCandidate]:
+        return []
+
+
 class RecordedDecisionProposer:
     """Replays recorded candidates keyed by Discussion id (the fixture's stand-in for the model).
 

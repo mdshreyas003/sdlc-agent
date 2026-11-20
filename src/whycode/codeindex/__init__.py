@@ -34,6 +34,7 @@ class CodeEntity:
     receiver: str | None = None  # method receiver type name, without '*' or type parameters
     pointer_receiver: bool = False
     go_var: str | None = None  # Go variable a setting is registered to
+    names: tuple[str, ...] = ()  # a setting's other user-visible names (settings.WithName / WithRetiredName)
     details: dict[str, str] = field(default_factory=dict, compare=False, hash=False)
 
     @property
@@ -64,8 +65,8 @@ class CodeEntity:
             out = [*local, *(f"{self.package_name}.{n}" for n in local), *(f"{self.package}.{n}" for n in local)]
             if self.receiver:
                 out.append(self.name)
-        elif self.kind == "setting" and self.go_var:
-            out = [self.go_var]
+        elif self.kind == "setting":
+            out = [*self.names, *([self.go_var] if self.go_var else [])]
         return tuple(dict.fromkeys(a for a in out if a and a != self.key))
 
 
@@ -103,7 +104,7 @@ class CodeIndex:
 
     def touched_by(self, change: FileChange) -> set[CodeEntity]:
         """Entities a file diff touches: the file, functions named by hunk headers or declared on changed
-        lines, and settings whose key literal or Go variable appears on a changed line.
+        lines, and settings whose key or name literal, or Go variable, appears on a changed line.
 
         No line-level anchoring: diffs of files the index does not hold touch nothing.
         """
@@ -120,7 +121,7 @@ class CodeIndex:
                 touched |= self._declared(file.key, line[1:])
         body = "\n".join(changed)
         for setting in self._settings_by_key.values():
-            if f'"{setting.key}"' in body or (
+            if any(f'"{name}"' in body for name in (setting.key, *setting.names)) or (
                 setting.go_var and setting.package == file.package
                 and re.search(rf"\b{re.escape(setting.go_var)}\b", body)
             ):
@@ -156,8 +157,10 @@ class CodeIndex:
         yield entity.key
         if entity.kind in ("file", "function"):
             yield from entity.aliases
-        elif entity.kind == "setting" and entity.go_var and re.search(r"[a-z][A-Z]", entity.go_var):
-            yield entity.go_var
+        elif entity.kind == "setting":
+            yield from entity.names
+            if entity.go_var and re.search(r"[a-z][A-Z]", entity.go_var):
+                yield entity.go_var
 
     def _unique_names(self, names_of) -> dict[str, CodeEntity]:
         owners: dict[str, set[CodeEntity]] = defaultdict(set)

@@ -1,0 +1,35 @@
+{
+  "history": "github",
+  "cutoff": "2024-06-30",
+  "extractor": "none",
+  "counts": {
+    "Decisions": 0,
+    "Changes": 42,
+    "Discussions": 73,
+    "Code Entities": 2458,
+    "Incidents": 4,
+    "People": 43
+  },
+  "latest_date": "2024-06-30",
+  "graph": {
+    "Change": 42,
+    "CodeEntity": 2458,
+    "Commit": 27,
+    "Discussion": 73,
+    "File": 297,
+    "Function": 2058,
+    "Incident": 4,
+    "Issue": 30,
+    "Package": 41,
+    "Person": 43,
+    "PullRequest": 15,
+    "Rfc": 28,
+    "Setting": 62,
+    "Stub": 112,
+    "edges": 2910
+  },
+  "limit": 15,
+  "complete": false,
+  "cutoff_commit": "d13253527955eaa2da09394b8a2729627ab25c48",
+  "github_calls": 0
+}
