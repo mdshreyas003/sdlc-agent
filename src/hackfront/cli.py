@@ -64,6 +64,13 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("--workspace", required=True)
     ask.add_argument("--mode", default="why", choices=["why", "debug", "change"])
     ask.add_argument("--provider", choices=provider_names)
+    pw = sub.add_parser("set-password", help="create an email account or reset its password (there is no self-service "
+                        "reset); prompts for the password")
+    pw.add_argument("email")
+    own = sub.add_parser("assign-owner", help="give a workspace to a signed-in user (id like gh-12345; "
+                         "see the user id on Settings > Profile). Needed for workspaces made before accounts existed")
+    own.add_argument("workspace")
+    own.add_argument("user", help="user id, e.g. gh-12345; use '' to make it ownerless again")
     migrate = sub.add_parser("migrate-state", help="copy local workspaces, saved keys and investigations into Neo4j")
     migrate.add_argument("--overwrite", action="store_true", help="replace workspaces that already exist in Neo4j")
     kafka = sub.add_parser("migrate-kafka", help="file all local Kafka data (mail, Jira, PRs, commits, KIPs) under the "
@@ -110,6 +117,29 @@ def main(argv: list[str] | None = None) -> int:
             return _sync("eval", "deep")
         if args.cmd == "sync":
             return _sync(args.workspace, "deep" if args.deep else "standard")
+        if args.cmd == "set-password":
+            import getpass
+
+            from . import auth, state
+
+            email = auth.normalize_email(args.email)
+            password = getpass.getpass("New password: ")
+            if len(password) < auth.MIN_PASSWORD or password != getpass.getpass("Repeat: "):
+                print(f"error: passwords must match and be at least {auth.MIN_PASSWORD} characters", file=sys.stderr)
+                return 2
+            uid = auth.email_user_id(email)
+            existed = state.backend().read_user(uid) is not None
+            _, claimed = auth.register(auth.User(uid, email, email.split("@")[0]), auth.hash_password(password), email)
+            print(f"{email}: password {'reset' if existed else 'set, account created'}"
+                  + ("; existing workspaces assigned to this account" if claimed else ""))
+            return 0
+        if args.cmd == "assign-owner":
+            ws = config.load_workspace(args.workspace)
+            if args.user:
+                config.check_user(args.user)
+            config.save_workspace(args.workspace, {**ws, "owner": args.user})
+            print(f"{args.workspace}: owner is now {args.user or '(nobody)'}")
+            return 0
         if args.cmd == "migrate-state":
             from . import state
 

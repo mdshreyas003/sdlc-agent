@@ -21,6 +21,7 @@ SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
 EMPTY_WORKSPACE = {
     "name": "",
     "demo": False,
+    "owner": "",  # user id of the account that owns it; "" = nobody (shared demo, or a legacy local workspace)
     "github": {"owner": "", "repos": []},
     "jira": {"site": "", "projects": []},
     "slack": {"workspace": "", "channels": [], "channel_names": {}, "users": {}},
@@ -31,6 +32,9 @@ EMPTY_WORKSPACE = {
 DEMO_SETUP_LOCKED = "Demo workspace setup is locked"
 # Source credentials. A demo workspace rejects these; model keys stay writable so a private copy can set its own.
 SOURCE_SECRET_KEYS = frozenset({"github_token", "jira_email", "jira_token", "slack_token"})
+
+# Model settings a signed-in user keeps once for all their workspaces (a workspace may override each of them).
+MODEL_KEYS = ("azure_endpoint", "azure_key", "sarvam_key", "llm_provider", "llm_model")
 
 # secret key -> (environment fallback, is_secret). Non-secrets (endpoint, provider, model, jira email) may be shown.
 SECRETS = {
@@ -113,11 +117,29 @@ def workspace_dir(slug: str) -> Path:
     return workspaces_dir() / check_slug(slug)
 
 
+USER_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
+
+
+def check_user(uid: str) -> str:
+    if not isinstance(uid, str) or not USER_ID.fullmatch(uid):
+        raise ValueError("invalid user id")
+    return uid
+
+
+def users_dir() -> Path:
+    return HOME / ".hackfront" / "users"
+
+
+def user_dir(uid: str) -> Path:
+    return users_dir() / check_user(uid)
+
+
 def validate_workspace(data: dict) -> dict:
     """Return a clean workspace dict or raise ValueError. Secrets never live here."""
-    out = {"name": str(data.get("name") or "").strip()[:80], "demo": bool(data.get("demo", False))}
+    out = {"name": str(data.get("name") or "").strip()[:80], "demo": bool(data.get("demo", False)),
+           "owner": str(data.get("owner") or "").strip()[:80]}
     for section, shape in EMPTY_WORKSPACE.items():
-        if section in ("name", "demo"):
+        if section in ("name", "demo", "owner"):
             continue
         raw = data.get(section) or {}
         if not isinstance(raw, dict):
@@ -155,15 +177,15 @@ def slugify(name: str) -> str:
     return slug
 
 
-def create_workspace(name: str, *, demo: bool = False, slug: str | None = None) -> str:
-    """Create an empty (or demo) workspace and return its slug."""
+def create_workspace(name: str, *, demo: bool = False, slug: str | None = None, owner: str = "") -> str:
+    """Create an empty (or demo) workspace owned by `owner` and return its slug."""
     name = name.strip()
     if not name:
         raise ValueError("workspace name is required")
     slug = check_slug(slug) if slug else slugify(name)
     if state.backend().exists(slug):
         raise ValueError("workspace already exists")
-    save_workspace(slug, {**EMPTY_WORKSPACE, "name": name, "demo": demo})
+    save_workspace(slug, {**EMPTY_WORKSPACE, "name": name, "demo": demo, "owner": owner})
     return slug
 
 
@@ -173,9 +195,9 @@ def list_workspaces() -> list[dict]:
         try:
             ws = load_workspace(slug)
         except (ValueError, LookupError):  # a corrupt record must not hide the other workspaces
-            out.append({"slug": slug, "name": slug, "demo": False})
+            out.append({"slug": slug, "name": slug, "demo": False, "owner": ""})
             continue
-        out.append({"slug": slug, "name": ws["name"] or slug, "demo": ws["demo"]})
+        out.append({"slug": slug, "name": ws["name"] or slug, "demo": ws["demo"], "owner": ws["owner"]})
     return out
 
 
@@ -223,13 +245,28 @@ def _stored(slug: str) -> dict:
     return state.backend().read_secrets(check_slug(slug))
 
 
-def get_secret(slug: str, key: str) -> str | None:
-    """Stored workspace value, else the environment fallback, else None."""
+def secret_source(slug: str | None, key: str, user: str | None = None) -> str | None:
+    """Which layer supplies `key`: 'workspace', 'user' (model keys only), 'env', or None."""
     if key not in SECRETS:
         raise KeyError(key)
-    value = _stored(slug).get(key)
-    if isinstance(value, str) and value:
-        return value
+    if slug:
+        own = _stored(slug).get(key)
+        if isinstance(own, str) and own:
+            return "workspace"
+    if user and key in MODEL_KEYS:
+        mine = state.backend().read_user_secrets(check_user(user)).get(key)
+        if isinstance(mine, str) and mine:
+            return "user"
+    return "env" if os.environ.get(SECRETS[key][0]) else None
+
+
+def get_secret(slug: str | None, key: str, user: str | None = None) -> str | None:
+    """Workspace value, else the user's own model setting (model keys), else the environment fallback, else None."""
+    source = secret_source(slug, key, user)
+    if source == "workspace":
+        return _stored(slug)[key]
+    if source == "user":
+        return state.backend().read_user_secrets(check_user(user))[key]
     return os.environ.get(SECRETS[key][0]) or None
 
 
@@ -265,5 +302,42 @@ def secret_status(slug: str) -> dict:
                 entry["hint"] = ("••••" + value[-4:]) if len(value) >= 12 else "••••"
             else:
                 entry["value"] = value
+        out[key] = entry
+    return out
+
+
+# ---------------------------------------------------------------- per-user model settings
+def set_user_secrets(uid: str, values: dict) -> None:
+    """Partial update of a user's model settings (MODEL_KEYS only); an empty string clears a key."""
+    unknown = set(values) - set(MODEL_KEYS)
+    if unknown:
+        raise ValueError(f"unknown setting: {sorted(unknown)[0]}")
+    if not all(isinstance(v, str) and len(v) <= 2000 and "\n" not in v and "\r" not in v for v in values.values()):
+        raise ValueError("settings must be single-line strings")
+    data = state.backend().read_user_secrets(check_user(uid))
+    for key, value in values.items():
+        value = value.strip()
+        if value:
+            data[key] = value
+        else:
+            data.pop(key, None)
+    state.backend().write_user_secrets(uid, data)
+
+
+def user_secret_status(uid: str) -> dict:
+    """Like secret_status but for a user's own model settings: {key: {set, source:'user'|'env'|None, value|hint}}."""
+    mine = state.backend().read_user_secrets(check_user(uid))
+    out = {}
+    for key in MODEL_KEYS:
+        env, is_secret = SECRETS[key]
+        own = mine.get(key) if isinstance(mine.get(key), str) and mine.get(key) else None
+        value = own or os.environ.get(env) or None
+        entry = {"set": bool(own), "source": "user" if own else "env" if value else None}
+        shown = own or value
+        if shown:
+            if is_secret:
+                entry["hint"] = ("••••" + shown[-4:]) if len(shown) >= 12 else "••••"
+            else:
+                entry["value"] = shown
         out[key] = entry
     return out

@@ -1,15 +1,13 @@
 "use client";
-// /w/[ws]/setup: a step rail on the left, ONE focused step on the right (sources, AI model, ingest, ask).
-// The page itself never scrolls: long content (pickers, stream table) scrolls inside its own box.
+// /w/[ws]/setup: a guided checklist. Each step shows live status and links to the page that owns it
+// (Sources and Model in Settings, Sync, then Ask). Nothing is configured here.
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { wsApi } from "@/lib/api";
 import { repoSlug, useData } from "@/lib/data";
 import { fileHref } from "@/lib/workspace";
 import { Icon } from "./icons";
-import { LlmCard, Sources } from "./Integrations";
-import SyncPanel from "./SyncPanel";
 import { Chip, Notice, Spinner, btnGhost, btnPrimary, errText } from "./ui";
 
 type StepState = "done" | "todo" | "blocked" | "running";
@@ -23,19 +21,31 @@ const KAFKA_QUESTIONS = [
   "Why did producers in 3.0 and 3.1 stay non-idempotent by default even though enable.idempotence defaults to true?",
 ];
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-
-const STEPS = [
-  { title: "Sources", sub: "Connect where your engineering history lives." },
-  { title: "AI model", sub: "The model that reads the evidence and writes the answer." },
-  { title: "Ingest", sub: "Pull history into the graph. You can watch it happen." },
-  { title: "Ask", sub: "Open a file and click a line, or ask in the side panel." },
-];
+const SRC = { workspace: "this workspace", user: "your settings", server: "the server" } as const;
 
 function Dot({ n, state }: { n: number; state: StepState }) {
-  const base = "grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[11.5px] font-medium";
-  if (state === "done") return <span className={`${base} border-ok bg-ok text-bg`}><Icon name="check" size={12} /></span>;
+  const base = "grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[12px] font-medium";
+  if (state === "done") return <span className={`${base} border-ok bg-ok text-bg`}><Icon name="check" size={13} /></span>;
   if (state === "running") return <span className={`${base} border-accent text-accent`}><Spinner /></span>;
   return <span className={`${base} ${state === "blocked" ? "border-line text-dim/60" : "border-line2 text-mute"}`}>{n}</span>;
+}
+
+function Step({ n, title, state, summary, children }: { n: number; title: string; state: StepState; summary: string; children?: ReactNode }) {
+  return (
+    <li className={`card flex items-start gap-4 p-5 ${state === "blocked" ? "opacity-70" : ""}`}>
+      <Dot n={n} state={state} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-3">
+          <h2 className="font-semibold">{title}</h2>
+          <Chip tone={state === "done" ? "ok" : state === "running" ? "run" : state === "blocked" ? "warn" : "dim"}>
+            {state === "running" && <Spinner />}{{ done: "done", todo: "to do", blocked: "blocked", running: "running" }[state]}
+          </Chip>
+        </div>
+        <p className="mt-0.5 text-[12.5px] text-dim">{summary}</p>
+        {children && <div className="mt-3 flex flex-wrap items-center gap-2">{children}</div>}
+      </div>
+    </li>
+  );
 }
 
 export default function Setup() {
@@ -45,12 +55,11 @@ export default function Setup() {
   const [autoError, setAutoError] = useState("");
   const [opening, setOpening] = useState("");
   const [openError, setOpenError] = useState("");
-  const [active, setActive] = useState<number | null>(null); // null = follow the first unfinished step
 
   useEffect(() => {
     if (!auto || !ws || status !== "ready" || !syncLoaded || started.has(ws)) return;
     started.add(ws);
-    router.replace(`/w/${encodeURIComponent(ws)}/setup`); // a reload must not start another run
+    router.replace(`/w/${encodeURIComponent(ws)}/sync`); // a reload must not start another run
     if (info?.workspace.demo || sync?.state === "running") return;
     startSync("standard").catch((e) => setAutoError(errText(e)));
   }, [auto, ws, status, syncLoaded, sync, startSync, router, info]);
@@ -64,28 +73,11 @@ export default function Setup() {
   const indexed = info.indexed_repos;
   const running = sync?.state === "running";
   const s1 = hasTargets && (demo || (["github", "jira", "slack"] as const).some((k) => ints[k].configured));
-  const s2 = ints.llm.configured;
+  const s2 = info.providers.some((p) => p.configured);
   const s3 = indexed.length > 0 && !running;
   const ready = s1 && s2 && indexed.length > 0;
-  const kafka = ws === "kafka";
-  const suggested = kafka ? KAFKA_QUESTIONS : DEMO_QUESTIONS;
-
-  const state: StepState[] = [
-    s1 ? "done" : "todo",
-    s2 ? "done" : "todo",
-    running ? "running" : s3 ? "done" : s1 && !dbDown ? "todo" : "blocked",
-    ready ? "todo" : "blocked",
-  ];
-  const provider = info.providers.find((p) => p.configured);
-  const summary = [
-    demo ? "Demo data, pre-connected" : hasTargets ? [n.repos && plural(n.repos, "repo"), n.jira && plural(n.jira, "project"), n.slack && plural(n.slack, "channel")].filter(Boolean).join(" · ") : "Nothing connected yet",
-    s2 ? (provider ? `${provider.name === "azure" ? "Azure OpenAI" : "Sarvam"} ready` : "Configured") : "Needs an API key",
-    running ? `Running · ${sync?.totals.persisted ?? 0} stored` : dbDown ? "Waiting for the database" : s3 ? (sync?.graph ? `${sync.graph.artifacts} artifacts · ${sync.graph.edges} links` : "Data ingested") : "Not started",
-    ready ? "Ready to ask" : "Finish the steps before",
-  ];
-  const firstTodo = [s1, s2, s3, ready].findIndex((d) => !d);
-  const act = active ?? (firstTodo === -1 ? 3 : firstTodo);
-  const done = [s1, s2, s3, false][act];
+  const suggested = ws === "kafka" ? KAFKA_QUESTIONS : DEMO_QUESTIONS;
+  const doneCount = [s1, s2, s3, false].filter(Boolean).length;
 
   const open = async (question?: string) => {
     const repo = indexed[0];
@@ -99,98 +91,58 @@ export default function Setup() {
   };
 
   return (
-    <div className="h-full min-h-0 overflow-hidden">
-      <div className="mx-auto grid h-full max-w-[1040px] grid-cols-[236px_minmax(0,1fr)] gap-8 px-8 py-8 max-md:grid-cols-[minmax(0,1fr)] max-md:grid-rows-[auto_minmax(0,1fr)] max-md:gap-4 max-md:px-4 max-md:py-4">
-        <aside aria-label="Setup steps" className="min-h-0 min-w-0">
-          <p className="label">Set up</p>
-          <h1 className="mt-1 flex flex-wrap items-center gap-2 text-[22px] font-semibold leading-tight tracking-tight">
-            {info.workspace.name}
-            {demo && <Chip tone="dim"><Icon name="flask" size={11} />demo</Chip>}
-          </h1>
-          <ol className="mt-6 space-y-1 max-md:mt-3 max-md:flex max-md:space-y-0 max-md:overflow-x-auto">
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="relative max-md:shrink-0">
-                {i < STEPS.length - 1 && <span aria-hidden className="absolute bottom-[-6px] left-[23px] top-[38px] w-px bg-line max-md:hidden" />}
-                <button type="button" onClick={() => setActive(i)} aria-current={act === i ? "step" : undefined}
-                  className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${act === i ? "border-line2 bg-raised" : "border-transparent hover:bg-hover"}`}>
-                  <Dot n={i + 1} state={state[i]} />
-                  <span className="min-w-0">
-                    <span className={`block text-[13.5px] font-medium ${state[i] === "blocked" ? "text-dim" : ""}`}>{s.title}</span>
-                    <span className="mt-0.5 block truncate text-[11.5px] text-dim max-md:hidden">{summary[i]}</span>
-                  </span>
+    <div className="h-full overflow-auto">
+      <div className="mx-auto max-w-[760px] px-8 py-10">
+        <p className="label">Set up</p>
+        <h1 className="mt-1 flex flex-wrap items-center gap-2 text-[24px] font-semibold tracking-tight">
+          {info.workspace.name}{demo && <Chip tone="dim"><Icon name="flask" size={11} />demo</Chip>}
+        </h1>
+        <p className="mt-1 text-dim">{doneCount} of 4 steps done. Each step opens the page that owns it; come back here any time.</p>
+
+        {dbDown && (
+          <div className="mt-5 rounded-lg border border-warn/40 px-3 py-2">
+            <Notice tone="warn">The graph database (Neo4j) is not reachable. Start it with <code className="font-mono">docker compose up -d</code>, check the NEO4J_* values in <code className="font-mono">.env</code>, restart the API and reload.</Notice>
+          </div>
+        )}
+
+        <ol className="mt-6 space-y-3">
+          <Step n={1} title="Connect sources" state={s1 ? "done" : "todo"}
+            summary={demo ? "Demo data, pre-connected." : hasTargets ? [n.repos && plural(n.repos, "repo"), n.jira && plural(n.jira, "project"), n.slack && plural(n.slack, "channel")].filter(Boolean).join(" · ") : "GitHub, Jira, Slack: nothing connected yet."}>
+            <Link href={`/w/${ws}/settings/sources`} className={s1 ? btnGhost : btnPrimary}>{s1 ? "Manage sources" : "Connect sources"}<Icon name="arrow" size={12} /></Link>
+          </Step>
+          <Step n={2} title="Choose a model" state={s2 ? "done" : "todo"}
+            summary={s2 && info.model ? `${info.model.provider} / ${info.model.model} from ${SRC[info.model.source]}.` : "No model key yet. Add one under your account; every workspace of yours can use it."}>
+            <Link href="/settings/models" className={s2 ? btnGhost : btnPrimary}>{s2 ? "Your models" : "Add a model key"}<Icon name="arrow" size={12} /></Link>
+            <Link href={`/w/${ws}/settings/model`} className="text-[12px] text-dim hover:text-fg">Override for this workspace</Link>
+          </Step>
+          <Step n={3} title="Run a sync" state={running ? "running" : s3 ? "done" : s1 && !dbDown ? "todo" : "blocked"}
+            summary={running ? `Running · ${sync?.totals.persisted ?? 0} stored.` : dbDown ? "Waiting for the database." : s3 ? (sync?.graph ? `${sync.graph.artifacts} items · ${sync.graph.edges} links in the graph.` : "History is in the graph.") : "Fetch history into the graph; every run keeps a log."}>
+            <Link href={`/w/${ws}/sync`} className={running || !s3 ? btnPrimary : btnGhost}>{running ? "View progress" : s3 ? "Sync & history" : "Open Sync"}<Icon name="arrow" size={12} /></Link>
+            {s3 && <Link href={`/w/${ws}/ingestion`} className="text-[12px] text-dim hover:text-fg">See ingestion</Link>}
+            {autoError && <Notice tone="warn">{autoError}</Notice>}
+          </Step>
+          <Step n={4} title="Ask why" state={ready ? "todo" : "blocked"}
+            summary={ready ? "Open a file and click a line, or start with a question." : `Still to do: ${[!s1 && "connect a source", !s2 && "add a model", indexed.length === 0 && "run a sync"].filter(Boolean).join(", ")}.`}>
+            <button type="button" onClick={() => open()} disabled={!ready || !!opening} className={btnPrimary}>
+              {opening === "open" ? <Spinner /> : <Icon name="arrow" size={12} />}Open workbench
+            </button>
+            {openError && <Notice tone="warn">{openError}</Notice>}
+          </Step>
+        </ol>
+
+        {ready && demo && (
+          <section className="mt-6" aria-label="Suggested questions">
+            <p className="label mb-2">Or start with a question</p>
+            <div className="flex flex-col items-start gap-2">
+              {suggested.map((q) => (
+                <button key={q} type="button" onClick={() => open(q)} disabled={!!opening}
+                  className="inline-flex min-h-8 items-center gap-2 rounded-full border border-line px-3 py-1 text-left text-[12.5px] text-mute hover:border-line2 hover:text-fg disabled:opacity-40">
+                  {opening === q ? <Spinner /> : <Icon name="help" size={12} />}{q}
                 </button>
-              </li>
-            ))}
-          </ol>
-        </aside>
-
-        <main className="flex min-h-0 min-w-0 flex-col gap-3">
-          {dbDown && (
-            <div className="shrink-0 rounded-lg border border-warn/40 px-3 py-2">
-              <Notice tone="warn">
-                The graph database (Neo4j) is not reachable. Start it with <code className="font-mono">docker compose up -d</code>, check the NEO4J_* values in <code className="font-mono">.env</code>, restart the API and reload.
-              </Notice>
+              ))}
             </div>
-          )}
-          <section aria-label={STEPS[act].title} className="flex min-h-0 flex-1 flex-col rounded-xl border border-line bg-panel">
-            <header className="flex shrink-0 items-start gap-3 border-b border-line px-6 py-4">
-              <div className="min-w-0">
-                <h2 className="text-[16px] font-semibold tracking-tight">{STEPS[act].title}</h2>
-                <p className="mt-0.5 text-[12.5px] text-dim">{act === 0 && demo ? "The demo workspace is already connected." : STEPS[act].sub}</p>
-              </div>
-              <span aria-live="polite" className="ml-auto shrink-0">
-                <Chip tone={state[act] === "done" ? "ok" : state[act] === "running" ? "run" : state[act] === "blocked" ? "warn" : "dim"}>
-                  {state[act] === "running" && <Spinner />}{{ done: "done", todo: "to do", blocked: "blocked", running: "running" }[state[act]]}
-                </Chip>
-              </span>
-            </header>
-
-            <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
-              {act === 0 && <Sources />}
-              {act === 1 && <LlmCard />}
-              {act === 2 && (
-                <>
-                  <SyncPanel />
-                  {autoError && <div className="mt-3"><Notice tone="warn">{autoError}</Notice></div>}
-                </>
-              )}
-              {act === 3 && (
-                <div className="space-y-5">
-                  {!ready && <Notice tone="dim">Still to do: {[!s1 && "connect and select a source", !s2 && "configure the AI model", indexed.length === 0 && "ingest your data"].filter(Boolean).join(", ")}.</Notice>}
-                  <button type="button" onClick={() => open()} disabled={!ready || !!opening} className={btnPrimary}>
-                    {opening === "open" ? <Spinner /> : <Icon name="arrow" size={12} />}Open workbench
-                  </button>
-                  {ready && demo && (
-                    <div>
-                      <p className="label mb-2">Or start with a question</p>
-                      <div className="flex flex-col items-start gap-2">
-                        {suggested.map((q) => (
-                          <button key={q} type="button" onClick={() => open(q)} disabled={!!opening}
-                            className="inline-flex h-8 items-center gap-2 rounded-full border border-line px-3 text-[12.5px] text-mute hover:border-line2 hover:text-fg disabled:opacity-40">
-                            {opening === q ? <Spinner /> : <Icon name="help" size={12} />}{q}
-                          </button>
-                        ))}
-                      </div>
-                      {!kafka && <p className="mt-3 text-[11.5px] text-dim">Or open <span className="font-mono">src/payments/gateway_client.py</span> and click the <span className="font-mono">MAX_RETRIES = 3</span> line.</p>}
-                    </div>
-                  )}
-                  {openError && <Notice tone="warn">{openError}</Notice>}
-                  <p className="text-[11.5px] text-dim">Manage everything later from <Link href={`/w/${ws}`} className="text-accent hover:underline">the workbench</Link> under Connections.</p>
-                </div>
-              )}
-            </div>
-
-            <footer className="flex shrink-0 items-center gap-2 border-t border-line px-6 py-3">
-              {act > 0 && <button type="button" onClick={() => setActive(act - 1)} className={btnGhost}><Icon name="back" size={12} />Back</button>}
-              {act < 3 && !done && <span className="ml-auto text-[11.5px] text-dim">{state[act] === "blocked" ? "Waiting on the previous steps" : "Complete this step to continue"}</span>}
-              {act < 3 && (
-                <button type="button" onClick={() => setActive(act + 1)} disabled={!done} className={`${btnPrimary} ${done ? "ml-auto" : ""}`}>
-                  Continue<Icon name="arrow" size={12} />
-                </button>
-              )}
-            </footer>
           </section>
-        </main>
+        )}
       </div>
     </div>
   );

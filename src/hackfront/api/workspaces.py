@@ -10,7 +10,7 @@ from typing import Literal
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
-from .. import config, state
+from .. import auth, config, state
 from ..ingest.sources.github.client import GitHubClient
 from ..ingest.sources.jira.client import JiraClient
 from ..ingest.sources.slack.client import SlackClient
@@ -95,7 +95,13 @@ def _last_sync(slug: str):
 @router.get("/api/workspaces")
 def list_workspaces():
     out = []
+    user = auth.current()
     for row in config.list_workspaces():
+        if auth.enabled() and not auth.can_access(row, user):
+            continue  # other people's workspaces never appear
+        row["owned"] = row["owner"] == (user.id if user else "") if auth.enabled() else True
+        row["shared"] = auth.enabled() and auth.is_shared(row)  # sharing only means something with accounts
+        row.pop("owner", None)
         try:
             scopes = config.scopes(row["slug"])
             pages = config.load_workspace(row["slug"]).get("docs", {}).get("pages", [])
@@ -112,12 +118,13 @@ def list_workspaces():
 @router.post("/api/workspaces", status_code=201)
 def create_workspace(body: NewWorkspace):
     try:
-        slug = config.create_workspace(body.name)
+        owner = auth.user_id() if auth.enabled() else ""
+        slug = config.create_workspace(body.name, owner=owner)
         if body.demo:
             from ..ingest.demo import DEMO_WORKSPACE
 
             config.save_workspace(slug, {**config.EMPTY_WORKSPACE, **DEMO_WORKSPACE,
-                                         "name": body.name.strip(), "demo": True})
+                                         "name": body.name.strip(), "demo": True, "owner": owner})
     except ValueError as error:
         raise HTTPException(422, str(error)) from None
     return {"slug": slug, "name": body.name.strip(), "demo": body.demo}
@@ -126,6 +133,8 @@ def create_workspace(body: NewWorkspace):
 @router.delete("/api/workspaces/{ws}")
 def delete_workspace(ws: str):
     try:
+        if auth.enabled() and auth.is_shared(config.load_workspace(ws)):
+            raise HTTPException(403, config.DEMO_SETUP_LOCKED)
         config.delete_workspace(ws)
     except (LookupError, ValueError):
         raise HTTPException(404, "workspace not found") from None
@@ -174,9 +183,10 @@ def workbench(ws: str):
     try:
         from ..agent import llm
 
-        providers = llm.providers(ws)
+        providers = llm.providers(ws, auth.user_id())
+        model = _model_info(ws)
     except Exception:  # noqa: BLE001  provider listing must never break the workbench
-        providers = []
+        providers, model = [], None
     configured["llm"] = any(p["configured"] for p in providers)
     targets = {"github": len(scopes["repos"]), "jira": len(scopes["jira"]), "slack": len(scopes["slack"])}
     integrations = {}
@@ -195,8 +205,26 @@ def workbench(ws: str):
         "neo4j": neo4j,
         "integrations": integrations,
         "providers": providers,
+        "model": model,
         "names": config.names(ws),
     }
+
+
+def _model_info(ws: str) -> dict:
+    """{provider, model, source}: what this workspace resolves to for the signed-in user, and which layer decided it."""
+    from ..agent import llm
+
+    uid = auth.user_id()
+    wt, ut = llm._workspace.set(ws), llm._user.set(uid)
+    try:
+        provider = llm.default_provider()
+        key = {"azure": "azure_key", "sarvam": "sarvam_key"}.get(provider)
+        layers = [config.secret_source(ws, k, uid) for k in ("llm_provider", "llm_model", *([key] if key else []))]
+        source = "workspace" if "workspace" in layers else "user" if "user" in layers else "server"
+        return {"provider": provider, "model": llm.model_for(provider), "source": source}
+    finally:
+        llm._workspace.reset(wt)
+        llm._user.reset(ut)
 
 
 def _lock_demo(stored: dict) -> None:
@@ -230,8 +258,8 @@ def put_workspace(ws: str, body: dict = Body(...)):  # noqa: B008  FastAPI idiom
 @router.put("/api/w/{ws}/secrets")
 def put_secrets(ws: str, body: dict = Body(...)):  # noqa: B008  FastAPI idiom
     stored = _workspace(ws)
-    if stored.get("demo") and config.SOURCE_SECRET_KEYS.intersection(body):
-        raise HTTPException(403, config.DEMO_SETUP_LOCKED)
+    if stored.get("demo") and (config.SOURCE_SECRET_KEYS.intersection(body) or (auth.enabled() and auth.is_shared(stored))):
+        raise HTTPException(403, config.DEMO_SETUP_LOCKED)  # a shared demo must never hold anybody's keys
     try:
         config.set_secrets(ws, body)
     except ValueError as error:  # messages name only the key, never a value
@@ -245,6 +273,7 @@ def _test(ws: str, cfg: dict, which: str) -> dict:
 
     if which == "llm":
         llm.set_workspace(ws)
+        llm.set_user(auth.user_id())
         try:
             provider = config.get_secret(ws, "llm_provider") or next(
                 (p["name"] for p in llm.providers(ws) if p["configured"]), None)
@@ -256,6 +285,7 @@ def _test(ws: str, cfg: dict, which: str) -> dict:
             return {"ok": True, "detail": "Model replied", "account": f"{provider} ({llm.model_for(provider)})"}
         finally:
             llm.set_workspace(None)
+            llm.set_user(None)
     client = _client(ws, cfg, which)
     if which == "github":
         account = client.whoami()

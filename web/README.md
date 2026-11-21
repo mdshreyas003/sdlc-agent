@@ -44,3 +44,17 @@ Workbench keys: `1`/`2` timeline/graph · `j`/`k` step evidence · `r` replay ·
 
 Code map: `lib/api.ts` (`wsApi` helpers + SSE reader), `lib/data.tsx` (`DataProvider` keyed by workspace: workbench, graph, investigations, sync polling),
 `lib/types.ts` (contract types), `components/Setup.tsx` (checklist), `Integrations.tsx` (source cards, pickers, AI model), `SyncPanel.tsx`, `ConfigDialog.tsx`.
+
+## Accounts, settings, sync and ingestion (v3, see `docs/accounts-and-settings-api.md`)
+
+| Route | What |
+|---|---|
+| `/login` | GitHub sign-in (or "Running as local user" when the server has auth off). Signed-out visitors are redirected here with `?next=`. |
+| `/settings`, `/settings/models`, `/settings/appearance` | Your account. **Models** holds provider keys for all your workspaces; resolution is workspace override, then you, then server. |
+| `/workspaces` | Your workspaces (owned vs shared read-only demo): create, rename, delete, jump to Sync / Ingestion / Settings. |
+| `/w/[ws]/sync` | Run a sync, live streams and log, run history, per-run log viewer. |
+| `/w/[ws]/ingestion` | What the synced records became: fetched, stored, linked, indexed; graph and repo coverage. |
+| `/w/[ws]/settings/{sources,model,danger}` | Workspace-level sources, model override, delete. |
+| `/w/[ws]/setup` | Guided checklist that links to the pages above. |
+
+The API proxy forwards the `Cookie` upstream and passes `Set-Cookie` / `Location` back without following redirects.

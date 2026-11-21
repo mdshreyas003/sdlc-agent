@@ -1,7 +1,7 @@
 // Typed fetch helpers for docs/workbench-api.md. Same-origin: next.config.ts proxies /api/* to FastAPI.
 import type {
   Graph, IntegrationId, Investigation, InvestigationRow, Resource, SecretState, Step, SyncMode, SyncStatus, Targets, TargetsPatch,
-  TestResult, WorkbenchInfo, WorkspaceRow,
+  Ingestion, Me, Run, RunMeta, TestResult, UserModels, WorkbenchInfo, WorkspaceRow,
 } from "./types";
 
 export class ApiError extends Error {
@@ -21,6 +21,15 @@ async function failure(res: Response): Promise<ApiError> {
   return new ApiError(msg, res.status);
 }
 
+/** Signed-out API call while auth is on: send the user to /login and come back afterwards. */
+export function toLogin() {
+  if (typeof window === "undefined") return;
+  const { pathname, search } = window.location;
+  if (pathname === "/" || pathname === "/login") return;
+  window.location.assign(`/login?next=${encodeURIComponent(pathname + search)}`);
+}
+const SIGN_IN = "sign in required";
+
 export async function api<T>(path: string, init?: { method?: string; body?: unknown; signal?: AbortSignal }): Promise<T> {
   let res: Response;
   try {
@@ -35,7 +44,11 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
     if ((e as Error).name === "AbortError") throw e;
     throw new ApiError(DOWN, 0);
   }
-  if (!res.ok) throw await failure(res);
+  if (!res.ok) {
+    const err = await failure(res);
+    if (res.status === 401 && err.message === SIGN_IN) toLogin();
+    throw err;
+  }
   return res.json() as Promise<T>;
 }
 
@@ -57,6 +70,9 @@ export const wsApi = {
   resources: (ws: string, id: Exclude<IntegrationId, "llm">) => api<{ resources: Resource[] }>(`${W(ws)}/integrations/${id}/resources`),
   syncStart: (ws: string, mode: SyncMode) => api<SyncStatus>(`${W(ws)}/sync`, { method: "POST", body: { mode } }),
   syncStatus: (ws: string, signal?: AbortSignal) => api<SyncStatus>(`${W(ws)}/sync`, { signal }),
+  runs: (ws: string) => api<RunMeta[]>(`${W(ws)}/runs`),
+  run: (ws: string, id: string, signal?: AbortSignal) => api<Run>(`${W(ws)}/runs/${encodeURIComponent(id)}`, { signal }),
+  ingestion: (ws: string) => api<Ingestion>(`${W(ws)}/ingestion`),
   graph: (ws: string) => api<Graph>(`${W(ws)}/graph`),
   investigations: (ws: string) => api<InvestigationRow[]>(`${W(ws)}/investigations`),
   investigation: (ws: string, id: string) => api<{ investigation: Investigation; graph: Graph }>(`${W(ws)}/investigations/${encodeURIComponent(id)}`),
@@ -76,7 +92,11 @@ export async function investigate(ws: string, body: InvestigateBody, onStep: (s:
     if ((e as Error).name === "AbortError") throw e;
     throw new ApiError(DOWN, 0);
   }
-  if (!res.ok) throw await failure(res);
+  if (!res.ok) {
+    const err = await failure(res);
+    if (res.status === 401 && err.message === SIGN_IN) toLogin();
+    throw err;
+  }
   if (!res.body) throw new ApiError("The server sent no stream", res.status);
 
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -108,3 +128,16 @@ export async function investigate(ws: string, body: InvestigateBody, onStep: (s:
   if (!out.result) throw new ApiError("The investigation ended without a result", 500);
   return out.result;
 }
+
+/** The signed-in user: identity, logout and their own model settings (Settings > Models). */
+export const meApi = {
+  me: () => api<Me>("/api/me"),
+  logout: () => api<{ ok: true }>("/api/auth/logout", { method: "POST" }),
+  signIn: (email: string, password: string) => api<{ ok: true }>("/api/auth/login", { method: "POST", body: { email, password } }),
+  signUp: (email: string, password: string, name: string) =>
+    api<{ ok: true; claimed_workspaces: boolean }>("/api/auth/signup", { method: "POST", body: { email, password, name } }),
+  models: () => api<UserModels>("/api/me/models"),
+  saveModels: (body: Record<string, string>) => api<UserModels>("/api/me/models", { method: "PUT", body }),
+  testModel: (provider: string) => api<TestResult>(`/api/me/models/${encodeURIComponent(provider)}/test`, { method: "POST" }),
+  renameWorkspace: (ws: string, name: string) => api<Targets>(`${W(ws)}/workspace`, { method: "PUT", body: { name } }),
+};
