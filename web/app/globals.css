@@ -12,11 +12,11 @@
   --line2: #dcdce1;
   --fg: #0a0a0b;
   --mute: #4b4b55;
-  --dim: #85858f;
+  --dim: #666670;
   --accent: #4353e8;
-  --ok: #0c9a6a;
-  --warn: #b7791f;
-  --unk: #7a7a85;
+  --ok: #067a56;
+  --warn: #8f5a00;
+  --unk: #666670;
   --bad: #d92d3a;
   --gridline: #0000000b;
   color-scheme: light;
@@ -31,7 +31,7 @@
   --line2: #2e2e33;
   --fg: #ededee;
   --mute: #a4a4ad;
-  --dim: #71717b;
+  --dim: #8a8a94;
   --accent: #8b9bff;
   --ok: #3ecf8e;
   --warn: #f0b429;

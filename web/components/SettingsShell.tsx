@@ -15,7 +15,7 @@ export default function SettingsShell({ eyebrow, title, sections, active, childr
         <aside aria-label="Settings sections" className="sticky top-0 self-start">
           <p className="label">{eyebrow}</p>
           <h1 className="mt-1 break-words text-[20px] font-semibold leading-tight tracking-tight">{title}</h1>
-          <nav className="mt-6 space-y-0.5">
+          <nav aria-label="Settings" className="mt-6 space-y-0.5">
             {sections.map((s) => (
               <Link key={s.key} href={s.href} aria-current={active === s.key ? "page" : undefined}
                 className={`relative flex h-8 items-center gap-2.5 rounded-md px-2.5 ${active === s.key ? "bg-raised font-medium text-fg" : s.danger ? "text-dim hover:bg-hover hover:text-bad" : "text-mute hover:bg-hover hover:text-fg"}`}>
@@ -25,7 +25,7 @@ export default function SettingsShell({ eyebrow, title, sections, active, childr
             ))}
           </nav>
         </aside>
-        <main className="min-w-0">{children}</main>
+        <div className="min-w-0">{children}</div>
       </div>
     </div>
   );

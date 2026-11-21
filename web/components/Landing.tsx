@@ -67,7 +67,7 @@ export default function Landing() {
       <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1180px] items-center justify-between px-8">
           <span className="text-[14px] font-semibold">Engineering Memory <span className="ml-2 font-normal text-dim">prototype guide</span></span>
-          <nav className="flex items-center gap-2">
+          <nav aria-label="Primary" className="flex items-center gap-2">
             <a href="https://github.com/mdshreyas003/sdlc-agent" className={btnGhost}>GitHub</a>
             <Link href="/workspaces" className={btnGhost}>Workspaces</Link>
             <Link href="/w/kafka" className={btnAccent}>Try the demo</Link>
@@ -76,7 +76,7 @@ export default function Landing() {
       </header>
 
       <div className="mx-auto flex max-w-[1180px] gap-12 px-8">
-        <aside className="sticky top-14 h-[calc(100vh-3.5rem)] w-[210px] shrink-0 overflow-auto py-10">
+        <aside aria-label="Guided path" className="sticky top-14 h-[calc(100vh-3.5rem)] w-[210px] shrink-0 overflow-auto py-10">
           <p className="label mb-3">Guided path</p>
           <ol className="space-y-0.5">
             {SECTIONS.map(([id, t], i) => (
@@ -193,7 +193,7 @@ export default function Landing() {
 
           <Section id="different" caption="Memory tools and coding agents solve other problems. Compared on the four points above.">
             <table className="card w-full text-left text-[12.5px]">
-              <thead className="text-dim"><tr><th className="px-4 py-2" /><th>Engineering Memory</th><th>Mem0 · Zep/Graphiti · GraphRAG</th><th>Coding agents</th></tr></thead>
+              <thead className="text-dim"><tr><th className="px-4 py-2"><span className="sr-only">Point</span></th><th>Engineering Memory</th><th>Mem0 · Zep/Graphiti · GraphRAG</th><th>Coding agents</th></tr></thead>
               <tbody>
                 {[["Links", "only links a person wrote down", "relations extracted or inferred by an LLM", "not about team history"],
                   ["Proof", "word-for-word quote, checked in code", "traceable sources or record IDs, not checked quotes", "tests and linters check code edits"],
