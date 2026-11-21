@@ -263,7 +263,7 @@ export default function Shell({ children }: { children: ReactNode }) {
   const gridPage = pathname.startsWith("/workspaces") || pathname.startsWith("/settings"); // thin-grid backdrop
   const bare = pathname === "/" || pathname === "/login" || pathname.startsWith("/prototype"); // these bring their own chrome
   if (bare) return <div className="h-screen min-w-[1000px]">{children}</div>;
-  if (loading || signedOut) return <div className="grid h-screen place-items-center text-dim" aria-busy>Loading…</div>; // signed-out visitors are sent to /login
+  if (loading || signedOut) return <main className="grid h-screen place-items-center text-dim" aria-busy><h1 className="sr-only">Engineering Memory</h1>Loading…</main>; // signed-out visitors are sent to /login
   return (
     <>
       <div className="flex h-screen min-w-[1000px] flex-col">

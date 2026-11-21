@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sdlc-agent-five.vercel.app/sitemap.xml
