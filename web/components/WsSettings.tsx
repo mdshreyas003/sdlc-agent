@@ -113,7 +113,7 @@ function ModelOverride() {
           </div>
         ) : <p className="text-dim">No model resolved yet.</p>}
         {!info.providers.some((p) => p.configured) && <div className="mt-3"><Notice tone="warn">No model is configured. Add a key in <Link href="/settings/models" className="underline">your model settings</Link> or override it below.</Notice></div>}
-        <p className="mt-3 text-[12px] text-dim">Your shared default lives in <Link href="/settings/models" className="text-accent hover:underline">Settings → Models</Link>. Override it here only if this workspace needs a different provider, key or model.</p>
+        <p className="mt-3 text-[12px] text-dim">Your shared default lives in <Link href="/settings/models" className="text-accent underline underline-offset-2">Settings → Models</Link>. Override it here only if this workspace needs a different provider, key or model.</p>
       </Panel>
       <Panel title="Workspace override" right={overridden ? <button onClick={clear} disabled={busy || shared} className={btnGhost}>{busy && <Spinner />}Remove override</button> : <Chip tone="dim">inherits</Chip>}>
         {shared ? <Notice tone="dim">This is a shared demo, so it cannot hold its own keys. It uses your model settings.</Notice> : <LlmCard />}

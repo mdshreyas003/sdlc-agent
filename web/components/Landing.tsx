@@ -125,7 +125,7 @@ export default function Landing() {
 
           <Section id="proof" caption="Real Apache Kafka history, three layers of checks. Early numbers: one run each, on a question set not yet human-checked; the full 75-question benchmark is next.">
             <div className="card p-5">
-              <div className="flex items-baseline justify-between"><p className="text-[14px] font-semibold text-fg">The Kafka demo workspace</p><Link href="/w/kafka" className="text-[12px] text-accent hover:underline">open it {"\u2192"}</Link></div>
+              <div className="flex items-baseline justify-between"><p className="text-[14px] font-semibold text-fg">The Kafka demo workspace</p><Link href="/w/kafka" className="text-[12px] text-accent underline underline-offset-2">open it {"\u2192"}</Link></div>
               <div className="mt-3 grid grid-cols-4 gap-3">
                 {[["1,201", "items", "1,070 mail · 96 Jira · 25 GitHub · 10 KIP pages"], ["2,194", "links between them", "2,854 incl. links to items not loaded"], ["10", "Kafka KIPs", "KIP-98 … KIP-890"], ["4", "saved investigations", "open with their evidence graph"]].map(([big, t, sub]) => (
                   <div key={t}><p className="text-[28px] font-semibold leading-none tracking-tight text-fg">{big}</p><p className="mt-2 text-[13px] text-mute">{t}</p><p className="mt-0.5 text-[11.5px] text-dim">{sub}</p></div>
@@ -178,12 +178,14 @@ export default function Landing() {
                 </div>
                 <p className="mt-3 text-[12.5px] text-dim">5 fixed read-only tools, plus one guarded escape hatch that may only find IDs.</p>
               </div>
-              <ul className="card space-y-2.5 p-4">
+              <div className="card p-4">
                 <p className="label mb-1 text-bad">Refuses</p>
+                <ul className="space-y-2.5">
                 {[["No writes", "write words blocked; read-only route; queries time-limited"], ["No invented IDs", "only IDs already seen can be opened"], ["No paraphrased quotes", "quote must be word for word in that item"], ["No guessing", "no verified quote → “Not established”"]].map(([t, d]) => (
                   <li key={t} className="flex gap-2.5"><span className="text-bad">✕</span><span><B>{t}</B> <span className="text-dim">· {d}</span></span></li>
                 ))}
-              </ul>
+                </ul>
+              </div>
             </div>
             <More>
               <p><B>Seed</B> pulls exact IDs from the question (ticket keys, PR numbers, commit hashes, file paths) with no AI. <B>Plan</B> picks up to 5 tool calls per round. <B>Retrieve</B> runs read-only searches, then follows one hop of links from the best hits.</p>

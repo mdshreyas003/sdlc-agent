@@ -246,7 +246,7 @@ function SyncBanner() {
     <div role="status" className="flex h-8 shrink-0 items-center gap-2 border-b border-line bg-panel px-4 text-[12px] text-mute">
       <span aria-hidden className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-accent border-t-transparent" />
       Syncing · {sync.totals.fetched} fetched · {done}/{sync.streams.length} streams
-      <Link href={`/w/${ws}/sync`} className="ml-auto text-accent hover:underline">View progress</Link>
+      <Link href={`/w/${ws}/sync`} className="ml-auto text-accent underline underline-offset-2">View progress</Link>
     </div>
   );
 }
