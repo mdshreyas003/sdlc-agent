@@ -134,7 +134,7 @@ export default function SyncPage() {
         <div className="mt-1 flex flex-wrap items-end gap-4">
           <div>
             <h1 className="text-[22px] font-semibold tracking-tight">Sync</h1>
-            <p className="mt-0.5 max-w-[560px] text-dim">Fetch history from your connected sources. Every run is recorded with its log. What the records became in the graph is under <Link href={`/w/${ws}/ingestion`} className="text-accent hover:underline">Ingestion</Link>.</p>
+            <p className="mt-0.5 max-w-[560px] text-dim">Fetch history from your connected sources. Every run is recorded with its log. What the records became in the graph is under <Link href={`/w/${ws}/ingestion`} className="text-accent underline underline-offset-2">Ingestion</Link>.</p>
           </div>
         </div>
 
@@ -143,7 +143,7 @@ export default function SyncPage() {
             {sources.map((s) => (
               <span key={s.label} className={`flex items-center gap-1.5 ${s.n ? "text-mute" : "text-dim/60"}`}><Icon name={s.icon} size={13} /><b className="font-medium text-fg">{s.n}</b>{s.label}</span>
             ))}
-            <Link href={`/w/${ws}/settings/sources`} className="ml-auto text-accent hover:underline">Edit sources</Link>
+            <Link href={`/w/${ws}/settings/sources`} className="ml-auto text-accent underline underline-offset-2">Edit sources</Link>
           </div>
           {demo ? <div className="mt-4"><Notice tone="dim">Demo setup is locked: this workspace is not re-synced.</Notice></div> : (
             <>
@@ -160,7 +160,7 @@ export default function SyncPage() {
                 <button type="button" onClick={() => start(mode)} disabled={running || starting || !hasTargets || !syncLoaded} className={btnPrimary}>
                   {running || starting ? <Spinner /> : <Icon name="play" size={11} />}{running ? "Syncing…" : "Run sync"}
                 </button>
-                {!hasTargets && <span className="text-[11.5px] text-dim">Select a repository, project or channel in <Link href={`/w/${ws}/settings/sources`} className="text-accent hover:underline">Sources</Link> first.</span>}
+                {!hasTargets && <span className="text-[11.5px] text-dim">Select a repository, project or channel in <Link href={`/w/${ws}/settings/sources`} className="text-accent underline underline-offset-2">Sources</Link> first.</span>}
               </div>
               {error && <div className="mt-3"><Notice tone="warn">{error}</Notice></div>}
             </>
