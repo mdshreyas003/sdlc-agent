@@ -45,18 +45,48 @@ The four questions filed for the Kafka demo are in `data/kafka_demo_questions.js
 ## MCP server for coding agents
 
 `why(anchor)` over a workspace's evidence graph. Read-only, no model, scoped to one workspace, and refuses with
-"Not established" when nothing supports an answer. `anchor` is a file path, a ticket key, `#PR` or a few words.
-Each result carries a verbatim excerpt and a source link. Decision status (live / refined / dead) and
-`check_change(diff)` are not built yet.
+"Not established" when nothing supports an answer. Each result carries a verbatim excerpt and a source link.
+Decision status (live / refined / dead) and `check_change(diff)` are not built yet. Security notes and known gaps:
+[docs/adr/0001-mcp-server-for-coding-agents.md](docs/adr/0001-mcp-server-for-coding-agents.md).
 
-```sh
-uv run hackfront mcp --workspace kafka                       # stdio server (needs NEO4J_* set)
-uv run hackfront mcp-client --workspace kafka KAFKA-18654    # spawns it, calls why, prints the evidence
+### Usage guide
+
+1. **Prerequisites.** A synced workspace (for example the seeded `kafka` one; `hackfront workspaces` lists yours)
+   and `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` set, as for the API (see `.env.example`).
+2. **Check it from the terminal.** The client starts the server, calls `why` and prints the JSON:
+
+   ```sh
+   uv run hackfront mcp-client --workspace kafka KAFKA-18654
+   ```
+
+   Exit code 0 means evidence was found, 1 means the answer was refused, 2 means the server could not be called.
+3. **Register it with your agent.** Claude Code, in the project's `.mcp.json` (Cursor and others take the same
+   command in their MCP settings):
+
+   ```json
+   {"mcpServers": {"why": {"command": "uv", "args": ["run", "--directory", "/path/to/sdlc-agent", "hackfront", "mcp", "--workspace", "kafka"],
+                           "env": {"NEO4J_URI": "...", "NEO4J_USERNAME": "...", "NEO4J_PASSWORD": "..."}}}}
+   ```
+
+   `hackfront mcp --workspace kafka` is the server itself (stdio); you rarely run it by hand.
+4. **Ask before editing.** In the agent: "Use the why tool on `clients/.../Sender.java` before changing its retry
+   logic." The `anchor` can be a file path, a ticket key (`KAFKA-18654`), a PR number (`#18720`) or a few words.
+
+### What you get back
+
+```json
+{"anchor": "...", "refused": false, "note": null,
+ "evidence": [{"id": "...", "kind": "pull_request", "title": "...", "quote": "first 400 chars, verbatim",
+               "url": "https://...", "time": "2025-...", "relation": "direct | REFERENCES <id> | CONTAINS <id>"}]}
 ```
 
-Register it with an agent (Claude Code `.mcp.json`):
-`{"mcpServers": {"why": {"command": "uv", "args": ["run", "hackfront", "mcp", "--workspace", "kafka"]}}}`.
-Code: `src/hackfront/mcp_server.py`, `src/hackfront/mcp_client.py`.
+- `direct` items matched the anchor; the rest are linked to a direct hit by an edge a source stated. At most 12 items.
+- `refused: true` (with `note`) means nothing in the history supports an answer. Treat it as unknown, not as
+  permission to simplify the code.
+- Quotes are prefixes of stored text. Open `url` for the full record.
+
+Code: `src/hackfront/mcp_server.py`, `src/hackfront/mcp_client.py`. Tests: `tests/agent/unit/test_mcp_why.py`
+(need the throwaway `neo4j-test` service: `docker compose up -d neo4j-test`).
 
 ## Mental model
 
