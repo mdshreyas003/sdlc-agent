@@ -7,11 +7,15 @@ with nothing to cite, the answer is refused ("Not established"). stdout is the J
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import sys
 
 from .agent.harness import Harness, HarnessError
+from .redact import redact
+
+log = logging.getLogger("hackfront.mcp")
 
 SEEDS, MAX_EVIDENCE, QUOTE_LEN = 3, 12, 400
 INSTRUCTIONS = (
@@ -24,12 +28,21 @@ _PATHLIKE = re.compile(r"[/\\]|\.\w{1,6}$")
 
 
 def _item(row: dict, relation: str) -> dict:
-    return {"id": row["id"], "kind": row["kind"], "title": row.get("title"), "quote": (row.get("text") or "")[:QUOTE_LEN],
+    return {"id": row["id"], "kind": row["kind"], "title": redact(row.get("title")),
+            "quote": redact((row.get("text") or "")[:QUOTE_LEN]),
             "url": row.get("url"), "time": row.get("time"), "relation": relation}
 
 
-def why(harness: Harness, anchor: str) -> dict:
-    """Evidence for an anchor: a file path (file_history) or words/keys (find_text), expanded one chain deep."""
+def why(harness: Harness, anchor: str, workspace: str | None = None) -> dict:
+    """Evidence for an anchor: a file path (file_history) or words/keys (find_text), expanded one chain deep.
+    Excerpts are redacted for credentials; every call is audit-logged (workspace, anchor, outcome; never the excerpts)."""
+    out = _why(harness, anchor)
+    log.info(json.dumps({"event": "why", "workspace": workspace, "anchor": (anchor or "")[:200],
+                         "refused": out["refused"], "items": len(out["evidence"])}))
+    return out
+
+
+def _why(harness: Harness, anchor: str) -> dict:
     anchor = (anchor or "").strip()
     try:
         tool = "file_history" if _PATHLIKE.search(anchor) else "find_text"
@@ -50,7 +63,8 @@ def why(harness: Harness, anchor: str) -> dict:
     return {"anchor": anchor, "refused": False, "evidence": evidence, "note": None}
 
 
-def build_server(harness: Harness):
+def build_server(harness: Harness | None = None, harness_for=None, workspace_for=None):
+    """stdio: pass one `harness`. HTTP: pass `harness_for()` / `workspace_for()` resolving the caller's workspace."""
     from mcp.server.mcpserver import MCPServer
     from mcp.types import ToolAnnotations
 
@@ -60,7 +74,7 @@ def build_server(harness: Harness):
     def why_tool(anchor: str) -> dict:
         """Why is this code the way it is? `anchor` is a file path, ticket key, PR number (#N) or a few words.
         Returns evidence (commits, PRs, tickets, threads) with verbatim quotes and links, or refused=true."""
-        return why(harness, anchor)
+        return why(harness_for() if harness_for else harness, anchor, workspace_for() if workspace_for else None)
 
     return server
 
