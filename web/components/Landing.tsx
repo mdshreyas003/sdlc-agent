@@ -52,10 +52,10 @@ const Figure = ({ children }: { children: ReactNode }) => <Reveal className="car
 
 const TIERS: [string, number, string, string][] = [
   ["A", 16, "answer is in one item", "bg-accent"],
-  ["B", 24, "needs several linked items", "bg-accent/70"],
-  ["C", 20, "evidence removed → must abstain", "bg-warn/80"],
-  ["T", 10, "close in time, not linked → must abstain", "bg-warn/50"],
-  ["N", 5, "nothing in the data answers it", "bg-unk/60"],
+  ["B", 24, "needs several linked items", "bg-ok"],
+  ["C", 20, "evidence removed → must abstain", "bg-warn"],
+  ["T", 10, "close in time, not linked → must abstain", "bg-bad"],
+  ["N", 5, "nothing in the data answers it", "bg-unk"],
 ];
 
 // Demo video slot: shown only when web/public/demo.mp4 exists (checked at build/render time; add the file and redeploy).
