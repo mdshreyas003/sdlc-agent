@@ -71,13 +71,13 @@ export default function Login() {
   useEffect(() => { if (signedIn) router.replace(next); }, [signedIn, next, router]);
 
   return (
-    <div className="px-grid grid h-full place-items-center">
+    <main className="px-grid grid h-full place-items-center">
       <div className="px-halo grid h-full w-full place-items-center">
         <div className="card w-[400px] max-w-[92vw] p-8">
           <div className="mb-6 flex items-center gap-3">
             <Logo size={26} />
             <div>
-              <p className="font-semibold leading-tight">Engineering Memory</p>
+              <h1 className="font-semibold leading-tight">Engineering Memory</h1>
               <p className="font-mono text-[11px] text-dim">why is this code the way it is?</p>
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function Login() {
 
           {!loading && me?.auth === "enabled" && (
             <>
-              <h1 className="text-[20px] font-semibold tracking-tight">Sign in</h1>
+              <h2 className="text-[20px] font-semibold tracking-tight">Sign in</h2>
               <p className="mb-5 mt-1 text-mute">Your workspaces, sources and model keys are private to your account.</p>
               {code && <p role="alert" className="mb-4 rounded-md border border-warn/40 px-3 py-2 text-[12.5px] text-warn">{ERRORS[code] ?? "Sign-in failed. Try again."}</p>}
               {methods.includes("password") && <PasswordForm next={next} onDone={refresh} />}
@@ -106,13 +106,13 @@ export default function Login() {
 
           {!loading && me?.auth === "disabled" && (
             <>
-              <h1 className="text-[20px] font-semibold tracking-tight">Running as local user</h1>
+              <h2 className="text-[20px] font-semibold tracking-tight">Running as local user</h2>
               <p className="mb-5 mt-1 text-mute">Sign-in is not enabled on this server, so everything runs as one local user. Set the GitHub OAuth variables to turn accounts on.</p>
               <Link href={next} className={`${btnPrimary} h-10 w-full text-[13.5px]`}>Continue<Icon name="arrow" size={13} /></Link>
             </>
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

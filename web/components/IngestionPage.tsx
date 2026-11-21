@@ -32,9 +32,9 @@ function HowItWorks({ data, ws }: { data: Ingestion; ws: string }) {
         <header className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line px-5 py-3">
           <h2 className="font-semibold">What a sync pulls</h2>
           <span className="font-mono text-[11.5px] text-dim">{plan.order} · standard {plan.pages.standard} pages · deep {plan.pages.deep} pages per stream</span>
-          <Link href={`/w/${ws}/sync`} className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">Run a sync<Icon name="arrow" size={12} /></Link>
+          <Link href={`/w/${ws}/sync`} className="ml-auto inline-flex items-center gap-1 text-accent underline underline-offset-2">Run a sync<Icon name="arrow" size={12} /></Link>
         </header>
-        {plan.sources.length === 0 ? <p className="px-5 py-4 text-dim">No sources selected yet. Pick repositories, projects or channels in <Link href={`/w/${ws}/settings/sources`} className="text-accent hover:underline">Settings</Link>.</p> : (
+        {plan.sources.length === 0 ? <p className="px-5 py-4 text-dim">No sources selected yet. Pick repositories, projects or channels in <Link href={`/w/${ws}/settings/sources`} className="text-accent underline underline-offset-2">Settings</Link>.</p> : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[12.5px]">
               <thead><tr className="label border-b border-line"><th className="px-5 py-2 font-medium">Target</th><th className="px-2 py-2 font-medium">Stream</th><th className="px-2 py-2 font-medium">Read order</th><th className="px-2 py-2 text-right font-medium">Standard max</th><th className="px-2 py-2 text-right font-medium">Deep max</th><th className="px-5 py-2 font-medium">Includes</th></tr></thead>
@@ -108,7 +108,7 @@ export default function IngestionPage() {
       <div className="mx-auto max-w-[980px] px-8 py-8">
         <p className="label">{info.workspace.name}</p>
         <h1 className="mt-1 text-[22px] font-semibold tracking-tight">Ingestion</h1>
-        <p className="mt-0.5 max-w-[600px] text-dim">What your synced records became in the evidence graph. Sync fetches from sources; ingestion maps, links and stores. Run or inspect fetches under <Link href={`/w/${ws}/sync`} className="text-accent hover:underline">Sync</Link>.</p>
+        <p className="mt-0.5 max-w-[600px] text-dim">What your synced records became in the evidence graph. Sync fetches from sources; ingestion maps, links and stores. Run or inspect fetches under <Link href={`/w/${ws}/sync`} className="text-accent underline underline-offset-2">Sync</Link>.</p>
 
         {error && <div className="mt-5"><Notice tone="warn">{error}</Notice></div>}
         {loading && !data && <p className="mt-6 flex items-center gap-2 text-dim"><Spinner />Loading…</p>}
@@ -143,7 +143,7 @@ export default function IngestionPage() {
                   {data.graph && <span className="font-mono text-[11.5px] text-dim num">{n(data.graph.artifacts)} items · {n(data.graph.edges)} links{data.graph.stubs ? ` · ${n(data.graph.stubs)} stubs` : ""}</span>}
                 </header>
                 <div className="space-y-4 px-5 py-4">
-                  {bySource.length === 0 && <p className="text-dim">Nothing ingested yet. <Link href={`/w/${ws}/sync`} className="text-accent hover:underline">Run a sync</Link>.</p>}
+                  {bySource.length === 0 && <p className="text-dim">Nothing ingested yet. <Link href={`/w/${ws}/sync`} className="text-accent underline underline-offset-2">Run a sync</Link>.</p>}
                   {bySource.map(([source, v]) => (
                     <div key={source}>
                       <div className="mb-1 flex items-center justify-between text-[12.5px]"><span className="font-medium">{SOURCE_LABEL[source] ?? source}</span><span className="font-mono text-dim num">{n(v.total)}</span></div>
@@ -176,7 +176,7 @@ export default function IngestionPage() {
                       <p className="flex items-center gap-2"><Chip tone={data.last_run.state === "done" ? (data.last_run.complete ? "ok" : "warn") : data.last_run.state === "failed" ? "bad" : "run"}>{data.last_run.state}{data.last_run.state === "done" && !data.last_run.complete ? " · partial" : ""}</Chip><span className="text-dim">{data.last_run.mode}</span></p>
                       <p className="text-dim">{fmtStamp(data.last_run.finished_at ?? data.last_run.started_at)}</p>
                       <p className="font-mono text-[11.5px] text-mute num">{n(data.last_run.totals.fetched)} fetched · {n(data.last_run.totals.persisted)} stored · {data.last_run.totals.errors} errors</p>
-                      <Link href={`/w/${ws}/sync?run=${encodeURIComponent(data.last_run.id)}`} className="inline-flex items-center gap-1 pt-1 text-accent hover:underline">Open run and log<Icon name="arrow" size={12} /></Link>
+                      <Link href={`/w/${ws}/sync?run=${encodeURIComponent(data.last_run.id)}`} className="inline-flex items-center gap-1 pt-1 text-accent underline underline-offset-2">Open run and log<Icon name="arrow" size={12} /></Link>
                     </div>
                   )}
                 </section>

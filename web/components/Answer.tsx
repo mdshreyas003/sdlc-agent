@@ -156,7 +156,7 @@ function Body() {
         </div>
       )}
       <Fold title="Trace" count={inv.trace.length}>
-        <button onClick={replay} className="mb-2 flex items-center gap-1 text-[12px] text-accent hover:underline"><Icon name="replay" size={11} />Replay <span className="kbd">r</span></button>
+        <button onClick={replay} className="mb-2 flex items-center gap-1 text-[12px] text-accent underline underline-offset-2"><Icon name="replay" size={11} />Replay <span className="kbd">r</span></button>
         <TraceList trace={inv.trace} step={step} />
       </Fold>
     </div>
