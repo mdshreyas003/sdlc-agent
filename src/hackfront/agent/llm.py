@@ -103,6 +103,7 @@ _clients: dict[str, Any] = {}  # provider -> client; rebuilt when credentials ch
 _creds: dict[str, tuple] = {}  # provider -> (credentials, client) it was built with
 TOKENS = [0]  # running total of completion usage; the benchmark reads deltas per question
 _workspace: ContextVar[str | None] = ContextVar("llm_workspace", default=None)
+_user: ContextVar[str | None] = ContextVar("llm_user", default=None)
 
 
 def foundry_base_url(endpoint: str) -> str:
@@ -118,21 +119,26 @@ def set_workspace(slug: str | None) -> None:
     _workspace.set(slug)
 
 
+def set_user(uid: str | None) -> None:
+    """Also resolve model settings from this user's own store (between the workspace override and the environment)."""
+    _user.set(uid)
+
+
 def _env(name: str) -> str:
     return (os.environ.get(name) or "").strip()
 
 
 def _setting(key: str) -> str:
-    """A config.SECRETS key: workspace store then env when a workspace is set, else env only."""
-    slug = _workspace.get()
-    value = config.get_secret(slug, key) if slug else os.environ.get(config.SECRETS[key][0])
+    """A config.SECRETS key: workspace store, then the user's own model setting, then env."""
+    slug, uid = _workspace.get(), _user.get()
+    value = config.get_secret(slug, key, uid) if (slug or uid) else os.environ.get(config.SECRETS[key][0])
     return (value or "").strip()
 
 
 def _from_workspace(key: str) -> bool:
-    """True when the active workspace's own store supplies `key` (not the environment fallback)."""
-    slug = _workspace.get()
-    return bool(slug) and config.secret_status(slug)[key]["source"] == "workspace"
+    """True when a workspace or the user (not the server environment) supplies `key`."""
+    slug, uid = _workspace.get(), _user.get()
+    return bool(slug or uid) and config.secret_source(slug, key, uid) in ("workspace", "user")
 
 
 def _spec(provider: str) -> ProviderSpec:
@@ -208,13 +214,16 @@ def model_for(provider: str, model: str | None = None) -> str:
     return configured_model or spec.default_model
 
 
-def providers(workspace: str | None = None) -> list[dict]:
-    token = _workspace.set(workspace) if workspace else None
+def providers(workspace: str | None = None, user: str | None = None) -> list[dict]:
+    wt = _workspace.set(workspace) if workspace else None
+    ut = _user.set(user) if user else None
     try:
         return [{"name": n, "model": model_for(n), "configured": configured(n)} for n in PROVIDERS]
     finally:
-        if token:
-            _workspace.reset(token)
+        if wt:
+            _workspace.reset(wt)
+        if ut:
+            _user.reset(ut)
 
 
 def _timeout() -> float:

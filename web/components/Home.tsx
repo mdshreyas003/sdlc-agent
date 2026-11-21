@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { wsApi } from "@/lib/api";
+import { meApi, wsApi } from "@/lib/api";
 import { useData } from "@/lib/data";
 import { fmtDate, fmtTime, type WorkspaceRow } from "@/lib/types";
 import Empty from "./Empty";
@@ -24,6 +24,8 @@ function Card({ w, onDeleted }: { w: WorkspaceRow; onDeleted: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [newName, setNewName] = useState(w.name);
   const stats = [
     { icon: "repo", n: w.connected.repos, label: w.connected.repos === 1 ? "repo" : "repos" },
     { icon: "issue", n: w.connected.jira, label: "Jira" },
@@ -32,18 +34,32 @@ function Card({ w, onDeleted }: { w: WorkspaceRow; onDeleted: () => void }) {
   ] as const;
   const empty = stats.every((s) => s.n === 0);
 
+  const rename = async () => {
+    setBusy(true); setError("");
+    try { await meApi.renameWorkspace(w.slug, newName.trim()); onDeleted(); setRenaming(false); } catch (e) { setError(errText(e)); } finally { setBusy(false); }
+  };
   const remove = async () => {
     setBusy(true); setError("");
     try { await wsApi.remove(w.slug); onDeleted(); } catch (e) { setError(errText(e)); setBusy(false); }
   };
 
   return (
-    <li className="card flex flex-col p-5">
+    <li className="card flex min-w-0 flex-col p-5">
       <div className="flex items-center gap-3">
         <span className="grid h-9 w-9 place-items-center rounded-lg bg-fg text-[15px] font-semibold text-bg">{w.name[0]?.toUpperCase()}</span>
         <h2 className="min-w-0 truncate text-[15px] font-semibold">{w.name}</h2>
-        {w.demo && <Chip tone="dim"><Icon name="flask" size={11} />demo</Chip>}
+        {!w.shared && w.owned !== false && !w.demo && (
+          <button onClick={() => setRenaming(true)} aria-label={`Rename ${w.name}`} className="ml-auto text-dim hover:text-fg"><Icon name="sliders" size={13} /></button>
+        )}
       </div>
+      <div className="mt-2">{w.shared ? <Chip tone="dim"><Icon name="flask" size={11} />shared demo · read-only</Chip> : w.demo ? <Chip tone="dim"><Icon name="flask" size={11} />demo</Chip> : <Chip tone="ok"><Icon name="lock" size={11} />yours</Chip>}</div>
+      {renaming && (
+        <form onSubmit={(e) => { e.preventDefault(); rename(); }} className="mt-3 flex items-center gap-2">
+          <input value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="Workspace name" maxLength={80} autoFocus className={field} />
+          <button type="submit" disabled={busy || !newName.trim()} className={btnPrimary}>{busy && <Spinner />}Save</button>
+          <button type="button" onClick={() => { setRenaming(false); setNewName(w.name); }} className={btnGhost}>Cancel</button>
+        </form>
+      )}
       <div className="mt-4 flex gap-4 text-[12.5px]">
         {empty ? <span className="text-dim">Nothing connected yet</span> : stats.map((s) => (
           <span key={s.label} className={`flex items-center gap-1.5 ${s.n ? "text-mute" : "text-dim/60"}`}>
@@ -52,10 +68,12 @@ function Card({ w, onDeleted }: { w: WorkspaceRow; onDeleted: () => void }) {
         ))}
       </div>
       <p className="mt-2 text-[12px]"><SyncLine s={w.last_sync} /></p>
-      <div className="mt-5 flex items-center gap-2">
+      <div className="mt-5 flex flex-wrap items-center gap-2">
         <Link href={`/w/${w.slug}`} className={btnPrimary}>Open</Link>
-        <Link href={`/w/${w.slug}/setup`} className={btnGhost}><Icon name="sliders" size={13} />Set up</Link>
-        {confirm ? (
+        <Link href={`/w/${w.slug}/sync`} className={btnGhost}><Icon name="replay" size={13} />Sync</Link>
+        <Link href={`/w/${w.slug}/ingestion`} className={btnGhost}><Icon name="layers" size={13} />Ingestion</Link>
+        <Link href={`/w/${w.slug}/settings`} className={btnGhost} aria-label={`Settings of ${w.name}`}><Icon name="sliders" size={13} /></Link>
+        {w.shared || w.owned === false ? null : confirm ? (
           <span className="ml-auto flex items-center gap-1.5 text-[12px]">
             <span className="text-dim">Delete?</span>
             <button onClick={remove} disabled={busy} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-bad px-3 text-[12.5px] font-medium text-bg hover:opacity-90 disabled:opacity-40">{busy && <Spinner />}Delete</button>
@@ -91,7 +109,7 @@ export default function Home() {
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-[760px] px-8 pb-16 pt-16">
         <h1 className="text-[24px] font-semibold tracking-tight">Workspaces</h1>
-        <p className="mt-1 text-dim">Each workspace has its own sources, credentials and AI model.</p>
+        <p className="mt-1 text-dim">Your workspaces are private to your account. Each has its own sources, credentials, sync history and optional model override.</p>
 
         <div className="card mt-8 flex flex-wrap items-center gap-3 p-4">
           <form onSubmit={(e) => { e.preventDefault(); create(); }} className="flex min-w-[260px] flex-1 items-center gap-2">

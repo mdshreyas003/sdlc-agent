@@ -18,7 +18,7 @@
   --warn: #b7791f;
   --unk: #7a7a85;
   --bad: #d92d3a;
-  --gridline: #00000008;
+  --gridline: #0000000b;
   color-scheme: light;
 }
 :root[data-theme="dark"],
@@ -37,7 +37,7 @@
   --warn: #f0b429;
   --unk: #8a8a94;
   --bad: #f87171;
-  --gridline: #ffffff06;
+  --gridline: #ffffff0a;
   color-scheme: dark;
 }
 
@@ -104,3 +104,17 @@ details.more > summary { cursor: pointer; list-style: none; color: var(--dim); f
 details.more > summary::-webkit-details-marker { display: none; }
 details.more > summary::before { content: "+ "; color: var(--accent); }
 details.more[open] > summary::before { content: "\2212  "; }
+
+/* Dev-aesthetic helpers (grid, halo, glow, caret, flow, ping) shared by login, settings, sync and ingestion. */
+.px-grid { background-image: linear-gradient(var(--gridline) 1px, transparent 1px), linear-gradient(90deg, var(--gridline) 1px, transparent 1px); background-size: 24px 24px; }
+.px-glow { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 28px -6px color-mix(in srgb, var(--accent) 55%, transparent); }
+.px-halo { background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%); }
+@keyframes px-blink { 50% { opacity: 0; } }
+.px-caret { display: inline-block; width: 7px; height: 14px; background: var(--accent); vertical-align: -2px; animation: px-blink 1s steps(1) infinite; }
+@keyframes px-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }
+.px-ping { animation: px-ring 1.4s ease-out infinite; }
+@keyframes px-flow { to { background-position: 24px 0; } }
+.px-flow { background-image: linear-gradient(90deg, var(--accent) 50%, transparent 50%); background-size: 12px 2px; animation: px-flow .6s linear infinite; }
+.px-tab-active { box-shadow: inset 0 -1.5px 0 var(--accent); }
+.px-scan::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 50%, color-mix(in srgb, var(--fg) 3%, transparent) 50%); background-size: 100% 3px; pointer-events: none; }
+.num { font-variant-numeric: tabular-nums; }

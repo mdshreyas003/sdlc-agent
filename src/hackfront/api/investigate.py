@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, StrictInt
 
-from hackfront import config
+from hackfront import auth, config
 
 log = logging.getLogger("hackfront.investigate")
 router = APIRouter()
@@ -120,16 +120,22 @@ def investigate(ws: str, body: InvestigateBody):
             raise HTTPException(503, "Neo4j unreachable or not configured") from None
         anchor = _anchor(driver, targets["repos"], body.repo, body.file, body.line) if body.file else None
         out: queue.Queue = queue.Queue()
+        uid = auth.user_id()  # captured here: the worker thread has its own context
 
         def work():
             try:
+                from hackfront.agent import llm
                 from hackfront.agent.investigation import investigate as run, save
+
+                llm.set_user(uid)  # the signed-in user's own model settings sit between the workspace override and env
 
                 for ev in run(body.question.strip(), body.mode, body.provider, body.model, driver, anchor,
                               scopes=scopes, workspace=ws):
                     if ev["event"] == "trace":
                         out.put(_sse("trace", {"step": ev["step"]}))
                     elif ev["event"] == "investigation":
+                        if auth.enabled():
+                            ev["investigation"]["owner"] = uid  # on a shared demo, only its author lists it again
                         try:
                             save(ev["investigation"], ev["graph"], ws)
                         except Exception:  # noqa: BLE001 - the answer is still worth delivering
@@ -159,12 +165,24 @@ def investigate(ws: str, body: InvestigateBody):
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
 
+def _visible(ws: str, owner: str | None) -> bool:
+    """On a shared demo a stored investigation is visible to its author and, when ownerless (seeded), to everyone."""
+    if not auth.enabled() or not owner:
+        return True
+    try:
+        shared = auth.is_shared(config.load_workspace(ws))
+    except (LookupError, ValueError):
+        return False
+    return not shared or owner == auth.user_id()
+
+
 @router.get("/api/w/{ws}/investigations")
 def list_investigations(ws: str) -> list[dict]:
     from hackfront.agent.investigation import list_all
 
     _scopes(ws)
-    return list_all(ws)
+    rows = list_all(ws)
+    return [r for r in rows if _visible(ws, r.get("owner"))]
 
 
 @router.get("/api/w/{ws}/investigations/{iid}")
@@ -173,6 +191,8 @@ def get_investigation(ws: str, iid: str) -> dict:
 
     _scopes(ws)
     found = get(iid, ws)
+    if found is not None and not _visible(ws, (found.get("investigation") or {}).get("owner")):
+        found = None
     if found is None:
         raise HTTPException(404, "Investigation not found")
     return found

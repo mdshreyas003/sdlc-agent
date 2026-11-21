@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
     "cryptography>=43",  # Fernet: encrypts saved API keys at rest when state lives in Neo4j
+    "mcp>=2.3.0",
 ]
 
 [dependency-groups]

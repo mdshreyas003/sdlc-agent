@@ -10,7 +10,7 @@ async function proxy(req: Request, ctx: { params: Promise<{ path: string[] }> })
   const target = `${BASE}/api/${path.map(encodeURIComponent).join("/")}${new URL(req.url).search}`;
 
   const headers = new Headers();
-  for (const name of ["content-type", "accept"]) {
+  for (const name of ["content-type", "accept", "cookie"]) {
     const value = req.headers.get(name);
     if (value) headers.set(name, value);
   }
@@ -35,6 +35,9 @@ async function proxy(req: Request, ctx: { params: Promise<{ path: string[] }> })
   const out = new Headers({ "cache-control": "no-store", "x-accel-buffering": "no" });
   const type = upstream.headers.get("content-type");
   if (type) out.set("content-type", type);
+  const location = upstream.headers.get("location"); // OAuth redirects must reach the browser untouched
+  if (location) out.set("location", location);
+  for (const cookie of upstream.headers.getSetCookie()) out.append("set-cookie", cookie); // session cookie
   return new Response(upstream.body, { status: upstream.status, headers: out });
 }
 

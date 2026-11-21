@@ -17,5 +17,22 @@ export const buildTree = (paths: string[]): TreeNode[] => {
   }
   const sort = (t: TreeNode) => { t.children.sort((a, b) => Number(b.dir) - Number(a.dir) || a.name.localeCompare(b.name)); t.children.forEach(sort); };
   sort(root);
+  // Collapse single-child folder chains ("clients/src/main/java" is one row), as editors do: deep trees stay shallow.
+  const compact = (t: TreeNode) => {
+    t.children.forEach(compact);
+    while (t.dir && t.path && t.children.length === 1 && t.children[0].dir) {
+      const only = t.children[0];
+      t.name = `${t.name}/${only.name}`; t.path = only.path; t.children = only.children;
+    }
+  };
+  root.children.forEach(compact);
   return root.children;
+};
+
+/** Fit a name into `max` characters: files keep their extension, folder chains keep their last segments. */
+export const shortName = (name: string, dir: boolean, max = 30) => {
+  if (name.length <= max) return name;
+  if (dir) return `…${name.slice(-(max - 1))}`;
+  const ext = /\.[^./]{1,8}$/.exec(name)?.[0] ?? "";
+  return `${name.slice(0, max - ext.length - 1)}…${ext}`;
 };

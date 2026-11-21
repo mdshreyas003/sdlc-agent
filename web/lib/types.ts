@@ -126,6 +126,7 @@ export interface WorkbenchInfo {
   integrations: Record<IntegrationId, IntegrationStatus>;
   providers: Provider[];
   names?: { channels: Record<string, string>; users: Record<string, string> };
+  model?: { provider: string; model: string; source: "workspace" | "user" | "server" };
 }
 
 export interface WorkspaceRow {
@@ -134,6 +135,8 @@ export interface WorkspaceRow {
   demo: boolean;
   connected: { repos: number; jira: number; slack: number; docs?: number };
   last_sync?: { state: string; finished_at?: string | null } | null;
+  owned?: boolean; // the caller owns it
+  shared?: boolean; // visible to everyone, read-only (shared demo)
 }
 
 export type StreamStatus = "running" | "done" | "incomplete" | "failed";
@@ -156,6 +159,8 @@ export interface SyncStatus {
   graph?: { artifacts: number; edges: number; stubs: number } | null;
   complete: boolean;
   error?: string | null;
+  id?: string;
+  log?: LogLine[];
 }
 
 export interface Resource { id: string; name: string; private?: boolean; detail?: string }
@@ -174,3 +179,47 @@ export const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 export const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+
+// ---- accounts, user models, runs, ingestion (docs/accounts-and-settings-api.md)
+export interface Me {
+  auth: "enabled" | "disabled";
+  methods?: ("github" | "password")[];
+  user: { id: string; login: string; name: string; avatar_url: string } | null;
+}
+export interface ModelField { key: string; label: string; secret: boolean; set: boolean; hint?: string; value?: string }
+export interface ModelProvider {
+  name: string; label: string; model: string; configured: boolean;
+  source: "user" | "server" | null; editable: boolean; fields: ModelField[];
+}
+export interface UserModels {
+  providers: ModelProvider[];
+  default: { provider: string; model: string; source: "user" | "server" };
+  selected: { provider: string; model: string };
+}
+export interface LogLine { ts: string; level: "info" | "warn" | "error"; stream?: string; message: string }
+export interface RunMeta {
+  id: string; state: "running" | "done" | "failed"; mode: SyncMode; started_at: string; finished_at?: string;
+  complete: boolean; totals: { fetched: number; persisted: number; errors: number }; triggered_by?: string;
+}
+export interface Run extends RunMeta {
+  streams: SyncStream[]; graph?: { artifacts: number; edges: number; stubs: number } | null; error?: string; log: LogLine[];
+}
+export interface Ingestion {
+  neo4j: { ok: boolean };
+  graph: { artifacts: number; edges: number; stubs: number } | null;
+  by_source: { source: string; kind: string; count: number }[];
+  repos: { repo: string; indexed: boolean }[];
+  last_run: RunMeta | null;
+  stages: { key: "fetched" | "stored" | "linked" | "indexed"; label: string; count: number; status: "ok" | "warn" | "idle" }[];
+  plan: IngestPlan;
+  timeline: { source: string; kind: string; oldest: string; newest: string; count: number }[];
+  last_streams: { stream: string; status: StreamStatus; pages: number; fetched: number; persisted: number; errors: number }[];
+}
+export interface IngestPlan {
+  pages: { standard: number; deep: number };
+  order: string; incremental: boolean; idempotent: boolean; notes: string[];
+  sources: { source: "github" | "jira" | "slack"; target: string; streams: {
+    stream: string; label: string; order: string; page: number | null; includes: string;
+    max: { standard: number | null; deep: number | null } }[] }[];
+}
+export const fmtStamp = (iso?: string | null) => (iso ? `${fmtDate(iso)} ${fmtTime(iso)} UTC` : "");

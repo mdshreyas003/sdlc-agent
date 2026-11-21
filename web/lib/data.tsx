@@ -4,6 +4,7 @@
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiError, api, wsApi } from "./api";
+import { useMe } from "./auth";
 import type {
   CodeFile, Connected, Edge, Graph, Investigation, InvestigationRow, Node, SyncMode, SyncStatus, Targets, TargetsPatch, WorkbenchInfo, WorkspaceRow,
 } from "./types";
@@ -57,7 +58,8 @@ function wsFromPath(path: string): string | undefined {
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const ws = wsFromPath(usePathname());
-  return <Inner key={ws ?? ""} ws={ws}>{children}</Inner>;
+  const uid = useMe().me?.user?.id ?? ""; // a different (or newly signed-in) user must never see the previous one's data
+  return <Inner key={`${ws ?? ""}|${uid}`} ws={ws}>{children}</Inner>;
 }
 
 function Inner({ ws, children }: { ws: string | undefined; children: ReactNode }) {

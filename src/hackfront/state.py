@@ -33,7 +33,10 @@ def backend():
 
 def _meta(doc: dict) -> dict:
     inv = doc.get("investigation") or {}
-    return {k: inv.get(k) for k in ("id", "question", "file", "line", "confidence", "created_at")}
+    out = {k: inv.get(k) for k in ("id", "question", "file", "line", "confidence", "created_at")}
+    if inv.get("owner"):
+        out["owner"] = inv["owner"]  # only investigations made while signed in carry an author
+    return out
 
 
 # ---------------------------------------------------------------- file backend
@@ -111,6 +114,62 @@ class FileState:
             raise FileNotFoundError("workspace deleted")
         _atomic(path, json.dumps(data))
 
+    # ---- users (accounts live next to workspaces; secrets are 0600)
+    def _udir(self, uid):
+        from . import config
+
+        return config.user_dir(uid)
+
+    def read_user(self, uid) -> dict | None:
+        try:
+            return json.loads((self._udir(uid) / "user.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+
+    def write_user(self, uid, data: dict) -> None:
+        d = self._udir(uid)
+        d.mkdir(parents=True, exist_ok=True)
+        _atomic(d / "user.json", json.dumps(data, indent=2))
+
+    def users_exist(self) -> bool:
+        from . import config
+
+        root = config.users_dir()
+        return root.is_dir() and any((p / "user.json").exists() for p in root.iterdir() if p.is_dir())
+
+    def read_user_secrets(self, uid) -> dict:
+        try:
+            data = json.loads((self._udir(uid) / "secrets.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def write_user_secrets(self, uid, data: dict) -> None:
+        d = self._udir(uid)
+        d.mkdir(parents=True, exist_ok=True)
+        _atomic(d / "secrets.json", json.dumps(data, indent=2), mode=0o600)
+
+    # ---- sync run history (one JSON per run)
+    def put_run(self, ws, rid, doc: dict) -> None:
+        d = self._dir(ws) / "runs"
+        d.mkdir(parents=True, exist_ok=True)
+        _atomic(d / f"{rid}.json", json.dumps(doc))
+
+    def get_run(self, ws, rid) -> dict | None:
+        try:
+            return json.loads((self._dir(ws) / "runs" / f"{rid}.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+
+    def list_runs(self, ws, limit=50) -> list[dict]:
+        d, out = self._dir(ws) / "runs", []
+        for p in (sorted(d.glob("*.json"), key=lambda p: p.name, reverse=True)[:limit] if d.exists() else []):
+            try:
+                out.append(json.loads(p.read_text(encoding="utf-8")))
+            except (OSError, ValueError):
+                continue
+        return out
+
 
 def _atomic(path, text: str, mode: int | None = None) -> None:
     tmp = path.with_name(f".{path.name}.{_secrets.token_hex(4)}.tmp")
@@ -133,6 +192,9 @@ SCHEMA = (
     "CREATE CONSTRAINT hf_secret_slug IF NOT EXISTS FOR (n:HfSecret) REQUIRE n.slug IS UNIQUE",
     "CREATE CONSTRAINT hf_sync_slug IF NOT EXISTS FOR (n:HfSync) REQUIRE n.slug IS UNIQUE",
     "CREATE CONSTRAINT hf_investigation_key IF NOT EXISTS FOR (n:HfInvestigation) REQUIRE n.key IS UNIQUE",
+    "CREATE CONSTRAINT hf_user_uid IF NOT EXISTS FOR (n:HfUser) REQUIRE n.uid IS UNIQUE",
+    "CREATE CONSTRAINT hf_user_secret_uid IF NOT EXISTS FOR (n:HfUserSecret) REQUIRE n.uid IS UNIQUE",
+    "CREATE CONSTRAINT hf_run_key IF NOT EXISTS FOR (n:HfRun) REQUIRE n.key IS UNIQUE",
 )
 
 
@@ -224,6 +286,7 @@ class Neo4jState:
     def delete(self, slug) -> None:
         _run("MATCH (n) WHERE (n:HfWorkspace OR n:HfSecret OR n:HfSync) AND n.slug = $slug DETACH DELETE n", write=True, slug=slug)
         _run("MATCH (i:HfInvestigation {ws: $slug}) DELETE i", write=True, slug=slug)
+        _run("MATCH (r:HfRun {ws: $slug}) DELETE r", write=True, slug=slug)
         _forget(("ws", slug), ("slugs",), ("secrets", slug), ("sync", slug))
 
     def read_secrets(self, slug) -> dict:
@@ -251,9 +314,9 @@ class Neo4jState:
     def put_investigation(self, ws, iid, doc: dict) -> None:
         m = _meta(doc)
         _run("MERGE (i:HfInvestigation {key: $key}) SET i.ws = $ws, i.id = $id, i.question = $q, i.file = $file, "
-             "i.line = $line, i.confidence = $conf, i.created_at = $created, i.doc = $doc",
+             "i.line = $line, i.confidence = $conf, i.created_at = $created, i.owner = $owner, i.doc = $doc",
              write=True, key=f"{ws}/{iid}", ws=ws, id=iid, q=m["question"], file=m["file"], line=m["line"],
-             conf=m["confidence"], created=m["created_at"] or _now(), doc=json.dumps(doc))
+             conf=m["confidence"], created=m["created_at"] or _now(), owner=m.get("owner"), doc=json.dumps(doc))
 
     def get_investigation(self, ws, iid) -> dict | None:
         rows = _run("MATCH (i:HfInvestigation {key: $key}) RETURN i.doc AS d", key=f"{ws}/{iid}")
@@ -264,9 +327,9 @@ class Neo4jState:
 
     def list_investigations(self, ws, limit=200) -> list[dict]:
         rows = _run("MATCH (i:HfInvestigation {ws: $ws}) RETURN i.id AS id, i.question AS question, i.file AS file, "
-                    "i.line AS line, i.confidence AS confidence, i.created_at AS created_at "
+                    "i.line AS line, i.confidence AS confidence, i.created_at AS created_at, i.owner AS owner "
                     "ORDER BY i.created_at DESC LIMIT $n", ws=ws, n=limit)
-        return rows
+        return [{k: v for k, v in r.items() if not (k == "owner" and v is None)} for r in rows]
 
     def read_sync(self, slug) -> dict | None:
         rows = _run("MATCH (s:HfSync {slug: $slug}) RETURN s.doc AS d", slug=slug)  # not cached: polled for live progress
@@ -279,6 +342,64 @@ class Neo4jState:
         if not self.exists(slug):
             raise FileNotFoundError("workspace deleted")
         _run("MERGE (s:HfSync {slug: $slug}) SET s.doc = $d, s.updated = $now", write=True, slug=slug, d=json.dumps(data), now=_now())
+
+    # ---- users
+    def read_user(self, uid) -> dict | None:
+        rows = _run("MATCH (u:HfUser {uid: $uid}) RETURN u.doc AS d", uid=uid)
+        try:
+            return json.loads(rows[0]["d"]) if rows else None
+        except ValueError:
+            return None
+
+    def write_user(self, uid, data: dict) -> None:
+        _run("MERGE (u:HfUser {uid: $uid}) SET u.doc = $d, u.updated = $now", write=True, uid=uid, d=json.dumps(data), now=_now())
+
+    def users_exist(self) -> bool:
+        return bool(_run("MATCH (u:HfUser) RETURN u.uid AS uid LIMIT 1"))
+
+    def read_user_secrets(self, uid) -> dict:
+        def load():
+            rows = _run("MATCH (s:HfUserSecret {uid: $uid}) RETURN s.blob AS b", uid=uid)
+            f = _fernet()
+            if not rows or f is None:
+                return {}
+            try:
+                data = json.loads(f.decrypt(rows[0]["b"].encode()).decode())
+            except Exception:  # wrong key / corrupt blob
+                return {}
+            return data if isinstance(data, dict) else {}
+
+        return _cached(("usecrets", uid), load)
+
+    def write_user_secrets(self, uid, data: dict) -> None:
+        f = _fernet()
+        if f is None:
+            raise ValueError("HACKFRONT_SECRET_KEY must be set on the server before keys can be saved to Neo4j")
+        _run("MERGE (s:HfUserSecret {uid: $uid}) SET s.blob = $b, s.updated = $now",
+             write=True, uid=uid, b=f.encrypt(json.dumps(data).encode()).decode(), now=_now())
+        _forget(("usecrets", uid))
+
+    # ---- sync run history
+    def put_run(self, ws, rid, doc: dict) -> None:
+        _run("MERGE (r:HfRun {key: $key}) SET r.ws = $ws, r.id = $id, r.started = $started, r.doc = $doc",
+             write=True, key=f"{ws}/{rid}", ws=ws, id=rid, started=doc.get("started_at") or _now(), doc=json.dumps(doc))
+
+    def get_run(self, ws, rid) -> dict | None:
+        rows = _run("MATCH (r:HfRun {key: $key}) RETURN r.doc AS d", key=f"{ws}/{rid}")
+        try:
+            return json.loads(rows[0]["d"]) if rows else None
+        except ValueError:
+            return None
+
+    def list_runs(self, ws, limit=50) -> list[dict]:
+        rows = _run("MATCH (r:HfRun {ws: $ws}) RETURN r.doc AS d ORDER BY r.started DESC LIMIT $n", ws=ws, n=limit)
+        out = []
+        for r in rows:
+            try:
+                out.append(json.loads(r["d"]))
+            except ValueError:
+                continue
+        return out
 
 
 # ---------------------------------------------------------------- migration (file -> neo4j)

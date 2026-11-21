@@ -58,7 +58,7 @@ function savedLine(s: SecretState | undefined) {
 }
 
 /** Password input that never shows a stored secret; a saved one shows its masked hint and a Replace action. */
-function SecretInput({ id, label, state, value, onChange, placeholder }: {
+export function SecretInput({ id, label, state, value, onChange, placeholder }: {
   id: string; label: string; state: SecretState | undefined; value: string; onChange: (v: string) => void; placeholder: string;
 }) {
   const [replacing, setReplacing] = useState(false);
@@ -96,7 +96,7 @@ function Help({ lines }: { lines: string[] }) {
   );
 }
 
-function TestLine({ result, error }: { result: TestResult | null; error: string }) {
+export function TestLine({ result, error }: { result: TestResult | null; error: string }) {
   if (error) return <Notice tone="warn">{error}</Notice>;
   if (!result) return null;
   return <Notice tone={result.ok ? "ok" : "warn"}>{result.ok ? "Connected" : "Failed"}{result.account ? ` as ${result.account}` : ""}: {result.detail}</Notice>;

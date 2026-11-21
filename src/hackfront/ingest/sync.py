@@ -13,6 +13,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import secrets
 import threading
 import time
 from datetime import datetime, timezone
@@ -33,6 +34,8 @@ from .sources.slack.mapper import ADAPTER_VERSION as SLACK_VERSION
 from .storage.neo4j import Neo4jNotConfigured, Neo4jStore
 
 PAGES = {"standard": 20, "deep": 100}  # pages per stream
+LOG_LIMIT = 500  # structured log lines kept per run
+LOG_TAIL = 200  # lines returned by GET /sync
 HEARTBEAT_SECONDS = 5
 STALE_SECONDS = 30  # a persisted "running" job whose heartbeat is older than this has lost its process
 
@@ -75,15 +78,29 @@ def _totals(streams: list[dict]) -> dict:
 
 
 class _Job:
-    def __init__(self, slug: str, mode: str, budget: float | None = None, persist: bool = True):
+    def __init__(self, slug: str, mode: str, budget: float | None = None, persist: bool = True, triggered_by: str | None = None):
         self.slug, self.pages, self.persist = slug, PAGES[mode], persist
         self.lock = threading.RLock()
-        self.status = {"state": "running", "mode": mode, "started_at": _now(), "streams": [], "complete": False}
+        self.status = {"id": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + secrets.token_hex(2),
+                       "state": "running", "mode": mode, "started_at": _now(), "streams": [], "complete": False,
+                       "log": []}
+        if triggered_by:
+            self.status["triggered_by"] = triggered_by
+        self.log("info", f"Sync started ({mode}, up to {PAGES[mode]} pages per stream)")
         self.by_name: dict[str, dict] = {}
         self._saved = 0.0
         self._dirty = False  # a throttled update waiting for the next flush
         self.deadline = time.monotonic() + budget if budget else None
         self.save(force=True)
+
+    def log(self, level: str, message: str, stream: str | None = None) -> None:
+        """Append one structured line. Messages are fixed safe strings or the already-exposed stream error text."""
+        with self.lock:
+            line = {"ts": _now(), "level": level, "message": message[:300]}
+            if stream:
+                line["stream"] = stream
+            self.status["log"].append(line)
+            del self.status["log"][:-LOG_LIMIT]
 
     def snapshot(self) -> dict:
         with self.lock:
@@ -100,6 +117,7 @@ class _Job:
             if not any(e["type"] == "TimeBudget" for e in s["errors"]):
                 s["errors"].append({"stage": "budget", "type": "TimeBudget",
                                     "message": "Stopped at the time limit; run the sync again to continue"})
+                self.log("warn", "Stopped at the time limit; run the sync again to continue", name)
             self.save()
 
     def keepalive(self) -> None:
@@ -135,6 +153,7 @@ class _Job:
                 s = self.by_name[name] = {"stream": name, "status": status, "pages": 0, "fetched": 0,
                                           "persisted": 0, "errors": []}
                 self.status["streams"].append(s)
+                self.log("info", "Stream started", name)
                 self.save()
             return s
 
@@ -149,6 +168,7 @@ class _Job:
         with self.lock:
             s = self.stream(name, "failed")
             s["errors"].append({"stage": "config", "type": "NotConfigured", "message": message})
+            self.log("error", message, name)
             self.save()
 
     def finish(self, name: str, complete: bool) -> None:
@@ -156,6 +176,8 @@ class _Job:
             s = self.stream(name)
             timed_out = any(e["type"] == "TimeBudget" for e in s["errors"])
             s["status"] = "done" if complete else "incomplete" if (s["persisted"] or not s["errors"] or timed_out) else "failed"
+            self.log("info" if s["status"] == "done" else "warn" if s["status"] == "incomplete" else "error",
+                     f"Stream {s['status']}: {s['fetched']} fetched, {s['persisted']} stored, {len(s['errors'])} error(s)", name)
             self.save()
 
     def end(self, state: str | None = None, error: str | None = None, graph: dict | None = None) -> None:
@@ -171,7 +193,14 @@ class _Job:
                 self.status["error"] = error
             if graph:
                 self.status["graph"] = graph
+            self.log("error" if self.status["state"] == "failed" else "info",
+                     error or f"Sync {self.status['state']}: {'complete' if self.status['complete'] else 'some streams incomplete'}")
             self.save(force=True)
+            if self.persist:
+                try:  # the run is kept in history with its log once it ends
+                    app_state.backend().put_run(self.slug, self.status["id"], self.snapshot())
+                except Exception:  # noqa: BLE001  workspace deleted or state store briefly unavailable
+                    pass
 
 
 _jobs: dict[str, _Job] = {}
@@ -202,6 +231,8 @@ def _run(job: _Job, name: str, fetch, writer, version: str, tap=None) -> bool:
             errors = [e for e in errors if e["type"] != "_OutOfTime"]
             job.out_of_time(name)
         job.stream(name)["errors"] += errors
+        for e in errors:
+            job.log("error", f"{e.get('stage', 'fetch')}: {e.get('message') or e.get('type', 'error')}", name)
     return summary["complete"]
 
 
@@ -375,7 +406,7 @@ def _alive(status: dict) -> bool:
     return (datetime.now(timezone.utc) - beat).total_seconds() < STALE_SECONDS
 
 
-def _prepare(slug: str, mode: str, budget: float | None = None) -> tuple[_Job, dict]:
+def _prepare(slug: str, mode: str, budget: float | None = None, triggered_by: str | None = None) -> tuple[_Job, dict]:
     """Validate and register a job. Raises LookupError (unknown workspace), ValueError (bad mode / no sources),
     RuntimeError (already running here, or in another instance with a live heartbeat)."""
     if mode not in PAGES:
@@ -393,31 +424,37 @@ def _prepare(slug: str, mode: str, budget: float | None = None) -> tuple[_Job, d
             persisted = None
         if persisted and persisted.get("state") == "running" and _alive(persisted):
             raise RuntimeError("a sync is already running")
-        job = _jobs[slug] = _Job(slug, mode, budget)
+        job = _jobs[slug] = _Job(slug, mode, budget, triggered_by=triggered_by)
     return job, ws
 
 
-def start_sync(slug: str, mode: str = "standard") -> dict:
+def start_sync(slug: str, mode: str = "standard", triggered_by: str | None = None) -> dict:
     """Start the job in a daemon thread and return its initial status (long-lived hosts)."""
-    job, ws = _prepare(slug, mode)
+    job, ws = _prepare(slug, mode, triggered_by=triggered_by)
     threading.Thread(target=_execute, args=(job, ws), daemon=True, name=f"sync-{slug}").start()
     return job.snapshot()
 
 
-def run_sync_inline(slug: str, mode: str = "standard", budget: float | None = None) -> dict:
+def run_sync_inline(slug: str, mode: str = "standard", budget: float | None = None, triggered_by: str | None = None) -> dict:
     """Run the job in the calling thread and return the FINAL status (serverless hosts). Stops cleanly after `budget`
     seconds (default HACKFRONT_SYNC_BUDGET, 240: below Vercel Hobby's 300 s cap); unfinished streams are `incomplete`."""
     budget = budget if budget is not None else float(os.environ.get("HACKFRONT_SYNC_BUDGET", "240"))
-    job, ws = _prepare(slug, mode, budget)
+    job, ws = _prepare(slug, mode, budget, triggered_by)
     _execute(job, ws)
     return job.snapshot()
+
+
+def _tail(status: dict) -> dict:
+    if isinstance(status.get("log"), list):
+        status["log"] = status["log"][-LOG_TAIL:]
+    return status
 
 
 def sync_status(slug: str) -> dict:
     """Live status if this process runs the job, else the persisted one (possibly owned by another instance), else idle."""
     job = _jobs.get(config.check_slug(slug))
     if job:
-        return job.snapshot()
+        return _tail(job.snapshot())
     try:
         status = app_state.backend().read_sync(slug)
     except Exception:  # state store unavailable: report idle rather than fail the poll
@@ -430,7 +467,7 @@ def sync_status(slug: str) -> dict:
             if s.get("status") == "running":
                 s["status"] = "failed"
     status["totals"] = _totals(status["streams"])
-    return status
+    return _tail(status)
 
 
 def scoped_counts(scopes: list[str]) -> dict:

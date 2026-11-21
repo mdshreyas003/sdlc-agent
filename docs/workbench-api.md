@@ -1,5 +1,8 @@
 # Workbench API contract v2 (Next.js UI <-> FastAPI)
 
+> Accounts, per-user isolation, user model settings, run history/logs and the ingestion overview are specified in
+> [accounts-and-settings-api.md](accounts-and-settings-api.md) (v3). Where they differ, v3 wins.
+
 The UI is `web/` (Next.js 16, the owner's "why workbench"). FastAPI serves JSON/SSE only; dev: API :8000, Next
 proxies `/api/*`. Everything user-visible is **per workspace**: `/api/w/{ws}/...`. Errors are `{"detail": "<safe message>"}`
 with 4xx/5xx; never stack traces or secret values. Security is deliberately minimal (local single-user tool):

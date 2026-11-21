@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import hmac
 import os
+import re
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from hackfront import config
+from hackfront import auth, config, state
 
 config.load_env()
 # The Next.js UI (web/) proxies /api/* here from whatever local port it runs on, so any localhost origin is trusted;
@@ -37,7 +38,40 @@ async def guard(request, call_next):
     origin = request.headers.get("origin")
     if request.method not in ("GET", "HEAD") and origin and not trusted_origin(origin, request.headers.get("host")):
         return JSONResponse({"detail": "cross-origin request refused"}, status_code=403)
-    return await call_next(request)
+    path = request.url.path
+    user = auth.authenticate(request.cookies.get(auth.COOKIE))
+    if path.startswith("/api/") and not PUBLIC.match(path):
+        if auth.mode() == "misconfigured":
+            return JSONResponse({"detail": "Authentication is not configured on this server"}, status_code=503)
+        if user is None:
+            return JSONResponse({"detail": "sign in required"}, status_code=401)
+        slug = _workspace_slug(path, request.method)
+        if slug and auth.enabled() and not _may_open(slug, user):
+            return JSONResponse({"detail": "workspace not found"}, status_code=404)  # never reveal that it exists
+    token_ = auth.set_current(user)
+    try:
+        return await call_next(request)
+    finally:
+        auth.reset_current(token_)
+
+
+PUBLIC = re.compile(r"^/api/(me|auth/.*)$")
+_WS_PATH = re.compile(r"^/api/w/([^/]+)(?:/|$)")
+_WS_DELETE = re.compile(r"^/api/workspaces/([^/]+)$")
+
+
+def _workspace_slug(path: str, method: str) -> str | None:
+    m = _WS_PATH.match(path) or (_WS_DELETE.match(path) if method == "DELETE" else None)
+    return m.group(1) if m else None
+
+
+def _may_open(slug: str, user) -> bool:
+    """False only when the workspace exists and belongs to somebody else; unknown slugs fall through to the route's 404."""
+    try:
+        raw = state.backend().read_workspace(config.check_slug(slug))
+    except Exception:  # noqa: BLE001  bad slug / unreadable record: the route reports it
+        return True
+    return raw is None or auth.can_access(raw, user)
 
 
 @app.get("/health")
@@ -45,7 +79,7 @@ def health() -> dict:
     return {"ok": True}  # unauthenticated, for the host's health check; reveals nothing
 
 
-from . import admin, investigate, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
+from . import accounts, admin, investigate, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
 
-for module in (workspaces, sync, workbench, investigate, admin):
+for module in (accounts, workspaces, sync, workbench, investigate, admin):
     app.include_router(module.router)

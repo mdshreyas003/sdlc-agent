@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from hackfront import config
+from hackfront import auth, config
 
 router = APIRouter()
 
@@ -29,8 +29,8 @@ def start(ws: str, body: SyncBody | None = None):
         if not all(os.environ.get(k) for k in ("NEO4J_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD")):
             raise HTTPException(503, "Neo4j is not configured")
         if sync.sync_mode() == "inline":
-            return JSONResponse(sync.run_sync_inline(ws, mode), status_code=200)
-        return JSONResponse(sync.start_sync(ws, mode), status_code=202)
+            return JSONResponse(sync.run_sync_inline(ws, mode, triggered_by=auth.user_id()), status_code=200)
+        return JSONResponse(sync.start_sync(ws, mode, triggered_by=auth.user_id()), status_code=202)
     except LookupError:
         raise HTTPException(404, "workspace not found") from None
     except RuntimeError:
