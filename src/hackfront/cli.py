@@ -94,9 +94,23 @@ def main(argv: list[str] | None = None) -> int:
     serve = sub.add_parser("serve", help="start the API and web UI")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
+    mcp = sub.add_parser("mcp", help="serve `why` over MCP (stdio) for coding agents, scoped to one workspace")
+    mcp.add_argument("--workspace", required=True)
+    mcp_client = sub.add_parser("mcp-client", help="call the MCP `why` tool through a spawned server (end-to-end check)")
+    mcp_client.add_argument("anchor", help="file path, ticket key, #PR or a few words")
+    mcp_client.add_argument("--workspace", required=True)
     args = cli.parse_args(argv)
 
     try:
+        if args.cmd == "mcp":
+            from .mcp_server import main as serve_mcp
+
+            serve_mcp(args.workspace)
+            return 0
+        if args.cmd == "mcp-client":
+            from .mcp_client import main as run_client
+
+            return run_client(args.anchor, args.workspace)
         if args.cmd == "demo":
             from .ingest.demo import DEMO_WORKSPACE
 

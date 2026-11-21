@@ -42,6 +42,22 @@ Early, and one run each. The gold set is not human-checked.
 
 The four questions filed for the Kafka demo are in `data/kafka_demo_questions.json` (Q013, Q026, Q030, Q041). Q041 is the investigation the video script walks through: why producers in 3.0 and 3.1 stayed non-idempotent by default.
 
+## MCP server for coding agents
+
+`why(anchor)` over a workspace's evidence graph. Read-only, no model, scoped to one workspace, and refuses with
+"Not established" when nothing supports an answer. `anchor` is a file path, a ticket key, `#PR` or a few words.
+Each result carries a verbatim excerpt and a source link. Decision status (live / refined / dead) and
+`check_change(diff)` are not built yet.
+
+```sh
+uv run hackfront mcp --workspace kafka                       # stdio server (needs NEO4J_* set)
+uv run hackfront mcp-client --workspace kafka KAFKA-18654    # spawns it, calls why, prints the evidence
+```
+
+Register it with an agent (Claude Code `.mcp.json`):
+`{"mcpServers": {"why": {"command": "uv", "args": ["run", "hackfront", "mcp", "--workspace", "kafka"]}}}`.
+Code: `src/hackfront/mcp_server.py`, `src/hackfront/mcp_client.py`.
+
 ## Mental model
 
 A librarian who only answers with a quote that is actually on the shelf. The shelves are PRs, commits, tickets, and threads. A string between two items exists only where someone wrote the link down. The model proposes. Code decides.
