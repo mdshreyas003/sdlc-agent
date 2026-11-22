@@ -95,7 +95,7 @@ const Body: React.FC<{ s: Slide; frames: number }> = ({ s, frames }) => {
           <div style={{ border: `4px solid ${WHITE}`, padding: "44px 56px", display: "flex", flexDirection: "column", gap: 26, maxWidth: 1620 }}>
             {s.lines.map((l, i) => (
               <Rise key={i} at={(i + 1) * st}>
-                <div style={{ fontFamily: BC_MONO, fontWeight: 800, fontSize: 44, color: WHITE, textAlign: "left", lineHeight: 1.2 }}>{l}</div>
+                <div style={{ fontFamily: BC_MONO, fontWeight: 800, fontSize: 56, color: WHITE, textAlign: "left", lineHeight: 1.2 }}>{l}</div>
               </Rise>
             ))}
           </div>

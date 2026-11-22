@@ -64,7 +64,7 @@ export const BC8 = S([
   {
     k: "card",
     head: "3 approved notes apply.",
-    lines: ["rule     Changes to payment attempts need a reliability review", "decision Try a card payment at most 3 times", "rule     Every payment carries a unique payment ID"],
+    lines: ["rule: reliability review needed", "decision: at most 3 times", "rule: every payment has a unique ID"],
     w: 30,
   },
   { k: "big", lines: ["The agent knows what", "it would undo."], w: 8 },
