@@ -1,4 +1,4 @@
-> The deck is now 7 slides: title, the problem, who buys, where we sit, architecture, a real use case end to end, proof. Rows below for removed slides no longer apply.
+> The deck is now 10 slides: title, the problem, who buys, where we sit, architecture and design choices, a real use case end to end, the data as a connected map, evolution stage by stage, how triage decides, built / next / proof. The data slides use numbers measured on the live story graph after stage 4 (92 records, 206 links) and the clean stage-by-stage replay (82/182, 87/191, 89/195, 92/206). Rows below for removed slides no longer apply.
 
 # Brightcart pitch deck: sources
 
