@@ -27,7 +27,9 @@ function Rail({ ws }: { ws: string }) {
   const running = sync?.state === "running";
   const needsSetup = !!info && info.indexed_repos.length === 0 && !running;
   const items: { key: string; label: string; icon: IconName; href: string; on: boolean; dot?: "run" | "warn" }[] = [
+    { key: "overview", label: "Overview", icon: "home", href: `/w/${ws}/overview`, on: section === "overview" },
     { key: "ask", label: "Ask", icon: "claude", href: `/w/${ws}`, on: !section || section === "setup" },
+    { key: "memory", label: "Memory", icon: "shield", href: `/w/${ws}/memory`, on: section === "memory" },
     { key: "sync", label: "Sync", icon: "replay", href: `/w/${ws}/sync`, on: section === "sync", dot: running ? "run" : needsSetup ? "warn" : undefined },
     { key: "ingestion", label: "Ingestion", icon: "layers", href: `/w/${ws}/ingestion`, on: section === "ingestion" },
     { key: "settings", label: "Settings", icon: "sliders", href: `/w/${ws}/settings`, on: section === "settings" },
@@ -52,7 +54,12 @@ function Rail({ ws }: { ws: string }) {
         })}
       </nav>
       <div className="mt-auto flex flex-col gap-2">
-        {!collapsed && <p className="px-2 font-mono text-[10.5px] leading-snug text-dim">Repo + file: pick them inside Ask.</p>}
+        {[["/workspaces", "All workspaces", "folder"], ["/", "Product overview", "spark"]].map(([href, label, icon]) => (
+          <Link key={href} href={href} aria-label={collapsed ? label : undefined} title={collapsed ? label : undefined}
+            className={`flex h-8 items-center rounded-md text-dim hover:bg-hover hover:text-fg ${collapsed ? "justify-center" : "gap-2.5 px-2.5"}`}>
+            <Icon name={icon as IconName} size={15} />{!collapsed && <span className="text-[12px]">{label}</span>}
+          </Link>
+        ))}
         <button onClick={toggle} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!collapsed} title={`${collapsed ? "Expand" : "Collapse"} sidebar ([)`}
           className={`flex h-8 items-center rounded-md text-dim hover:bg-hover hover:text-fg ${collapsed ? "justify-center" : "gap-2.5 px-2.5"}`}>
           <Icon name="panel" size={15} />{!collapsed && <span className="text-[12px]">Collapse</span>}{!collapsed && <span className="kbd ml-auto">[</span>}

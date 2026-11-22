@@ -60,6 +60,17 @@ Relationships `REFERENCES | CONTAINS | REPLIES_TO | PARENT_OF | CHANGES` with `c
 
 Every tool returns rows: `{id, kind, title, text, url, time, paths, hops?, via?}` (`text` truncated to 600 chars). `via` = `{rel, origin, from}` for traversal results. Tools: `find_text(query)`, `file_history(path)`, `neighbors(id)`, `evidence_chain(id)`, `get(id)`.
 
+## Memory (prototype)
+
+Reviewed ADRs, rules and episodes live beside workspace state, not in the evidence graph. Triage turns `why` evidence into drafts, a person approves, and the MCP `memory` tool serves approved entries only. Lifecycle, API and edge cases: [memory.md](memory.md).
+
+```mermaid
+flowchart LR
+  NEO[(Evidence graph)] --> W[why anchor] --> TR[Triage] --> ST[("Memory store<br/>draft · staged · approved")]
+  ST <--> UI[Memory review page]
+  ST -- approved only --> MCP[MCP memory tool] --> CA[Coding agents]
+```
+
 ## API
 
-`GET /api/status` · `GET/PUT /api/workspace` · `POST /api/sync` · `POST /api/demo` · `POST /api/ask {question, mode, provider}` (SSE: `trace` events then one `answer` event with `evidence: {nodes, edges}`) · static UI at `/`.
+`GET /api/status` · `GET/PUT /api/workspace` · `POST /api/sync` · `POST /api/demo` · `POST /api/ask {question, mode, provider}` (SSE: `trace` events then one `answer` event with `evidence: {nodes, edges}`) · static UI at `/`. Memory routes: see [memory.md](memory.md).

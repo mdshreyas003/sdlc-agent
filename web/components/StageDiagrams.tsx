@@ -142,6 +142,33 @@ export function FlowDiagram() {
 }
 
 /* ── 07 Architecture: sources → memory → answers → three doors ───────────────────────────────────────────────────────── */
+/* ── Triage: one anchor in, one kind of memory out, or nothing ───────────────────────────────────────────────────────── */
+export function TriageDiagram() {
+  const K: [string, string, number][] = [["Decision", "decided · instead of · trade-off", 36], ["Rule", "always · never · must", 130], ["Episode", "regression · revert · root cause", 224]];
+  return (
+    <Frame id="tr" h={372} label="Triage: a PR, ticket or file is turned into evidence, scored as a decision, rule or episode, drafted with verbatim quotes, and approved by a person; no signal means nothing is drafted">
+      <g className="dg-in" style={at(0)}><Node x={20} y={128} w={130} h={64} title="Anchor" sub="PR · ticket · file" /></g>
+      <g className="dg-in" style={at(1)}><Edge id="tr" d="M154 160 H186" /><Node x={190} y={128} w={140} h={64} title="Gather" sub="cited evidence" /></g>
+      {K.map(([t, sub, y], i) => (
+        <g key={t} className="dg-in" style={at(2 + i)}>
+          <Edge id="tr" d={`M334 160 C360 160 354 ${y + 31} 376 ${y + 31}`} />
+          <Node x={380} y={y} w={210} h={62} title={t} sub={sub} accent={i === 0} glow={i === 0 ? "tr" : undefined} />
+          <Edge id="tr" d={`M594 ${y + 31} C614 ${y + 31} 612 160 634 160`} />
+        </g>
+      ))}
+      <g className="dg-in" style={at(5)}><Node x={638} y={128} w={150} h={64} title="Draft" sub="verbatim + TODO" /></g>
+      <g className="dg-in" style={at(6)}><Edge id="tr" accent flow d="M792 160 H822" /><Node x={826} y={128} w={120} h={64} title="You" sub="approve or reject" accent glow="tr" /><Lbl x={886} y={116}>HUMAN GATE</Lbl></g>
+      <g className="dg-in" style={at(7)}>
+        <Edge id="tr" dashed d="M262 196 V326 H376" />
+        <Node x={380} y={304} w={210} h={44} title="No signal: no draft" dashed dim />
+        <Lbl x={20} y={236} anchor="start" fill={T.dim}>keywords, no model</Lbl>
+        <Lbl x={638} y={230} anchor="start" fill={T.dim}>nothing goes live</Lbl>
+        <Lbl x={638} y={248} anchor="start" fill={T.dim}>until you approve</Lbl>
+      </g>
+    </Frame>
+  );
+}
+
 export function ArchDiagram() {
   const doors = ["PR guard", "Web page", "MCP"];
   const dy = [88, 164, 240];

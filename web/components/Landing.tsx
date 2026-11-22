@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Reveal from "./Reveal";
 import { Logo } from "./Logo";
 import StageNav from "./StageNav";
-import { ArchDiagram, FlowDiagram, GraphDiagram, HeroArt, MarketDiagram, WhoDiagram } from "./StageDiagrams";
+import { ArchDiagram, FlowDiagram, GraphDiagram, HeroArt, MarketDiagram, TriageDiagram, WhoDiagram } from "./StageDiagrams";
 import LandingCta from "./LandingCta";
 import { btnAccent } from "./ui";
 
@@ -16,6 +16,7 @@ const SLIDES = [
   ["market", "Where we sit"],
   ["edge", "What is different"],
   ["flow", "The flow"],
+  ["triage", "Triage"],
   ["moment", "The moment"],
   ["inside", "Architecture"],
   ["graph", "The graph"],
@@ -124,8 +125,13 @@ export default function Landing() {
           <Figure><FlowDiagram /></Figure>
         </Slide>
 
-        {/* 06 · The moment: what the judges will see */}
-        <Slide id="moment" kicker="06 · The moment" title={<>A PR undoes a decision. <Em>We say so.</Em></>}>
+        {/* 06 · Triage */}
+        <Slide id="triage" kicker="06 · Triage" title={<>Not everything is worth remembering. <Em>Triage decides.</Em></>} note="Triage drafts only what the evidence says. You approve it.">
+          <Figure><TriageDiagram /></Figure>
+        </Slide>
+
+        {/* 07 · The moment: what the judges will see */}
+        <Slide id="moment" kicker="07 · The moment" title={<>A PR undoes a decision. <Em>We say so.</Em></>}>
           <div className="grid items-stretch gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-line bg-panel p-5">
               <p className="font-mono text-[11.5px] uppercase tracking-[.14em] text-dim">Pull request</p>
@@ -148,8 +154,8 @@ export default function Landing() {
           <p className="mt-3 text-[12px] text-dim">Illustrative example.</p>
         </Slide>
 
-        {/* 07 · Architecture */}
-        <Slide id="inside" kicker="07 · Under the hood" title={<>Simple parts. <Em>One graph.</Em></>}>
+        {/* 08 · Architecture */}
+        <Slide id="inside" kicker="08 · Under the hood" title={<>Simple parts. <Em>One graph.</Em></>}>
           <Figure><ArchDiagram /></Figure>
           <ul className="mt-5 flex flex-wrap gap-2 text-[13px]">
             {["GitHub: read-only", "Never stores source files", "No endpoint returns code", "Models never trained on your data"].map((t) => (
@@ -158,13 +164,13 @@ export default function Landing() {
           </ul>
         </Slide>
 
-        {/* 08 · Graph */}
-        <Slide id="graph" kicker="08 · Why a graph" title={<>“Is this still live?” is a <Em>path.</Em></>} note="The guard is one query: diff, function, live Decision, incident, person.">
+        {/* 09 · Graph */}
+        <Slide id="graph" kicker="09 · Why a graph" title={<>“Is this still live?” is a <Em>path.</Em></>} note="The guard is one query: diff, function, live Decision, incident, person.">
           <Figure><GraphDiagram /></Figure>
           <p className="mt-4 font-mono text-[12px] text-dim">Graph database: Neo4j</p>
         </Slide>
 
-        {/* 09 · Close */}
+        {/* 10 · Close */}
         <section id="start" aria-labelledby="start-h" className="relative flex min-h-[100svh] snap-start items-center overflow-hidden px-6 pb-14 pt-24 md:px-16">
           <div aria-hidden className="px-halo pointer-events-none absolute inset-0" />
           <div className="relative mx-auto w-full max-w-[1080px] text-center">

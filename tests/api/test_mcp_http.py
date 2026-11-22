@@ -95,7 +95,7 @@ def test_endpoint_serves_why_scoped_to_the_token_workspace(client):
     init = {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}
     assert rpc(client, token, "initialize", init).status_code == 200
     tools = rpc(client, token, "tools/list").json()["result"]["tools"]
-    assert [t["name"] for t in tools] == ["why"]
+    assert [t["name"] for t in tools] == ["why", "memory"]
     r = rpc(client, token, "tools/call", {"name": "why", "arguments": {"anchor": "src/pay/gateway.py"}})
     out = json.loads(r.json()["result"]["content"][0]["text"])
     assert out["refused"] is False and out["evidence"][0]["id"] == ROW["id"]

@@ -46,7 +46,7 @@ def test_server_exposes_read_only_why_over_mcp(graph):
             return tools, result
 
     tools, result = anyio.run(run)
-    assert [t.name for t in tools] == ["why"] and tools[0].annotations.read_only_hint is True
+    assert [t.name for t in tools] == ["why", "memory"] and all(t.annotations.read_only_hint for t in tools)
     import json
 
     assert not result.is_error and json.loads(result.content[0].text)["refused"] is False

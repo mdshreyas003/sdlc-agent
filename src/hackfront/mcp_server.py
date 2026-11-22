@@ -63,8 +63,16 @@ def _why(harness: Harness, anchor: str) -> dict:
     return {"anchor": anchor, "refused": False, "evidence": evidence, "note": None}
 
 
-def build_server(harness: Harness | None = None, harness_for=None, workspace_for=None):
-    """stdio: pass one `harness`. HTTP: pass `harness_for()` / `workspace_for()` resolving the caller's workspace."""
+def recall(entries: list[dict], anchor: str) -> dict:
+    """Approved memory only (ADRs, rules, episodes a human signed off). Drafts, staged revisions and rejects never leave."""
+    from .memory import served
+
+    items = served(entries, anchor)
+    return {"anchor": anchor, "items": items, "note": None if items else "No approved memory matches. Use `why` for raw history."}
+
+
+def build_server(harness: Harness | None = None, harness_for=None, workspace_for=None, workspace: str | None = None):
+    """stdio: pass one `harness`. HTTP: pass `harness_for()` / `workspace_for()` resolving the caller's workspace. `workspace` names it for the stdio `memory` tool."""
     from mcp.server.mcpserver import MCPServer
     from mcp.types import ToolAnnotations
 
@@ -76,6 +84,26 @@ def build_server(harness: Harness | None = None, harness_for=None, workspace_for
         Returns evidence (commits, PRs, tickets, threads) with verbatim quotes and links, or refused=true."""
         return why(harness_for() if harness_for else harness, anchor, workspace_for() if workspace_for else None)
 
+    if workspace:
+        from . import state
+
+        @server.tool(name="memory", annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False))
+        def memory_tool(anchor: str = "") -> dict:
+            """Team-approved decisions (ADRs), rules and past incidents for this workspace, each citing its evidence ids.
+            Read these before editing; they were reviewed by a senior developer. Empty `anchor` lists everything."""
+            return recall(state.backend().list_memory(workspace), anchor)
+
+    @server.tool(name="memory", annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False))
+    def memory_tool(anchor: str = "") -> dict:
+        """Team-approved decisions (ADRs), rules and past incidents for this workspace, each citing its evidence ids.
+        Read these before editing; a senior developer reviewed them. Empty `anchor` lists everything."""
+        from . import state
+
+        ws = workspace_for() if workspace_for else workspace
+        if not ws:
+            return {"anchor": anchor, "items": [], "note": "No workspace is bound to this server."}
+        return recall(state.backend().list_memory(ws), anchor)
+
     return server
 
 
@@ -85,4 +113,4 @@ def main(workspace: str) -> None:
 
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     harness = Harness(config.neo4j_driver(), scopes=flat_scopes(config.scopes(workspace)))
-    build_server(harness).run()
+    build_server(harness, workspace).run()

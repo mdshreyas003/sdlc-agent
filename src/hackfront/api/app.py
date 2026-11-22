@@ -91,8 +91,8 @@ def health() -> dict:
     return {"ok": True}  # unauthenticated, for the host's health check; reveals nothing
 
 
-from . import accounts, admin, investigate, mcp_token, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
+from . import accounts, admin, investigate, mcp_token, memory, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
 
-for module in (accounts, workspaces, sync, workbench, investigate, admin, mcp_token):
+for module in (accounts, workspaces, sync, workbench, investigate, memory, admin, mcp_token):
     app.include_router(module.router)
 app.mount("/", _mcp_gate)  # last: only /mcp reaches it (bearer token); everything else under it is a 404
