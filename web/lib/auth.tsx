@@ -17,8 +17,9 @@ const Ctx = createContext<Auth>({ me: null, loading: true, signedOut: false, sig
 export const useMe = () => useContext(Ctx);
 
 export const PUBLIC_PATHS = ["/", "/login"];
-/** A same-site relative path or "/": never an absolute or protocol-relative URL. */
-export const safeNext = (n: string | null | undefined) => (n && n.startsWith("/") && !n.startsWith("//") && !n.includes("\\") ? n : "/");
+/** Where sign-in returns to: a same-site relative path (never an absolute or protocol-relative URL), else the app. */
+export const HOME = "/workspaces";
+export const safeNext = (n: string | null | undefined) => (n && n.startsWith("/") && !n.startsWith("//") && !n.includes("\\") ? n : HOME);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
