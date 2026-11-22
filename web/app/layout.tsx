@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 // Set the theme before first paint (stored choice, else system) to avoid a flash.
-const themeInit = `try{var t=localStorage.getItem("wb-theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="dark"}`;
+const themeInit = `try{var t=localStorage.getItem("wb-theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;var d=document.documentElement,a=localStorage.getItem("wb-accent"),c=localStorage.getItem("wb-contrast"),f=localStorage.getItem("wb-font");if(a&&a!=="blue")d.dataset.accent=a;if(c==="high")d.dataset.contrast="high";if(f==="system")d.dataset.font="system"}catch(e){document.documentElement.dataset.theme="dark"}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

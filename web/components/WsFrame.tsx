@@ -83,7 +83,7 @@ export default function WsFrame({ children }: { children: ReactNode }) {
         <div className="flex h-full">
           <Rail ws={ws!} />
           {!section && <Files ws={ws!} />}
-          <div className={`min-w-0 flex-1 ${section ? "px-grid" : ""}`}>{children}</div>
+          <div className={`min-w-0 flex-1 ${section ? "bg-panel" : ""}`}>{children}</div>
         </div>
       </LayoutProvider>
     </Ready>

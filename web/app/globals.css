@@ -13,7 +13,7 @@
   --fg: #0a0a0b;
   --mute: #4b4b55;
   --dim: #666670;
-  --accent: #4353e8;
+  --accent: var(--accent-l, #4353e8);
   --claude: #d97757; /* Claude orange: the Ask highlight */
   --ok: #067a56;
   --warn: #8f5a00;
@@ -33,7 +33,7 @@
   --fg: #ededee;
   --mute: #a4a4ad;
   --dim: #8a8a94;
-  --accent: #8b9bff;
+  --accent: var(--accent-d, #8b9bff);
   --claude: #e8896a;
   --ok: #3ecf8e;
   --warn: #f0b429;
@@ -108,10 +108,9 @@ details.more > summary::-webkit-details-marker { display: none; }
 details.more > summary::before { content: "+ "; color: var(--accent); }
 details.more[open] > summary::before { content: "\2212  "; }
 
-/* Dev-aesthetic helpers (grid, halo, glow, caret, flow, ping) shared by login, settings, sync and ingestion. */
-.px-grid { background-image: linear-gradient(var(--gridline) 1px, transparent 1px), linear-gradient(90deg, var(--gridline) 1px, transparent 1px); background-size: 24px 24px; }
+/* Helpers (halo, glow, caret, flow, ping) shared by login, settings, sync and ingestion. No background grid: flat surfaces read better. */
 .px-glow { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 28px -6px color-mix(in srgb, var(--accent) 55%, transparent); }
-.px-halo { background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%); }
+.px-halo { background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%); }
 @keyframes px-blink { 50% { opacity: 0; } }
 .px-caret { display: inline-block; width: 7px; height: 14px; background: var(--accent); vertical-align: -2px; animation: px-blink 1s steps(1) infinite; }
 @keyframes px-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }
@@ -126,3 +125,17 @@ details.more[open] > summary::before { content: "\2212  "; }
 @keyframes dgDash { to { stroke-dashoffset: -20; } }
 .dg-flow { stroke-dasharray: 4 6; animation: dgDash 1.2s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .dg-flow { animation: none; } }
+
+/* Cards sit on a slightly tinted page (bg-panel) and get a whisper of depth instead of a pattern behind the text. */
+:where(.card) { box-shadow: 0 1px 2px color-mix(in srgb, var(--fg) 6%, transparent); } /* :where keeps this below .px-glow, so selected cards keep their ring */
+
+/* User appearance preferences (Settings > Appearance); set on <html> by lib/appearance.ts and the inline script in layout.tsx. */
+:root[data-accent="violet"] { --accent-l: #7048e8; --accent-d: #a78bfa; }
+:root[data-accent="teal"] { --accent-l: #0b8a7a; --accent-d: #2dd4bf; }
+:root[data-accent="orange"] { --accent-l: #c2570c; --accent-d: #fb923c; }
+:root[data-accent="rose"] { --accent-l: #d6336c; --accent-d: #fb7185; }
+/* High contrast: darker secondary text and stronger borders (listed after the base palettes so it wins). */
+:root[data-contrast="high"] { --mute: #2f2f38; --dim: #4b4b55; --line: #d0d0d6; --line2: #a1a1aa; --unk: #4b4b55; }
+:root[data-contrast="high"][data-theme="dark"] { --mute: #d4d4da; --dim: #b4b4bc; --line: #3a3a41; --line2: #5a5a63; --unk: #b4b4bc; }
+/* Interface font: Geist (default) or the system UI font. Code keeps its monospace. */
+:root[data-font="system"] body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
