@@ -71,7 +71,7 @@ export default function Login() {
   useEffect(() => { if (signedIn) router.replace(next); }, [signedIn, next, router]);
 
   return (
-    <main className="px-grid grid h-full place-items-center">
+    <main className="grid h-full place-items-center bg-panel">
       <div className="px-halo grid h-full w-full place-items-center">
         <div className="card w-[400px] max-w-[92vw] p-8">
           <div className="mb-6 flex items-center gap-3">

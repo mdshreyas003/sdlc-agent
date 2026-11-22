@@ -1,9 +1,10 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useData } from "@/lib/data";
 import { KINDS, KIND_COLOR, fmtDate, fmtTime, type Kind } from "@/lib/types";
 import Detail from "./Detail";
 import { Icon } from "./icons";
+import { DEFAULT_SIZES, GRAPH_ZOOMS, LIMITS, Splitter, useLayout } from "./layout";
 import { useWb } from "./store";
 
 const KIND_ICON = { doc: "file", issue: "issue", discussion: "discussion", pr: "pr", commit: "commit" } as const;
@@ -19,14 +20,16 @@ export function KindBadge({ kind, label }: { kind: Kind; label?: string }) {
 export default function Evidence() {
   const { inv, tab, setTab, hiddenKinds, toggleKind, showInferred, setShowInferred, visible, selected } = useWb();
   const { hasInferred } = useData();
-  const [open, setOpen] = useState(true);
+  const L = useLayout();
+  const open = L.evidenceOpen; // remembered; collapses to this header bar
   if (!inv) return null;
   const tabs = [{ id: "timeline", label: "Timeline", key: "1" }, { id: "graph", label: "Graph", key: "2" }] as const;
 
   return (
-    <section aria-label="Evidence" className={`flex shrink-0 flex-col border-t border-line ${open ? "h-[36%] min-h-[220px]" : ""}`}>
+    <section aria-label="Evidence" style={open && !L.evMax ? { height: L.evH } : undefined}
+      className={`flex flex-col ${L.evMax ? "min-h-0 flex-1" : "shrink-0"} ${open ? "" : "border-t border-line"}`}>
       <div className="flex h-10 shrink-0 items-center gap-1 px-2">
-        <button onClick={() => setOpen((o) => !o)} aria-label={open ? "Collapse evidence" : "Expand evidence"} className="grid h-7 w-7 place-items-center rounded-md text-dim hover:bg-hover hover:text-fg">
+        <button onClick={L.toggleEvidence} aria-label={open ? "Collapse evidence (e)" : "Expand evidence (e)"} title={open ? "Collapse evidence (e)" : "Expand evidence (e)"} className="grid h-7 w-7 place-items-center rounded-md text-dim hover:bg-hover hover:text-fg">
           <Icon name="chevron" size={13} className={`transition-transform ${open ? "" : "-rotate-90"}`} />
         </button>
         <span className="mr-2 text-[12.5px] font-medium">Evidence <span className="font-normal text-dim">{visible.length}</span></span>
@@ -36,6 +39,8 @@ export default function Evidence() {
         ))}
         {open && (
           <div className="ml-auto flex items-center gap-0.5">
+            <button onClick={L.toggleEvMax} aria-pressed={L.evMax} aria-label={L.evMax ? "Exit full view (Esc)" : "Full view (m)"} title={L.evMax ? "Exit full view (Esc)" : "Full view: evidence fills the work area (m)"}
+              className={`mr-1 grid h-7 w-7 place-items-center rounded-md hover:bg-hover hover:text-fg ${L.evMax ? "bg-raised text-fg" : "text-dim"}`}><Icon name="maximize" size={13} /></button>
             {KINDS.map((k) => {
               const off = hiddenKinds.includes(k.kind);
               return (
@@ -54,11 +59,16 @@ export default function Evidence() {
         )}
       </div>
       {open && (
-        <div className={`grid min-h-0 flex-1 border-t border-line ${selected ? "grid-cols-[minmax(0,1fr)_minmax(0,46%)]" : ""}`}>
-          <div className="min-h-0 overflow-auto">
+        <div className="flex min-h-0 flex-1 border-t border-line">
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto">
             {visible.length === 0 ? <p className="p-6 text-center text-dim">Nothing to show. Check the filters or connections.</p> : tab === "timeline" ? <Timeline /> : <Graph />}
           </div>
-          {selected && <div className="min-h-0 overflow-hidden border-l border-line"><Detail /></div>}
+          {selected && (
+            <>
+              <Splitter orientation="vertical" invert label="Detail width" value={L.detailW} min={LIMITS.detailW[0]} max={LIMITS.detailW[1]} onChange={(v) => L.set({ detailW: v })} onReset={() => L.set({ detailW: DEFAULT_SIZES.detailW })} />
+              <div style={{ width: L.detailW }} className="min-h-0 max-w-[60%] shrink-0 overflow-hidden"><Detail /></div>
+            </>
+          )}
         </div>
       )}
     </section>
@@ -104,6 +114,8 @@ const LABELS: Record<Kind, string> = { doc: "Docs", issue: "Issues", discussion:
 function Graph() {
   const { inv, visible, selected, selectNode, hoverNodes, lit, showInferred } = useWb();
   const { byId, edges: allEdges, hasInferred } = useData();
+  const L = useLayout();
+  const z = L.graphZoom;
   const dim = useDim();
   const pos = useMemo(() => {
     const p: Record<string, { x: number; y: number }> = {};
@@ -113,10 +125,18 @@ function Graph() {
   const width = 100 + visible.length * 84;
   const edges = allEdges.filter((e) => pos[e.from] && pos[e.to] && (showInferred || e.rel !== "INFERRED"));
   const focus = new Set(lit); if (selected) focus.add(selected);
+  const linked = new Set(edges.flatMap((e) => [e.from, e.to]));
+  const loose = visible.filter((id) => !linked.has(id)).length;
+  const step = (d: number) => { const i = GRAPH_ZOOMS.indexOf(z as (typeof GRAPH_ZOOMS)[number]); L.set({ graphZoom: GRAPH_ZOOMS[Math.min(GRAPH_ZOOMS.length - 1, Math.max(0, i + d))] }); };
 
   return (
     <div className="p-2">
-      <svg viewBox={`0 0 ${width} ${LANES.length * LANE + 8}`} className="block w-full" role="img" aria-label={`Evidence graph for: ${inv!.question}`}>
+      <div className="mb-1 flex items-center justify-end gap-0.5 text-[11.5px] text-dim" role="group" aria-label="Graph zoom">
+        <button onClick={() => step(-1)} disabled={z === 0} aria-label="Zoom out" className="grid h-6 w-6 place-items-center rounded-md hover:bg-hover hover:text-fg disabled:opacity-30">−</button>
+        <button onClick={() => L.set({ graphZoom: 0 })} aria-pressed={z === 0} title="Fit the whole graph in the pane" className={`h-6 min-w-10 rounded-md px-1.5 font-mono num hover:bg-hover hover:text-fg ${z === 0 ? "bg-raised text-fg" : ""}`}>{z === 0 ? "Fit" : `${z}%`}</button>
+        <button onClick={() => step(1)} disabled={z === GRAPH_ZOOMS[GRAPH_ZOOMS.length - 1]} aria-label="Zoom in" className="grid h-6 w-6 place-items-center rounded-md hover:bg-hover hover:text-fg disabled:opacity-30">+</button>
+      </div>
+      <svg viewBox={`0 0 ${width} ${LANES.length * LANE + 8}`} style={z ? { width: (width * z) / 100 } : { maxWidth: width * 1.4 }} className={z ? "block max-w-none" : "block w-full"} role="img" aria-label={`Evidence graph for: ${inv!.question}`}>
         {LANES.map((k, i) => (
           <g key={k}>
             <rect x={0} y={i * LANE} width={width} height={LANE - 2} rx={6} fill={i % 2 ? "transparent" : "var(--gridline)"} />
@@ -144,6 +164,7 @@ function Graph() {
               onClick={() => selectNode(on ? null : id)} onMouseEnter={() => hoverNodes([id])} onMouseLeave={() => hoverNodes([])}
               tabIndex={0} role="button" aria-label={`${n.ref} ${n.title}`}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && selectNode(on ? null : id)}>
+              <title>{n.ref} · {n.title}</title>
               <circle r={on ? 14 : lit.has(id) ? 12 : 10} fill="none" stroke={KIND_COLOR[n.kind]} strokeOpacity={on ? 0.9 : 0.35} strokeWidth={on ? 2 : 1} />
               <circle r={7} fill={KIND_COLOR[n.kind]} />
               <text y={24} textAnchor="middle" fill={on ? "var(--fg)" : "var(--mute)"} fontSize={11} fontFamily="var(--font-mono)">{n.ref.length > 10 ? n.ref.slice(0, 9) + "…" : n.ref}</text>
@@ -151,7 +172,10 @@ function Graph() {
           );
         })}
       </svg>
-      <p className="px-1 text-[11px] text-dim">Solid: explicit link{hasInferred && <> · <span className="text-warn">dashed: inferred</span></>}</p>
+      <p className="px-1 text-[11px] leading-snug text-dim">
+        Solid: explicit link{hasInferred && <> · <span className="text-warn">dashed: inferred</span></>}
+        {loose > 0 && <> · <span title="A line exists only where a source states the link: a Jira key, a PR or commit URL, #N, or a Slack link. File names and plain wording do not create links.">{loose} of {visible.length} items have no stated link to the others</span></>}
+      </p>
     </div>
   );
 }

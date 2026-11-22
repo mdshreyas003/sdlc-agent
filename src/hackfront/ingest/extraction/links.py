@@ -41,6 +41,8 @@ def _text_fields(artifact: Artifact) -> tuple[tuple[str, str | None], ...]:
         return (("$.commit.message", artifact.text),)
     if provider == "github" and kind == "pull_request":
         return (("$.title", artifact.title), ("$.body", artifact.text))
+    if provider == "github" and kind == "document":
+        return (("$.path", artifact.title), ("$.content", artifact.text))
     if provider == "confluence":
         return (("$.title", artifact.title), ("$.body.storage.value", artifact.text))
     if provider == "jira" and kind == "issue":

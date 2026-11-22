@@ -99,9 +99,20 @@ def main(argv: list[str] | None = None) -> int:
     mcp_client = sub.add_parser("mcp-client", help="call the MCP `why` tool through a spawned server (end-to-end check)")
     mcp_client.add_argument("anchor", help="file path, ticket key, #PR or a few words")
     mcp_client.add_argument("--workspace", required=True)
+    tok = sub.add_parser("mcp-token", help="issue (or --revoke) a workspace's MCP bearer token for the HTTP endpoint")
+    tok.add_argument("--workspace", required=True)
+    tok.add_argument("--revoke", action="store_true")
     args = cli.parse_args(argv)
 
     try:
+        if args.cmd == "mcp-token":
+            from . import mcp_tokens
+
+            if args.revoke:
+                print("revoked" if mcp_tokens.revoke(args.workspace) else "no token was set")
+            else:
+                print(mcp_tokens.issue(args.workspace))
+            return 0
         if args.cmd == "mcp":
             from .mcp_server import main as serve_mcp
 

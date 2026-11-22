@@ -23,13 +23,13 @@ function Frame({ id, w = 960, h = 520, label, children }: { id: string; w?: numb
   );
 }
 
-type NodeProps = { x: number; y: number; w: number; h: number; title: string; sub?: string; accent?: boolean; dashed?: boolean; dim?: boolean; warn?: boolean; tag?: string; mono?: boolean; glow?: string };
+type NodeProps = { x: number; y: number; w: number; h: number; title: string; sub?: string; accent?: boolean; dashed?: boolean; dim?: boolean; tag?: string; mono?: boolean; glow?: string };
 
-function Node({ x, y, w, h, title, sub, accent, dashed, dim, warn, tag, mono, glow }: NodeProps) {
+function Node({ x, y, w, h, title, sub, accent, dashed, dim, tag, mono, glow }: NodeProps) {
   return (
     <g>
       {accent && glow && <rect x={x} y={y} width={w} height={h} rx={12} fill={T.acc} opacity={0.28} filter={`url(#${glow}-glow)`} />}
-      <rect x={x} y={y} width={w} height={h} rx={12} fill={accent ? T.raised : T.panel} stroke={accent ? T.acc : warn ? T.warn : T.line} strokeWidth={accent ? 1.6 : 1} strokeDasharray={dashed ? "5 4" : undefined} />
+      <rect x={x} y={y} width={w} height={h} rx={12} fill={accent ? T.raised : T.panel} stroke={accent ? T.acc : T.line} strokeWidth={accent ? 1.6 : 1} strokeDasharray={dashed ? "5 4" : undefined} />
       <text x={x + w / 2} y={y + (sub ? h / 2 - 2 : h / 2 + 6)} textAnchor="middle" fill={dim ? T.dim : T.fg} fontSize={mono ? 16 : 18} fontWeight={600} fontFamily={mono ? MONO : undefined}>{title}</text>
       {sub && <text x={x + w / 2} y={y + h / 2 + 19} textAnchor="middle" fill={T.dim} fontSize={13}>{sub}</text>}
       {tag && <text x={x + w - 10} y={y + 17} textAnchor="end" fill={T.acc} fontSize={10.5} fontFamily={MONO} letterSpacing=".08em">{tag}</text>}
@@ -66,7 +66,26 @@ export function HeroArt() {
   );
 }
 
-/* ── Market: where we sit ─────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── 02 Who: four kinds of user around the product ───────────────────────────────────────────────────────────────────── */
+export function WhoDiagram() {
+  return (
+    <Frame id="who" label="whycode at the centre, used by tech leads, coding agents, new engineers and IT services firms">
+      <g className="dg-in" style={at(0)}>
+        <Edge id="who" flow d="M310 100 C350 100 340 235 380 245" accent />
+        <Edge id="who" flow d="M650 100 C610 100 620 235 580 245" />
+        <Edge id="who" flow d="M310 428 C350 428 340 285 380 275" />
+        <Edge id="who" flow d="M650 428 C610 428 620 285 580 275" />
+      </g>
+      <g className="dg-in" style={at(1)}><Node x={380} y={210} w={200} h={100} title="whycode" sub="the why, on record" accent glow="who" /></g>
+      <g className="dg-in" style={at(2)}><Node x={60} y={56} w={250} h={90} title="Tech leads" sub="approve · own the gate" accent tag="BUYER" /></g>
+      <g className="dg-in" style={at(3)}><Node x={650} y={56} w={250} h={90} title="Coding agents" sub="Claude Code · Cursor · Copilot" tag="MCP" /></g>
+      <g className="dg-in" style={at(4)}><Node x={60} y={384} w={250} h={90} title="New engineers" sub="ask why, get a quote" /></g>
+      <g className="dg-in" style={at(5)}><Node x={650} y={384} w={250} h={90} title="IT services firms" sub="handovers keep the why" /></g>
+    </Frame>
+  );
+}
+
+/* ── 03 Market: where we sit ─────────────────────────────────────────────────────────────────────────────────────────── */
 export function MarketDiagram() {
   return (
     <Frame id="mk" label="Positioning map: others answer why; whycode also tracks reversed decisions and guards pull requests">
@@ -98,30 +117,31 @@ export function MarketDiagram() {
   );
 }
 
-/* ── Software factory: agents write, whycode guards and remembers, memory feeds the next agent ───────────────────────── */
-export function FactoryDiagram() {
-  const S: [string, string][] = [["Spec", "issue or task"], ["Coding agent", "writes the PR"], ["Guard", "check_change"], ["Human", "review + decide"], ["Merge", "ships"], ["Memory", "drafts a Decision"]];
-  const w = 124, h = 92, y = 56, step = 160, x0 = 24;
-  const mine = (i: number) => i === 2 || i === 5;
+/* ── 05 Flow: connect → draft → approve → guard → resolve, and the loop back ─────────────────────────────────────────── */
+export function FlowDiagram() {
+  const S: [string, string, string][] = [["Connect", "read-only GitHub app", "01"], ["Draft", "PRs → Decisions", "02"], ["Approve", "tech lead: yes / no", "03"], ["Guard", "warning on the PR", "04"], ["Resolve", "keep or override", "05"]];
+  const w = 150, h = 96, y = 70, step = 186, x0 = 30;
   return (
-    <Frame id="fa" h={310} label="Software factory loop: spec, coding agent, guard, human review, merge, memory; memory feeds the coding agent through why before it edits">
-      {S.map(([t, sub], i) => {
+    <Frame id="fl" h={310} label="Flow: connect a repo, draft Decisions, approve them, guard new pull requests, resolve; an override becomes the new Decision">
+      {S.map(([t, s, n], i) => {
         const x = x0 + i * step;
         return (
           <g key={t} className="dg-in" style={at(i)}>
-            {i > 0 && <Edge id="fa" accent={mine(i) || mine(i - 1)} d={`M${x - step + w + 4} ${y + h / 2} H${x - 4}`} />}
-            <Node x={x} y={y} w={w} h={h} title={t} sub={sub} accent={mine(i)} glow={mine(i) ? "fa" : undefined} tag={mine(i) ? "WHYCODE" : undefined} />
+            {i > 0 && <Edge id="fl" accent={i === 3} d={`M${x - step + w + 4} ${y + h / 2} H${x - 4}`} />}
+            <Node x={x} y={y} w={w} h={h} title={t} sub={s} accent={i === 3} />
+            <text x={x + 14} y={y + 20} fill={T.acc} fontSize={11.5} fontFamily={MONO}>{n}</text>
           </g>
         );
       })}
-      <g className="dg-in" style={at(7)}>
-        <Edge id="fa" accent flow d={`M${x0 + 5 * step + w / 2} ${y + h + 4} V${y + h + 56} H${x0 + step + w / 2} V${y + h + 6}`} />
-        <Lbl x={x0 + 3.5 * step} y={y + h + 82}>why: before the next agent edits</Lbl>
+      <g className="dg-in" style={at(6)}>
+        <Edge id="fl" accent flow d={`M${x0 + 4 * step + w / 2} ${y + h + 4} V${y + h + 52} H${x0 + step + w / 2} V${y + h + 6}`} />
+        <Lbl x={x0 + 2.5 * step + w / 2} y={y + h + 76}>the override becomes the new Decision</Lbl>
       </g>
     </Frame>
   );
 }
 
+/* ── 07 Architecture: sources → memory → answers → three doors ───────────────────────────────────────────────────────── */
 /* ── Triage: one anchor in, one kind of memory out, or nothing ───────────────────────────────────────────────────────── */
 export function TriageDiagram() {
   const K: [string, string, number][] = [["Decision", "decided · instead of · trade-off", 36], ["Rule", "always · never · must", 130], ["Episode", "regression · revert · root cause", 224]];
@@ -149,7 +169,6 @@ export function TriageDiagram() {
   );
 }
 
-/* ── Architecture: sources → memory → answers → three doors ───────────────────────────────────────────────────────── */
 export function ArchDiagram() {
   const doors = ["PR guard", "Web page", "MCP"];
   const dy = [88, 164, 240];
@@ -176,33 +195,38 @@ export function ArchDiagram() {
   );
 }
 
-/* ── Data sync: every merge drafts, every override supersedes, outages queue instead of going silent ─────────────────── */
-export function SyncDiagram() {
-  const A: [string, string][] = [["Merge", "a PR lands"], ["Fetch", "only what is needed"], ["Draft", "Decision + quote"], ["Approve", "tech lead"], ["Graph", "Decision goes live"]];
-  const w = 150, h = 84, step = 186, x0 = 30, ya = 40, yb = 250;
-  const col = (i: number) => x0 + i * step;
+/* ── 08 Graph: why a graph; the guard is one path ────────────────────────────────────────────────────────────────────── */
+export function GraphDiagram() {
+  const cy = 250, w = 140, h = 64;
+  const X = { v1: 100, v2: 340, fn: 580, pr: 820 };
+  const box = (cx: number, y: number) => ({ x: cx - w / 2, y: y - h / 2, w, h });
   return (
-    <Frame id="sy" h={360} label="Data sync: a merge is fetched, drafted, approved and added to the graph; if the model or GitHub is down, drafts queue and retry and the PR says guard unavailable; an override supersedes the old Decision">
-      {A.map(([t, s], i) => (
-        <g key={t} className="dg-in" style={at(i)}>
-          {i > 0 && <Edge id="sy" accent flow d={`M${col(i - 1) + w + 4} ${ya + h / 2} H${col(i) - 4}`} />}
-          <Node x={col(i)} y={ya} w={w} h={h} title={t} sub={s} accent={i === 4} glow={i === 4 ? "sy" : undefined} />
-        </g>
-      ))}
-      <g className="dg-in" style={at(5)}>
-        <Edge id="sy" dashed d={`M${col(2) + 45} ${ya + h + 4} V${yb - 4}`} />
-        <Lbl x={col(2) + 35} y={196} anchor="end" fill={T.warn}>model / GitHub down</Lbl>
-        <Edge id="sy" dashed d={`M${col(2) + 105} ${yb - 4} V${ya + h + 4}`} />
-        <Lbl x={col(2) + 115} y={196} anchor="start" fill={T.dim}>retry</Lbl>
-        <Node x={col(2)} y={yb} w={w} h={h} title="Queue" sub="drafts wait, none lost" dashed warn />
-        <Edge id="sy" dashed d={`M${col(2) - 4} ${yb + h / 2} H${col(1) + w + 4}`} />
-        <Node x={col(1)} y={yb} w={w} h={h} title="PR comment" sub={"\u201Cguard unavailable\u201D"} dashed warn />
+    <Frame id="gr" h={470} label="Graph: an old Decision superseded by a live one, which governs a function; the live Decision links to an incident and a person; a PR diff touches the function">
+      <g className="dg-in" style={at(0)}>
+        <Edge id="gr" d={`M${X.v1 + w / 2 + 4} ${cy} H${X.v2 - w / 2 - 4}`} dashed />
+        <Lbl x={(X.v1 + X.v2) / 2} y={cy - 12} fill={T.dim}>superseded-by</Lbl>
+        <Node {...box(X.v1, cy)} title="Decision v1" sub="reversed" dashed dim />
       </g>
-      <g className="dg-in" style={at(6)}>
-        <Node x={col(4)} y={yb} w={w} h={h} title="Override" sub="a human, with a reason" />
-        <Edge id="sy" accent flow d={`M${col(4) + w / 2} ${yb - 4} V${ya + h + 4}`} />
-        <Lbl x={col(4) + w / 2 + 12} y={196} anchor="start">supersedes</Lbl>
+      <g className="dg-in" style={at(1)}>
+        <Edge id="gr" accent d={`M${X.pr - w / 2 - 4} ${cy} H${X.fn + w / 2 + 4}`} />
+        <Lbl x={(X.pr + X.fn) / 2} y={cy - 12}>touches</Lbl>
+        <Node {...box(X.pr, cy)} title="PR diff" sub="the new change" />
       </g>
+      <g className="dg-in" style={at(2)}>
+        <Edge id="gr" accent d={`M${X.fn - w / 2 - 4} ${cy} H${X.v2 + w / 2 + 4}`} />
+        <Lbl x={(X.fn + X.v2) / 2} y={cy - 12}>governed-by</Lbl>
+        <Node {...box(X.fn, cy)} title="commitTxn()" mono sub="function" />
+      </g>
+      <g className="dg-in" style={at(3)}>
+        <Edge id="gr" accent d={`M${X.v2} ${cy - h / 2 - 4} V${cy - 136 + h / 2 + 4}`} />
+        <Lbl x={X.v2 + 12} y={cy - 70} anchor="start">because of</Lbl>
+        <Edge id="gr" accent d={`M${X.v2} ${cy + h / 2 + 4} V${cy + 136 - h / 2 - 4}`} />
+        <Lbl x={X.v2 + 12} y={cy + 76} anchor="start">decided by</Lbl>
+        <Node {...box(X.v2, cy)} title="Decision v2" sub="live" accent glow="gr" tag="LIVE" />
+        <Node {...box(X.v2, cy - 136)} title="Incident" sub="the outage" />
+        <Node {...box(X.v2, cy + 136)} title="Person" sub="who to ask" />
+      </g>
+      <Lbl x={X.pr} y={cy + 66} fill={T.dim}>the guard path</Lbl>
     </Frame>
   );
 }

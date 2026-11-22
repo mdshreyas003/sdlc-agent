@@ -7,11 +7,15 @@ with nothing to cite, the answer is refused ("Not established"). stdout is the J
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import sys
 
 from .agent.harness import Harness, HarnessError
+from .redact import redact
+
+log = logging.getLogger("hackfront.mcp")
 
 SEEDS, MAX_EVIDENCE, QUOTE_LEN = 3, 12, 400
 INSTRUCTIONS = (
@@ -24,12 +28,21 @@ _PATHLIKE = re.compile(r"[/\\]|\.\w{1,6}$")
 
 
 def _item(row: dict, relation: str) -> dict:
-    return {"id": row["id"], "kind": row["kind"], "title": row.get("title"), "quote": (row.get("text") or "")[:QUOTE_LEN],
+    return {"id": row["id"], "kind": row["kind"], "title": redact(row.get("title")),
+            "quote": redact((row.get("text") or "")[:QUOTE_LEN]),
             "url": row.get("url"), "time": row.get("time"), "relation": relation}
 
 
-def why(harness: Harness, anchor: str) -> dict:
-    """Evidence for an anchor: a file path (file_history) or words/keys (find_text), expanded one chain deep."""
+def why(harness: Harness, anchor: str, workspace: str | None = None) -> dict:
+    """Evidence for an anchor: a file path (file_history) or words/keys (find_text), expanded one chain deep.
+    Excerpts are redacted for credentials; every call is audit-logged (workspace, anchor, outcome; never the excerpts)."""
+    out = _why(harness, anchor)
+    log.info(json.dumps({"event": "why", "workspace": workspace, "anchor": (anchor or "")[:200],
+                         "refused": out["refused"], "items": len(out["evidence"])}))
+    return out
+
+
+def _why(harness: Harness, anchor: str) -> dict:
     anchor = (anchor or "").strip()
     try:
         tool = "file_history" if _PATHLIKE.search(anchor) else "find_text"
@@ -58,7 +71,8 @@ def recall(entries: list[dict], anchor: str) -> dict:
     return {"anchor": anchor, "items": items, "note": None if items else "No approved memory matches. Use `why` for raw history."}
 
 
-def build_server(harness: Harness, workspace: str | None = None):
+def build_server(harness: Harness | None = None, harness_for=None, workspace_for=None, workspace: str | None = None):
+    """stdio: pass one `harness`. HTTP: pass `harness_for()` / `workspace_for()` resolving the caller's workspace. `workspace` names it for the stdio `memory` tool."""
     from mcp.server.mcpserver import MCPServer
     from mcp.types import ToolAnnotations
 
@@ -68,7 +82,7 @@ def build_server(harness: Harness, workspace: str | None = None):
     def why_tool(anchor: str) -> dict:
         """Why is this code the way it is? `anchor` is a file path, ticket key, PR number (#N) or a few words.
         Returns evidence (commits, PRs, tickets, threads) with verbatim quotes and links, or refused=true."""
-        return why(harness, anchor)
+        return why(harness_for() if harness_for else harness, anchor, workspace_for() if workspace_for else None)
 
     if workspace:
         from . import state
@@ -78,6 +92,17 @@ def build_server(harness: Harness, workspace: str | None = None):
             """Team-approved decisions (ADRs), rules and past incidents for this workspace, each citing its evidence ids.
             Read these before editing; they were reviewed by a senior developer. Empty `anchor` lists everything."""
             return recall(state.backend().list_memory(workspace), anchor)
+
+    @server.tool(name="memory", annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False))
+    def memory_tool(anchor: str = "") -> dict:
+        """Team-approved decisions (ADRs), rules and past incidents for this workspace, each citing its evidence ids.
+        Read these before editing; a senior developer reviewed them. Empty `anchor` lists everything."""
+        from . import state
+
+        ws = workspace_for() if workspace_for else workspace
+        if not ws:
+            return {"anchor": anchor, "items": [], "note": "No workspace is bound to this server."}
+        return recall(state.backend().list_memory(ws), anchor)
 
     return server
 

@@ -35,6 +35,7 @@ export default function Detail() {
         <div className="mb-2 font-mono text-[11px] text-dim">{n.author} · {fmtDate(n.time)}</div>
         <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed"><Quoted text={n.text} quotes={quotes} /></p>
 
+        {rels.length === 0 && <p className="mt-4 text-[11.5px] leading-snug text-dim">No stated links to other items. Links exist only where a source writes one down (a Jira key, a PR or commit URL, #N, or a Slack link); file names and plain wording do not create one.</p>}
         {rels.length > 0 && (
           <div className="mt-4">
             <div className="label mb-1.5">Linked</div>

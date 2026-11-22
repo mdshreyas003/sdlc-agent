@@ -14,7 +14,7 @@ _LITERALS = re.compile(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"|`[^`]*`")
 _LIMIT = re.compile(r"\bLIMIT\s+(\d+)\s*$", re.I)
 
 SCHEMA_CARD = """Neo4j graph. One node label: (:Artifact) with properties canonical_id (unique id), record_kind
-(git_commit | pull_request | issue | discussion_thread | discussion_message), title, text, source_uri, scope (repo owner/repo, Jira project key or Slack channel id), event_time
+(git_commit | pull_request | issue | discussion_thread | discussion_message | document), title, text, source_uri, scope (repo owner/repo, Jira project key or Slack channel id), event_time
 (ISO-8601 string, sortable), change_paths (list of file paths), provider (github|jira|slack), actor_display_name,
 actor_handle, is_stub (true = referenced but never ingested; filter with coalesce(a.is_stub,false) = false).
 Relationship types between Artifacts: REFERENCES, CONTAINS (pull_request -> commit), REPLIES_TO, PARENT_OF, CHANGES.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hmac
 import os
 import re
@@ -17,7 +18,18 @@ config.load_env()
 # extra origins (e.g. a LAN address) go in HACKFRONT_ORIGINS, comma-separated.
 ALLOWED_ORIGINS = set(filter(None, os.environ.get("HACKFRONT_ORIGINS", "").split(",")))
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
-app = FastAPI(title="hackfront", docs_url=None, redoc_url=None)
+from hackfront import mcp_http  # noqa: E402
+
+_mcp_gate, _mcp_inner = mcp_http.build_app()
+
+
+@contextlib.asynccontextmanager
+async def _lifespan(_app):
+    async with _mcp_inner.router.lifespan_context(_mcp_inner):  # MCP session manager
+        yield
+
+
+app = FastAPI(title="hackfront", docs_url=None, redoc_url=None, lifespan=_lifespan)
 
 
 def trusted_origin(origin: str, host: str | None) -> bool:
@@ -79,7 +91,8 @@ def health() -> dict:
     return {"ok": True}  # unauthenticated, for the host's health check; reveals nothing
 
 
-from . import accounts, admin, investigate, memory, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
+from . import accounts, admin, investigate, mcp_token, memory, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
 
-for module in (accounts, workspaces, sync, workbench, investigate, memory, admin):
+for module in (accounts, workspaces, sync, workbench, investigate, memory, admin, mcp_token):
     app.include_router(module.router)
+app.mount("/", _mcp_gate)  # last: only /mcp reaches it (bearer token); everything else under it is a 404

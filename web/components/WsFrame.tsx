@@ -5,13 +5,15 @@ import { useData } from "@/lib/data";
 import { Ready } from "./Gate";
 import { Icon, type IconName } from "./icons";
 import LeftPane from "./LeftPane";
+import { CollapsedStrip, DEFAULT_SIZES, LIMITS, LayoutProvider, Splitter, useLayout } from "./layout";
 import { Switcher, useLocation } from "./Shell";
 
 /** Slim workspace navigation: Ask (workbench), Sync, Ingestion, Settings. The repo tree only shows on Ask routes. */
 function Rail({ ws }: { ws: string }) {
   const { section } = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => { try { setCollapsed(localStorage.getItem("wb-rail") === "1"); } catch {} }, []);
+  // No saved choice: start collapsed on narrow windows (< 1180px), where every pixel beside the code matters.
+  useEffect(() => { try { const v = localStorage.getItem("wb-rail"); setCollapsed(v === null ? window.innerWidth < 1180 : v === "1"); } catch {} }, []);
   const toggle = () => setCollapsed((c) => { const n = !c; try { localStorage.setItem("wb-rail", n ? "1" : "0"); } catch {} return n; });
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
@@ -67,15 +69,30 @@ function Rail({ ws }: { ws: string }) {
   );
 }
 
+/** The file tree beside the code: resizable, collapsible to a strip, or hidden in code-only mode. */
+function Files({ ws }: { ws: string }) {
+  const L = useLayout();
+  if (L.focus) return null;
+  if (!L.treeVisible) return <CollapsedStrip side="left" label="Files" hint="\" onOpen={L.toggleTree} />;
+  return (
+    <>
+      <LeftPane ws={ws} />
+      <Splitter orientation="vertical" label="Files width" value={L.treeW} min={LIMITS.treeW[0]} max={LIMITS.treeW[1]} onChange={(v) => L.set({ treeW: v })} onReset={() => L.set({ treeW: DEFAULT_SIZES.treeW })} />
+    </>
+  );
+}
+
 export default function WsFrame({ children }: { children: ReactNode }) {
   const { ws, section } = useLocation();
   return (
     <Ready>
-      <div className="flex h-full">
-        <Rail ws={ws!} />
-        {!section && <LeftPane ws={ws!} />}
-        <div className={`min-w-0 flex-1 ${section ? "px-grid" : ""}`}>{children}</div>
-      </div>
+      <LayoutProvider>
+        <div className="flex h-full">
+          <Rail ws={ws!} />
+          {!section && <Files ws={ws!} />}
+          <div className={`min-w-0 flex-1 ${section ? "bg-panel" : ""}`}>{children}</div>
+        </div>
+      </LayoutProvider>
     </Ready>
   );
 }

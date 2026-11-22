@@ -283,7 +283,7 @@ export default function Shell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", on);
   }, []);
   const pathname = usePathname();
-  const gridPage = pathname.startsWith("/workspaces") || pathname.startsWith("/settings"); // thin-grid backdrop
+  const gridPage = pathname.startsWith("/workspaces") || pathname.startsWith("/settings"); // flat tinted page behind cards
   const bare = pathname === "/" || pathname === "/login" || pathname.startsWith("/prototype"); // these bring their own chrome
   if (bare) return <div className="h-screen min-w-[1000px]">{children}</div>;
   if (loading || signedOut) return <main className="grid h-screen place-items-center text-dim" aria-busy><h1 className="sr-only">Engineering Memory</h1>Loading…</main>; // signed-out visitors are sent to /login
@@ -292,7 +292,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       <div className="flex h-screen min-w-[1000px] flex-col">
         <Topbar onPalette={() => setPalette(true)} />
         <SyncBanner />
-        <main className={`min-h-0 flex-1 ${gridPage ? "px-grid" : ""}`}>{children}</main>
+        <main className={`min-h-0 flex-1 ${gridPage ? "bg-panel" : ""}`}>{children}</main>
       </div>
       <Palette open={palette} onClose={() => setPalette(false)} />
     </>

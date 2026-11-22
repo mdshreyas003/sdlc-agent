@@ -4,6 +4,7 @@ import { useData } from "@/lib/data";
 import { fmtDate } from "@/lib/types";
 import Empty from "./Empty";
 import { Icon } from "./icons";
+import { ViewControls, useLayout } from "./layout";
 import { useWb } from "./store";
 
 const PR_COLORS = ["#8b5cf6", "#14b8a6", "#f59e0b", "#f43f5e"];
@@ -60,6 +61,7 @@ function Composer({ line, text }: { line: number; text: string }) {
 export default function CodePane() {
   const { file, code, line, composer, lit, selected, selectLine, hoverNodes } = useWb();
   const { byId, explained, prOf } = useData();
+  const L = useLayout();
   const lines = useMemo(() => code.data?.lines ?? [], [code.data]);
   // PRs in order of first appearance, so each gets a stable stripe colour within the file
   const prs = useMemo(() => [...new Set(lines.map((l) => (l.blame ? prOf(l.blame) : undefined)).filter((x): x is string => !!x && !!byId[x]))], [lines, prOf, byId]);
@@ -79,10 +81,11 @@ export default function CodePane() {
         <span className="font-mono text-[12.5px] font-medium">{file.split("/").pop()}</span>
         <span className="truncate text-[11.5px] text-dim">{withReason} of {lines.length} lines have recorded reasons</span>
         {!code.data.complete && <span className="truncate text-[11.5px] text-warn" title={code.data.note}>Blame incomplete{code.data.note ? `: ${code.data.note}` : ""}</span>}
-        <span className="ml-auto hidden shrink-0 text-[11.5px] text-dim xl:inline">click or select code to ask about it</span>
+        <span className="ml-auto hidden shrink-0 text-[11.5px] text-dim 2xl:inline">click or select code to ask about it</span>
+        <span className="ml-auto 2xl:ml-3"><ViewControls /></span>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto py-2 font-mono text-[12px] leading-[21px]"
+      <div className="min-h-0 flex-1 overflow-auto py-2 font-mono" style={{ fontSize: L.codeSize, lineHeight: 1.7 }}
         onMouseUp={() => { // selecting code text also opens the box, on the line where the selection starts
           const sel = window.getSelection();
           if (!sel || sel.isCollapsed || !sel.anchorNode) return;
@@ -90,6 +93,7 @@ export default function CodePane() {
           const n = Number(el?.getAttribute("data-line"));
           if (n) selectLine(n);
         }}>
+        <div className={L.wrap ? "" : "w-max min-w-full"}>
         {lines.map((l, i) => {
           const n = l.blame ? byId[l.blame] : undefined;
           const isFirst = lines[i - 1]?.blame !== l.blame;
@@ -102,13 +106,13 @@ export default function CodePane() {
             <div data-line={i + 1} onClick={() => { if (!window.getSelection()?.toString()) selectLine(i + 1); }}
               onMouseEnter={() => hoverNodes(l.blame ? (pr ? [l.blame, pr] : [l.blame]) : [])} onMouseLeave={() => hoverNodes([])}
               title={n ? `${n.ref} · ${n.author} · ${fmtDate(n.time)}${pr && byId[pr] ? ` · PR ${byId[pr].ref}` : ""}${reason ? "" : " · no recorded reason"}` : "No recorded origin"}
-              className={`flex cursor-pointer items-stretch transition-colors ${focus ? "bg-accent/10" : isLit ? "bg-hover" : "hover:bg-panel"}`}>
+              className={`flex cursor-pointer items-stretch transition-colors ${L.wrap ? "flex-wrap" : ""} ${focus ? "bg-accent/10" : isLit ? "bg-hover" : "hover:bg-panel"}`}>
               <span className="w-[3px] shrink-0" style={{ background: stripe(l.blame), opacity: reason ? (isLit || focus ? 1 : 0.7) : 0.5 }} />
               <span className={`w-[58px] shrink-0 pl-2.5 text-[11px] ${isFirst ? "text-dim" : "text-transparent"}`}>{n?.ref.slice(0, 7)}</span>
               <span className={`w-8 shrink-0 select-none pr-2.5 text-right ${focus ? "text-accent" : "text-dim/60"}`}>{i + 1}</span>
-              <span className="whitespace-pre pr-6">{file.endsWith(".py") ? highlight(l.text) : l.text}</span>
+              <span className={L.wrap ? "min-w-0 flex-1 whitespace-pre-wrap pr-6 [overflow-wrap:anywhere]" : "whitespace-pre pr-6"}>{file.endsWith(".py") ? highlight(l.text) : l.text}</span>
               {focus && n && (
-                <span className="fade-up ml-2 whitespace-nowrap pr-4 font-sans text-[11px] italic text-dim">
+                <span className={`fade-up font-sans text-[11px] italic text-dim ${L.wrap ? "basis-full whitespace-normal pb-1 pl-[101px] pr-4" : "ml-2 whitespace-nowrap pr-4"}`}>
                   {n.author}, {fmtDate(n.time)} · {n.title}
                 </span>
               )}
@@ -117,6 +121,7 @@ export default function CodePane() {
             </Fragment>
           );
         })}
+        </div>
       </div>
 
       <div className="flex h-9 shrink-0 items-center gap-3 border-t border-line px-4 text-[11px] text-dim">

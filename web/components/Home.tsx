@@ -94,6 +94,7 @@ export default function Home() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30); // preview only; the server picks the final one
 
   const create = async () => {
     const n = name.trim();
@@ -111,14 +112,17 @@ export default function Home() {
         <h1 className="text-[24px] font-semibold tracking-tight">Workspaces</h1>
         <p className="mt-1 text-dim">Your workspaces are private to your account. Each has its own sources, credentials, sync history and optional model override.</p>
 
-        <div className="card mt-8 flex flex-wrap items-center gap-3 p-4">
-          <form onSubmit={(e) => { e.preventDefault(); create(); }} className="flex min-w-[260px] flex-1 items-center gap-2">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New workspace name" aria-label="New workspace name" maxLength={80} className={field} />
-            <button type="submit" disabled={busy || !name.trim()} className={btnGhost}>{busy ? <Spinner /> : <Icon name="plus" size={13} />}Create workspace</button>
+        <section aria-label="New workspace" className="card mt-8 p-5">
+          <h2 className="font-semibold">New workspace</h2>
+          <p className="mt-0.5 text-[12.5px] text-dim">One workspace per project or team. It holds its own sources, credentials and sync history.</p>
+          <form onSubmit={(e) => { e.preventDefault(); create(); }} className="mt-4 flex items-center gap-2">
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Payments platform" aria-label="New workspace name" maxLength={80} autoComplete="off"
+              className={`${field} h-10 font-sans text-[14px]`} />
+            <button type="submit" disabled={busy || !name.trim()} className={`${btnPrimary} h-10 shrink-0 px-5`}>{busy ? <Spinner /> : <Icon name="plus" size={13} />}Create workspace</button>
           </form>
-          <Link href="/w/kafka" className={btnPrimary}><Icon name="flask" size={13} />Try the Kafka demo</Link>
-          {error && <div className="w-full"><Notice tone="warn">{error}</Notice></div>}
-        </div>
+          <p className="mt-2 h-4 font-mono text-[11px] text-dim" aria-live="polite">{slug ? <>address <span className="text-mute">/w/{slug}</span> · you can rename it later</> : "You can rename it later in Settings."}</p>
+          {error && <div className="mt-2"><Notice tone="warn">{error}</Notice></div>}
+        </section>
 
         <div className="mt-6">
           {workspacesError && (
@@ -130,7 +134,7 @@ export default function Home() {
           {!workspacesError && !workspaces && <p className="flex items-center gap-2 text-dim"><Spinner />Loading…</p>}
           {workspaces && workspaces.length === 0 && (
             <div className="py-10"><Empty icon="repo" title="No workspaces yet">
-              <p className="max-w-[360px] text-dim">Create one above, or open the Kafka demo.</p>
+              <p className="max-w-[360px] text-dim">Create your first one above to connect a repository.</p>
             </Empty></div>
           )}
           {workspaces && workspaces.length > 0 && (
