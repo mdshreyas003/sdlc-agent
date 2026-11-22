@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { repoSlug, useData, useRepoFiles } from "@/lib/data";
 import { buildTree, fileHref, shortName, type TreeNode } from "@/lib/workspace";
 import { Icon } from "./icons";
+import { useLayout } from "./layout";
 import { useLocation } from "./Shell";
 
 const indent = (depth: number) => Math.min(depth, 5) * 12; // cap so deep trees never push names out of view
@@ -96,9 +97,14 @@ export default function LeftPane({ ws }: { ws: string }) {
   const { repo: slug, file } = useLocation();
   const { repos, connected, repoByslug, isIndexed } = useData();
   const repo = slug ? repoByslug(slug) : undefined;
+  const L = useLayout();
 
   return (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col overflow-hidden border-r border-line bg-panel" aria-label="Repositories">
+    <aside style={{ width: L.treeW }} className="flex h-full shrink-0 flex-col overflow-hidden bg-panel" aria-label="Repositories">
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-line px-3">
+        <span className="label">Files</span>
+        <button onClick={L.toggleTree} aria-label="Hide files (\)" title="Hide files (\)" className="ml-auto grid h-6 w-6 place-items-center rounded-md text-dim hover:bg-hover hover:text-fg"><Icon name="back" size={13} /></button>
+      </div>
       {repo ? (
         <>
           <RepoSwitcher ws={ws} current={repo} />
