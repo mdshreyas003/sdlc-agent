@@ -14,6 +14,7 @@
   --mute: #4b4b55;
   --dim: #666670;
   --accent: #4353e8;
+  --claude: #d97757; /* Claude orange: the Ask highlight */
   --ok: #067a56;
   --warn: #8f5a00;
   --unk: #666670;
@@ -33,6 +34,7 @@
   --mute: #a4a4ad;
   --dim: #8a8a94;
   --accent: #8b9bff;
+  --claude: #e8896a;
   --ok: #3ecf8e;
   --warn: #f0b429;
   --unk: #8a8a94;
@@ -52,6 +54,7 @@
   --color-mute: var(--mute);
   --color-dim: var(--dim);
   --color-accent: var(--accent);
+  --color-claude: var(--claude);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-unk: var(--unk);
