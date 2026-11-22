@@ -69,6 +69,45 @@ def _guard(fn, *args, **kw):
         raise HTTPException(422, str(error)) from None
 
 
+def _current(store, ws: str, entries: list[dict]) -> dict | None:
+    """The cited evidence as the graph holds it now; None when the graph is unreachable (drift is then simply unknown)."""
+    ids = sorted({e["id"] for x in entries if x["status"] not in memory.DONE for e in x["evidence"]})
+    if not ids:
+        return {}
+    try:
+        driver = config.neo4j_driver()
+        rows, _, _ = driver.execute_query(
+            "MATCH (a:Artifact) WHERE a.canonical_id IN $ids AND coalesce(a.is_stub, false) = false "
+            "RETURN a.canonical_id AS id, a.title AS title, left(coalesce(a.text, ''), 400) AS quote",
+            ids=ids, database_=config.neo4j_database(), routing_="r")
+    except Exception:  # noqa: BLE001  unreachable or unconfigured: no drift information, never an error page
+        return None
+    return {r["id"]: {"title": r["title"], "quote": r["quote"]} for r in rows}
+
+
+@router.get("/api/w/{ws}/memory/drift")
+def drift(ws: str) -> dict:
+    """{available, items: {entry id: [{id, title, was, now}]}}: cited sources that changed after an entry was written."""
+    entries = _store(ws).list_memory(ws)
+    current = _current(None, ws, entries)
+    if current is None:
+        return {"available": False, "items": {}}
+    return {"available": True, "items": {e["id"]: d for e in entries if (d := memory.drift(e, current))}}
+
+
+@router.post("/api/w/{ws}/memory/{mid}/acknowledge")
+def acknowledge(ws: str, mid: str, body: MoveBody) -> dict:
+    store = _store(ws)
+    _writable(ws)
+    old = _entry(store, ws, mid)
+    current = _current(store, ws, [old])
+    if current is None:
+        raise HTTPException(503, "Neo4j unreachable or not configured")
+    new = _guard(memory.acknowledge, old, body.version, _who(), current)
+    _save(store, ws, old, new)
+    return new
+
+
 @router.get("/api/w/{ws}/memory")
 def list_memory(ws: str, status: str | None = None) -> dict:
     items = _store(ws).list_memory(ws)

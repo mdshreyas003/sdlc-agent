@@ -74,3 +74,38 @@ def test_rejecting_or_retiring_rules():
         m.move(e, "reject", e["version"], "sr", "x")
     gone = m.move(e, "retire", e["version"], "sr", "superseded by ADR-7")
     assert gone["status"] == "retired" and m.served([gone]) == []
+
+
+def test_live_entry_with_a_staged_update_can_still_be_retired():
+    e = m.edit(m.propose([], "#1", ADR)["entry"], 1, "sr", body="Cap at 3.")
+    e = m.move(e, "approve", e["version"], "sr")
+    staged = m.edit(e, e["version"], "sr", body="Cap at 5.")
+    assert staged["status"] == "staged" and m.served([staged])
+    gone = m.move(staged, "retire", staged["version"], "sr", "superseded")
+    assert gone["status"] == "retired" and m.served([gone]) == []
+
+
+def test_a_source_that_says_it_replaces_a_decision_creates_a_linked_entry_not_a_refinement():
+    old = m.edit(m.propose([], "#1", ADR)["entry"], 1, "sr", body="Retry 10 times.")
+    old = m.move(old, "approve", old["version"], "sr")
+    new_ev = [dict(ADR[0], relation="direct", quote="We decided to cap retries at 3 instead of 10. Replaces the older policy because it double-charged.")]
+    out = m.propose([old], "#2", new_ev)
+    assert out["action"] == "created" and out["entry"]["supersedes"] == old["id"]
+
+
+def test_resolved_anchor_matches_on_evidence_not_on_words():
+    a = m.move(m.edit(m.propose([], "#1", ADR)["entry"], 1, "sr", body="Payments retries cap."), "approve", 2, "sr")
+    b_ev = [ev("other", "Never log card numbers. Always mask them.")]
+    b = m.move(m.edit(m.propose([], "#2", b_ev)["entry"], 1, "sr", body="Payments card numbers masked."), "approve", 2, "sr")
+    hits = m.served([a, b], "src/payments/charge.py", evidence_ids=["pr1"])
+    assert [h["id"] for h in hits] == [a["id"]] and hits[0]["matched_evidence"] == ["pr1"]
+    assert {h["id"] for h in m.served([a, b], "payments")} == {a["id"], b["id"]}  # free text still matches on words
+
+
+def test_a_source_naming_the_entry_anchor_refines_it_even_without_shared_evidence():
+    old = m.edit(m.propose([], "#218", ADR)["entry"], 1, "sr", body="Cap at 3.")
+    old = m.move(old, "approve", old["version"], "sr")
+    new = [dict(ev("pr310", "We decided to queue failed orders instead of adding attempts. Keeps the limit of 3 from #218 because it protects customers."),
+                relation="anchor")]
+    out = m.propose([old], "#310", new)
+    assert out["action"] == "refined" and out["entry"]["id"] == old["id"] and out["entry"]["status"] == "staged"

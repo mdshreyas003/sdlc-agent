@@ -123,6 +123,9 @@ class FileState:
                     raise Stale(f"entry is now v{have}")
             _atomic(d / f"{mid}.json", json.dumps(doc))
 
+    def clear_memory(self, ws) -> None:
+        shutil.rmtree(self._dir(ws) / "memory", ignore_errors=True)
+
     def list_memory(self, ws) -> list[dict]:
         d, out = self._dir(ws) / "memory", []
         for p in sorted(d.glob("*.json")) if d.exists() else []:
@@ -372,6 +375,9 @@ class Neo4jState:
                     "SET m.doc = $doc, m.version = $v RETURN count(m) AS n", write=True, key=key, expect=expect, **args)
         if not rows or rows[0]["n"] == 0:
             raise Stale("entry changed since it was read")
+
+    def clear_memory(self, ws) -> None:
+        _run("MATCH (m:HfMemory {ws: $ws}) DELETE m", write=True, ws=ws)
 
     def list_memory(self, ws) -> list[dict]:
         out = []

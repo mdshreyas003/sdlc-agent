@@ -234,6 +234,8 @@ export interface MemoryEntry {
   triage: string; version: number; reason?: string | null; created_at: string; updated_at: string;
   served: { version: number; title: string; body: string; approved_by: string; approved_at: string } | null;
   revisions: { version: number; at: string; by: string; note: string }[];
+  supersedes?: string | null;
 }
+export interface MemoryDrift { available: boolean; items: Record<string, { id: string; title: string | null; was: string; now: string }[]> }
 export interface MemoryList { counts: Record<MemoryStatus, number>; items: MemoryEntry[] }
 export interface TriageResult { action: "created" | "refined" | "unchanged" | "suppressed" | "nothing"; entry: MemoryEntry | null; note: string }

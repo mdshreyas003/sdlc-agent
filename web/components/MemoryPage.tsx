@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, wsApi } from "@/lib/api";
 import { useData } from "@/lib/data";
-import type { MemoryEntry, MemoryKind, MemoryList, MemoryStatus, TriageResult } from "@/lib/types";
+import type { MemoryDrift, MemoryEntry, MemoryKind, MemoryList, MemoryStatus, TriageResult } from "@/lib/types";
 import { Icon } from "./icons";
 import { Chip, Notice, Spinner, btnAccent, btnGhost, btnPrimary, errText, field } from "./ui";
 
@@ -46,6 +46,7 @@ const ACTION_TEXT: Record<TriageResult["action"], (r: TriageResult) => string> =
 export default function MemoryPage() {
   const { ws } = useData();
   const [data, setData] = useState<MemoryList | null>(null);
+  const [drift, setDrift] = useState<MemoryDrift["items"]>({});
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("review");
   const [sel, setSel] = useState<string | null>(null);
   const [anchor, setAnchor] = useState("");
@@ -61,6 +62,7 @@ export default function MemoryPage() {
 
   const load = useCallback(async () => {
     if (!ws) return;
+    wsApi.memoryDrift(ws).then((d) => setDrift(d.items)).catch(() => setDrift({}));
     try { setData(await wsApi.memory(ws)); } catch (e) { setMsg({ tone: "warn", text: errText(e) }); setData({ counts: {} as MemoryList["counts"], items: [] }); }
   }, [ws]);
   useEffect(() => { load(); }, [load]);
@@ -148,14 +150,15 @@ export default function MemoryPage() {
                 <button onClick={() => { if (e.id !== current?.id && leave()) setSel(e.id); }} aria-current={e.id === current?.id}
                   className={`w-full rounded-lg border p-3 text-left ${e.id === current?.id ? "border-line2 bg-raised" : "border-transparent hover:bg-hover"}`}>
                   <span className="flex items-center gap-1.5 text-[11px]"><span className="font-medium text-accent">{KIND[e.kind].label}</span><Chip tone={TONE[e.status]}>{e.status}</Chip>
-                    {e.served && e.status === "staged" && <span className="text-dim">v{e.served.version} live</span>}</span>
+                    {e.served && e.status === "staged" && <span className="text-dim">v{e.served.version} live</span>}
+                    {drift[e.id] && <span className="text-warn">source changed</span>}</span>
                   <span className="mt-1 line-clamp-2 block text-[13px]">{e.title}</span>
                   <span className="mt-0.5 block font-mono text-[10.5px] text-dim">{e.evidence.length} evidence · v{e.version}</span>
                 </button>
               </li>
             ))}
           </ul>
-          {current && <Detail key={`${current.id}:${current.version}`} entry={current} ws={ws!} onDirty={(d) => { dirty.current = d; }} onChange={async (m) => { if (m) setMsg(m); await load(); }} />}
+          {current && <Detail key={`${current.id}:${current.version}`} entry={current} drift={drift[current.id] ?? []} replacedBy={data?.items.find((x) => x.supersedes === current.id && x.status !== "retired")?.title} ws={ws!} onDirty={(d) => { dirty.current = d; }} onChange={async (m) => { if (m) setMsg(m); await load(); }} />}
         </div>
       )}
     </div>
@@ -172,7 +175,7 @@ function EmptyState({ tab }: { tab: string }) {
   return <p className="max-w-[64ch] rounded-lg border border-dashed border-line p-6 text-[13px] text-mute">{text}</p>;
 }
 
-function Detail({ entry: e, ws, onChange, onDirty }: { entry: MemoryEntry; ws: string; onDirty: (d: boolean) => void; onChange: (m?: { tone: "ok" | "warn" | "dim"; text: string }) => Promise<void> }) {
+function Detail({ entry: e, ws, drift, replacedBy, onChange, onDirty }: { entry: MemoryEntry; ws: string; replacedBy?: string; drift: MemoryDrift["items"][string]; onDirty: (d: boolean) => void; onChange: (m?: { tone: "ok" | "warn" | "dim"; text: string }) => Promise<void> }) {
   const [title, setTitle] = useState(e.title);
   const [body, setBody] = useState(e.body);
   const [kind, setKind] = useState<MemoryKind>(e.kind);
@@ -204,6 +207,27 @@ function Detail({ entry: e, ws, onChange, onDirty }: { entry: MemoryEntry; ws: s
       {e.served && e.status === "staged" && (
         <Notice tone="warn">Agents currently see v{e.served.version}, approved by {e.served.approved_by}. This version is not live until you approve it.</Notice>
       )}
+      {(e.status === "rejected" || e.status === "retired") && e.reason && (
+        <p className="rounded-md bg-raised p-2.5 text-[12.5px]"><span className="font-medium">{e.status === "retired" ? "Retired because: " : "Rejected because: "}</span>{e.reason}</p>
+      )}
+      {replacedBy && <p className="text-[12.5px] text-mute">Replaced by: <span className="font-medium text-fg">{replacedBy}</span></p>}
+      {drift.length > 0 && (
+        <div role="alert" className="rounded-md border border-warn/50 bg-warn/5 p-3 text-[12.5px]">
+          <p className="font-medium text-warn">{drift.length === 1 ? "A source this entry cites has changed" : `${drift.length} sources this entry cites have changed`} since it was written.</p>
+          <p className="mt-0.5 text-mute">Read what changed. If the entry is still right, mark it checked. If not, edit the text first.</p>
+          <ul className="mt-2 flex flex-col gap-2">
+            {drift.map((d) => (
+              <li key={d.id} className="rounded border border-line bg-bg p-2">
+                <p className="font-mono text-[10.5px] text-dim">{d.title || d.id}</p>
+                <p className="mt-1 text-dim line-through decoration-dim/50">{d.was.slice(0, 160)}{d.was.length > 160 ? "…" : ""}</p>
+                <p className="mt-1 text-fg">{d.now.slice(0, 260)}{d.now.length > 260 ? "…" : ""}</p>
+              </li>
+            ))}
+          </ul>
+          <button className={`${btnGhost} mt-2`} disabled={busy || dirty} onClick={() => run(() => wsApi.memoryAck(ws, e.id, e.version), "Marked as checked against the changed sources.")}>I checked it: mark as reviewed</button>
+        </div>
+      )}
+      {e.supersedes && <p className="text-[12px] text-mute">This decision replaces an earlier one. The earlier entry is retired once this is approved.</p>}
       <p className="rounded-md bg-raised p-2.5 text-[12px] text-mute"><span className="font-medium text-fg">Why this kind: </span>{e.triage}</p>
       <p className="text-[12.5px] font-medium text-accent">{NEXT[e.status]}</p>
 

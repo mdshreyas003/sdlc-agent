@@ -1,5 +1,5 @@
 import { loadFont } from "@remotion/fonts";
-import { staticFile } from "remotion";
+import { continueRender, delayRender, staticFile } from "remotion";
 
 // 1:1 with render.py (Pillow) so Remotion segments drop into the same pipeline.
 export const W = 1920;
@@ -23,10 +23,19 @@ export const C = {
 export const SANS = "Inter";
 export const MONO = "JetBrains Mono";
 
-loadFont({ family: SANS, url: staticFile("fonts/Inter.ttf"), weight: "100 900" });
-loadFont({ family: MONO, url: staticFile("fonts/JetBrainsMono.ttf"), weight: "100 800" });
 
 // script.md rule: on-screen text never says "mail", "email" or "Slack" — always "discussion chats".
 // render.py still said "Mailing lists" / "Mail"; flip these two constants to restore the old wording.
 export const SOURCE_CHATS_LABEL = "Discussion chats";
 export const SOURCE_CHATS_NODE = "Chat";
+
+// public/fonts is not in git. If the files are missing, skip them and use system fonts instead of failing the render.
+const loadIfPresent = (family: string, file: string, weight: string) => {
+  const handle = delayRender(`font ${family}`);
+  fetch(staticFile(file))
+    .then((r) => (r.ok ? loadFont({ family, url: staticFile(file), weight }) : undefined))
+    .catch(() => undefined)
+    .finally(() => continueRender(handle));
+};
+loadIfPresent(SANS, "fonts/Inter.ttf", "100 900");
+loadIfPresent(MONO, "fonts/JetBrainsMono.ttf", "100 800");

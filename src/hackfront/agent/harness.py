@@ -64,9 +64,15 @@ _PATH_IN = "($scopes IS NULL OR all(n IN nodes(p) WHERE coalesce(n.is_stub, fals
 _VIA = "{rel: type(r), origin: coalesce(r.origin, 'structural'), from: startNode(r).canonical_id}"
 
 CYPHER = {
+    # A lone "#N" names the pull request numbered N, and a lone ticket key (PAY-412) names that issue. PR bodies and tickets rarely
+    # mention their own number, and newer mentions would crowd them out of the limit, so the named record ranks first.
     "find_text": f"""MATCH (a:Artifact)
-WHERE {_REAL} AND {_IN} AND all(w IN $words WHERE toLower(coalesce(a.title, '') + ' ' + coalesce(a.text, '')) CONTAINS w)
-RETURN {_RET} ORDER BY a.event_time DESC LIMIT $limit""",
+WITH a, (size($words) = 1 AND ((a.record_kind = 'pull_request' AND head($words) STARTS WITH '#'
+                                 AND a.canonical_id ENDS WITH (':pull_request:' + substring(head($words), 1)))
+                              OR (a.record_kind = 'issue' AND toLower(a.canonical_id) ENDS WITH (':issue:' + head($words))))) AS named
+WHERE {_REAL} AND {_IN} AND (named OR all(w IN $words WHERE toLower(coalesce(a.title, '') + ' ' + coalesce(a.text, '')) CONTAINS w))
+RETURN {_RET}
+ORDER BY CASE WHEN named THEN 0 ELSE 1 END, a.event_time DESC LIMIT $limit""",
     # newest $limit matches, returned chronologically
     "file_history": f"""MATCH (a:Artifact)
 WHERE {_REAL} AND {_IN} AND any(p IN coalesce(a.change_paths, []) WHERE p CONTAINS $path)
