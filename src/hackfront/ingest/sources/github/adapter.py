@@ -4,10 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from typing import Mapping
+from urllib.parse import quote, urlencode
 
-from ...contracts import Artifact, RelationshipKind, SourceIdentity, SourceReference
-from .client import GitHubClient, Page
-from .mapper import map_commit, map_pull_request, map_pull_request_activity
+from ...contracts import Artifact, Change, RelationshipKind, SourceIdentity, SourceReference
+from .client import GitHubAPIError, GitHubClient, Page
+from .mapper import map_commit, map_document, map_pull_request, map_pull_request_activity
+
+MAX_DOCUMENTS = 100
+MAX_DOCUMENT_BYTES = 256_000
+DOCUMENT_SUFFIXES = (".md", ".mdx", ".rst", ".adoc")
 
 
 def _html_url(commit: Mapping[str, object]) -> str | None:
@@ -88,7 +93,7 @@ class GitHubAdapter:
         )
 
     def _with_commits(self, pull: Artifact, owner: str, repository: str) -> Artifact:
-        """PR CONTAINS each commit listed by the PR commits endpoint (the source's own statement)."""
+        """Attach PR commits and changed paths from GitHub's source-native endpoints."""
         number = pull.source.source_id
         # ponytail: first page only (100 commits per PR); follow cursors if PRs that large matter.
         page = self.client.get_page(
@@ -102,7 +107,86 @@ class GitHubAdapter:
             )
             for i, c in enumerate(page.items) if isinstance(c.get("sha"), str) and c["sha"]
         )
-        return replace(pull, references=pull.references + contained)
+        file_cursor, paths, pages = None, [], 0
+        while pages < 3:  # GitHub exposes at most 300 changed files per pull request.
+            try:
+                files = self.client.get_page(
+                    self.client.repository_path(owner, repository, f"pulls/{number}/files"),
+                    cursor=file_cursor,
+                    per_page=100,
+                )
+            except GitHubAPIError as error:
+                # A missing/deleted PR file listing should not discard its already-fetched PR and commit links.
+                if error.status == 404:
+                    break
+                raise
+            for item in files.items:
+                filename = item.get("filename")
+                previous = item.get("previous_filename")
+                if isinstance(filename, str) and filename:
+                    paths.append(filename)
+                if isinstance(previous, str) and previous:
+                    paths.append(previous)
+            pages += 1
+            file_cursor = files.next_cursor
+            if not file_cursor:
+                break
+        change = Change(
+            paths=tuple(dict.fromkeys(paths)),
+            additions=pull.change.additions if pull.change else None,
+            deletions=pull.change.deletions if pull.change else None,
+        )
+        return replace(pull, references=pull.references + contained, change=change)
+
+    def documents_page(self, owner: str, repository: str) -> ArtifactPage:
+        """Fetch bounded Markdown/design docs from the repository's default branch."""
+        self._repo(owner, repository)
+        repo_url = f"{self.client.api_url}/repos/{owner}/{repository}"
+        repo = self.client.get_resource(repo_url)
+        branch = repo.get("default_branch")
+        if not isinstance(branch, str) or not branch:
+            raise ValueError("GitHub repository is missing its default branch")
+        tree_url = (f"{self.client.api_url}/repos/{owner}/{repository}/git/trees/"
+                    f"{quote(branch, safe='')}?recursive=1")
+        tree_payload = self.client.get_resource(tree_url)
+        if tree_payload.get("truncated") is True:
+            raise ValueError("GitHub repository tree was truncated; document ingestion is incomplete")
+        tree = tree_payload.get("tree")
+        if not isinstance(tree, list):
+            raise ValueError("GitHub repository tree is missing its entries")
+
+        candidates = []
+        for entry in tree:
+            if not isinstance(entry, dict) or entry.get("type") != "blob":
+                continue
+            path, size = entry.get("path"), entry.get("size")
+            if not isinstance(path, str) or not path.lower().endswith(DOCUMENT_SUFFIXES):
+                continue
+            lower = path.lower()
+            is_doc_area = lower.startswith(("docs/", "doc/", "adr/", "adrs/")) or lower in {
+                "readme.md", "readme.mdx"
+            }
+            is_adr = path.rsplit("/", 1)[-1].lower().startswith("adr-")
+            if not (is_doc_area or is_adr) or (isinstance(size, int) and size > MAX_DOCUMENT_BYTES):
+                continue
+            candidates.append(path)
+
+        candidates = sorted(
+            set(candidates), key=lambda p: (not p.lower().startswith(("docs/adr/", "adr/", "adrs/")), p)
+        )
+        artifacts = []
+        for path in candidates[:MAX_DOCUMENTS]:
+            encoded_path = "/".join(quote(part, safe="") for part in path.split("/"))
+            url = (f"{self.client.api_url}/repos/{owner}/{repository}/contents/{encoded_path}?"
+                   f"{urlencode({'ref': branch})}")
+            payload = self.client.get_resource(url)
+            if isinstance(payload.get("size"), int) and payload["size"] > MAX_DOCUMENT_BYTES:
+                continue
+            try:
+                artifacts.append(map_document(payload, owner, repository, path))
+            except ValueError:
+                continue  # One malformed/non-text Markdown file must not hide the repository's other docs.
+        return ArtifactPage(tuple(artifacts), None)
 
     def pull_request_activity_page(
         self,

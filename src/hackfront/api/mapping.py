@@ -52,7 +52,14 @@ def to_node(row: dict, names: dict | None = None) -> dict:
         author = names.get("users", {}).get(author, author)
     if provider == "github":
         scope = row.get("scope") or row["workspace"]
-        ref = sid[:7] if rtype == "commit" else f"#{sid}" if rtype == "pull_request" else f"@{author}"
+        if rtype == "commit":
+            ref = sid[:7]
+        elif rtype == "pull_request":
+            ref = f"#{sid}"
+        elif rtype == "document":
+            ref = sid
+        else:
+            ref = f"@{author}"
     elif provider == "jira":
         scope = row.get("scope") or row["workspace"]
         ref = sid if rtype == "issue" else "comment"

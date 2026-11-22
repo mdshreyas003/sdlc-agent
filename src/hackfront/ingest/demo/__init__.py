@@ -44,14 +44,22 @@ class GitHubDemoTransport(_Transport):
         if re.fullmatch(rf"/(?:orgs|users)/{self.d.OWNER}/repos|/user/repos", parts.path):
             return _json(gh_client.HTTPResponse, [{"full_name": f"{self.d.OWNER}/{self.d.REPO}", "private": False, "name": self.d.REPO,
                                                    "pushed_at": "2025-01-01T00:00:00Z"}])
+        if parts.path == f"/repos/{self.d.OWNER}/{self.d.REPO}":
+            return _json(gh_client.HTTPResponse, {"default_branch": "main"})
+        if parts.path == f"/repos/{self.d.OWNER}/{self.d.REPO}/git/trees/main":
+            return _json(gh_client.HTTPResponse, {"tree": [], "truncated": False})
         path = parts.path.removeprefix(f"/repos/{self.d.OWNER}/{self.d.REPO}")
-        m = re.fullmatch(r"/(?:pulls|issues)/(\d+)/(commits|reviews|comments)", path)
+        m = re.fullmatch(r"/(?:pulls|issues)/(\d+)/(commits|reviews|comments|files)", path)
         if path == "/commits":
             items = self.d.COMMITS
         elif path == "/pulls":
             items = self.d.PULLS
         elif m and path.startswith("/pulls") and m.group(2) == "commits":
             items = self.d.PR_COMMITS.get(int(m.group(1)), [])
+        elif m and path.startswith("/pulls") and m.group(2) == "files":
+            items = [{"filename": f["filename"], "status": "modified"}
+                     for commit in self.d.PR_COMMITS.get(int(m.group(1)), [])
+                     for f in commit.get("files", []) if isinstance(f, dict) and f.get("filename")]
         elif m and path.startswith("/pulls") and m.group(2) == "reviews":
             items = self.d.PR_REVIEWS.get(int(m.group(1)), [])
         elif m and path.startswith("/pulls"):

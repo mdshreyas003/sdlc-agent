@@ -29,13 +29,13 @@ class HarnessError(ValueError):
     """A tool call the harness refused (bad tool, bad argument, unseen id)."""
 
 
-GRAPH_MODEL = """The evidence graph holds artifacts of five kinds: git_commit, pull_request, issue (Jira),
-discussion_thread and discussion_message (Slack). Edges are evidence, never guesses: an edge exists only if a source
-stated it. origin=structural means the source system itself links them (PR CONTAINS commit, message REPLIES_TO thread,
-a review/comment REFERENCES its PR). origin=text means an explicit identifier was found in the text (a ticket key such
-as PAY-412, a PR URL, a Slack permalink). Nothing is inferred from keywords or timing. REFERENCES points from the
-artifact that mentions to the one mentioned; traversal ignores direction. Pointing at a record that was never
-ingested yields a stub, which is not evidence and never returned."""
+GRAPH_MODEL = """The evidence graph holds artifacts of six kinds: git_commit, pull_request, issue (Jira),
+discussion_thread and discussion_message (Slack), and document (repository Markdown/design docs). Edges are evidence,
+never guesses: an edge exists only if a source stated it. origin=structural means the source system itself links them
+(PR CONTAINS commit, message REPLIES_TO thread, a review/comment REFERENCES its PR). origin=text means an explicit
+identifier was found in the text (a ticket key such as PAY-412, a PR URL, a Slack permalink). Nothing is inferred from
+keywords or timing. REFERENCES points from the artifact that mentions to the one mentioned; traversal ignores direction.
+Pointing at a record that was never ingested yields a stub, which is not evidence and never returned."""
 
 DESCRIPTIONS = {
     "find_text": "find_text(query): artifacts whose title+text contain ALL the words of the query (case-insensitive). "
