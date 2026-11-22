@@ -24,6 +24,8 @@ TEMPLATE = {
     "rule": ("Rule", "Applies to", "Why"),
     "episode": ("What happened", "Cause", "Fix"),
 }
+ANCHOR_WEIGHT, DIRECT_WEIGHT = 6, 2
+REPLACES = re.compile(r"\b(replaces|supersedes|superseded by)\b", re.I)
 OPEN, DONE = ("draft", "staged", "approved"), ("rejected", "retired")
 
 
@@ -41,13 +43,16 @@ def _sentences(text: str) -> list[str]:
 
 def triage(evidence: list[dict]) -> dict:
     """{kind, scores, reason, picked} or {kind: None, reason} when nothing is worth remembering. No model."""
-    scores, hits = {}, {k: [] for k in KINDS}
+    scores, hits = {k: 0 for k in KINDS}, {k: [] for k in KINDS}
     for e in evidence:
+        weight = {"anchor": ANCHOR_WEIGHT, "direct": DIRECT_WEIGHT}.get(e.get("relation"), 1)  # the record itself > what mentions it > linked
         for s in _sentences(e.get("quote", "")):
             for kind, rx in SIGNALS.items():
                 if re.search(rx, s, re.I):
                     hits[kind].append((e["id"], s))
-    scores = {k: len(v) for k, v in hits.items()}
+                    scores[kind] += weight
+    for kind in KINDS:  # picked sentences: the anchor's own first
+        hits[kind].sort(key=lambda h: next((e.get("relation") not in ("anchor", "direct") for e in evidence if e["id"] == h[0]), True))
     best = max(KINDS, key=lambda k: (scores[k], -KINDS.index(k)))  # ties go to the earlier kind: adr > rule > episode
     if not scores[best]:
         return {"kind": None, "scores": scores, "picked": [], "reason": "No decision, rule or incident language in the evidence. Nothing proposed."}
@@ -75,13 +80,23 @@ def propose(ws_entries: list[dict], anchor: str, evidence: list[dict], who: str 
     if verdict["kind"] is None:
         return {"action": "nothing", "entry": None, "note": verdict["reason"]}
     ids = {e["id"] for e in evidence}
+    direct = {e["id"] for e in evidence if e.get("relation") in ("anchor", "direct")} or ids  # shared ancestors alone do not merge entries
+    # a source that says it "replaces"/"supersedes" an earlier decision starts a new entry that points back, not a refinement
+    replaces = any(REPLACES.search(e.get("quote", "")) for e in evidence if e.get("relation") in ("anchor", "direct"))
+    supersedes = None
+    own_text = " ".join(e.get("quote", "") for e in evidence if e.get("relation") in ("anchor", "direct"))
     for old in ws_entries:
-        overlap = ids & {e["id"] for e in old["evidence"]}
+        overlap = direct & {e["id"] for e in old["evidence"]}
+        if not overlap and old.get("anchor") and re.search(rf"(?<![\w-]){re.escape(old['anchor'])}(?![\w-])", own_text):
+            overlap = {old["anchor"]}  # the new source names the entry's own anchor ("Keeps the limit from #218"): same topic
         if old["kind"] != verdict["kind"] or not overlap:
             continue
         if old["status"] == "rejected":
             return {"action": "suppressed", "entry": old, "note": f"Rejected earlier ({old.get('reason') or 'no reason given'}). Reopen it to reconsider."}
         if old["status"] == "retired":
+            continue
+        if replaces and old["status"] in ("approved", "staged"):
+            supersedes = supersedes or old["id"]
             continue
         fresh = [e for e in evidence if e["id"] not in {x["id"] for x in old["evidence"]}]
         if not fresh:
@@ -92,7 +107,7 @@ def propose(ws_entries: list[dict], anchor: str, evidence: list[dict], who: str 
         return {"action": "refined", "entry": entry, "note": f"Added {len(fresh)} item(s); moved to staged for review."}
     entry = {"id": uuid.uuid4().hex[:10], "kind": verdict["kind"], "status": "draft", "title": _title(anchor, verdict["kind"], verdict["picked"]),
              "body": draft_body(verdict["kind"], verdict["picked"]), "evidence": [_ev(e) for e in evidence], "anchor": anchor,
-             "triage": verdict["reason"], "version": 1, "served": None, "created_at": now(), "updated_at": now(),
+             "triage": verdict["reason"], "supersedes": supersedes, "version": 1, "served": None, "created_at": now(), "updated_at": now(),
              "revisions": [{"version": 1, "at": now(), "by": who, "note": f"Proposed from {anchor}"}]}
     return {"action": "created", "entry": entry, "note": verdict["reason"]}
 
@@ -146,7 +161,7 @@ def move(entry: dict, action: str, version: int, who: str, reason: str = "") -> 
             raise Conflict("Say why. The reason stops the same proposal coming back.")
         return _revise(entry, who=who, note=f"Rejected: {reason}", status="rejected", reason=reason.strip())
     if action == "retire":
-        if s != "approved":
+        if s != "approved" and not (s == "staged" and entry.get("served")):  # a live entry with an update waiting can still be retired
             raise Conflict("Only approved memory can be retired.")
         return _revise(entry, who=who, note=f"Retired: {reason or 'no reason'}", status="retired", served=None, reason=reason.strip())
     if action == "reopen":
@@ -156,7 +171,7 @@ def move(entry: dict, action: str, version: int, who: str, reason: str = "") -> 
     raise ValueError("action must be approve, reject, retire or reopen")
 
 
-def served(entries: list[dict], anchor: str = "") -> list[dict]:
+def served(entries: list[dict], anchor: str = "", evidence_ids=()) -> list[dict]:
     """What agents may read: approved snapshots only, optionally filtered by anchor words or an evidence id."""
     words = [w for w in re.split(r"\W+", anchor.lower()) if len(w) > 2]
     out = []
@@ -165,6 +180,34 @@ def served(entries: list[dict], anchor: str = "") -> list[dict]:
         if not s or e["status"] not in ("approved", "staged"):
             continue
         hay = f"{s['title']} {s['body']} {' '.join(s['evidence'])}".lower()
-        if not words or any(w in hay for w in words) or anchor in s["evidence"]:
-            out.append({"id": e["id"], **s})
+        shared = sorted(set(evidence_ids) & set(s["evidence"]))
+        # an anchor already resolved through the graph (file, ticket, PR) matches on cited evidence only; free text matches on words
+        hit = bool(shared) if evidence_ids else (not words or any(w in hay for w in words) or anchor in s["evidence"])
+        if hit:
+            out.append({"id": e["id"], **s, "matched_evidence": shared})
     return out
+
+
+def drift(entry: dict, current: dict[str, dict]) -> list[dict]:
+    """Evidence an open or live entry cites whose source text changed since the entry was written.
+
+    `current` maps evidence id -> {title, quote} as the graph holds it now. Missing ids are ignored (not ingested yet)."""
+    if entry["status"] in DONE:
+        return []
+    out = []
+    for e in entry["evidence"]:
+        now = current.get(e["id"])
+        if now and ((now.get("quote") or "") != (e.get("quote") or "") or (now.get("title") or "") != (e.get("title") or "")):
+            out.append({"id": e["id"], "title": now.get("title") or e.get("title"), "was": e.get("quote") or "", "now": now.get("quote") or ""})
+    return out
+
+
+def acknowledge(entry: dict, version: int, who: str, current: dict[str, dict]) -> dict:
+    """The reviewer checked the changed sources: take their current text as the new baseline (history keeps a note)."""
+    if entry["version"] != version:
+        raise Conflict(f"Changed by someone else (now v{entry['version']}). Reload first.")
+    changed = {d["id"] for d in drift(entry, current)}
+    if not changed:
+        raise Conflict("Nothing changed in the cited sources.")
+    fresh = [{**e, **({k: current[e["id"]].get(k) for k in ("title", "quote")} if e["id"] in changed else {})} for e in entry["evidence"]]
+    return _revise(entry, who=who, note=f"Re-checked after {len(changed)} cited source(s) changed", evidence=fresh)

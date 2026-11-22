@@ -48,8 +48,14 @@ def _why(harness: Harness, anchor: str) -> dict:
         tool = "file_history" if _PATHLIKE.search(anchor) else "find_text"
         hits = harness.call(tool, anchor)
         evidence = [_item(r, "direct") for r in hits]
+        own = [r for r in hits if (re.fullmatch(r"#\d+", anchor) and r["id"].endswith(f":pull_request:{anchor[1:]}"))
+               or (re.fullmatch(r"[A-Z][A-Z0-9]+-\d+", anchor) and r["id"].endswith(f":issue:{anchor}"))]  # the record the anchor names
+        for e in evidence:
+            if any(e["id"] == r["id"] for r in own):
+                e["relation"] = "anchor"
+        evidence.sort(key=lambda e: e["relation"] != "anchor")
         seen = {e["id"] for e in evidence}
-        for seed in reversed(hits[-SEEDS:]):  # newest first
+        for seed in own + list(reversed(hits[-SEEDS:])):  # the PR the anchor names first, then newest first
             for row in harness.call("evidence_chain", seed["id"]):
                 if row["id"] not in seen and len(evidence) < MAX_EVIDENCE:
                     seen.add(row["id"])
@@ -63,11 +69,11 @@ def _why(harness: Harness, anchor: str) -> dict:
     return {"anchor": anchor, "refused": False, "evidence": evidence, "note": None}
 
 
-def recall(entries: list[dict], anchor: str) -> dict:
+def recall(entries: list[dict], anchor: str, evidence_ids=()) -> dict:
     """Approved memory only (ADRs, rules, episodes a human signed off). Drafts, staged revisions and rejects never leave."""
     from .memory import served
 
-    items = served(entries, anchor)
+    items = served(entries, anchor, evidence_ids)
     return {"anchor": anchor, "items": items, "note": None if items else "No approved memory matches. Use `why` for raw history."}
 
 
@@ -102,7 +108,12 @@ def build_server(harness: Harness | None = None, harness_for=None, workspace_for
         ws = workspace_for() if workspace_for else workspace
         if not ws:
             return {"anchor": anchor, "items": [], "note": "No workspace is bound to this server."}
-        return recall(state.backend().list_memory(ws), anchor)
+        ids = ()
+        if _PATHLIKE.search(anchor) or re.fullmatch(r"#\d+|[A-Z][A-Z0-9]+-\d+", anchor.strip()):
+            h = harness_for() if harness_for else harness  # resolve the file/ticket/PR through the evidence graph, then match
+            if h is not None:
+                ids = [e["id"] for e in why(h, anchor.strip(), ws if workspace_for else None).get("evidence", [])]
+        return recall(state.backend().list_memory(ws), anchor, ids)
 
     return server
 

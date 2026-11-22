@@ -65,8 +65,9 @@ def _client(slug: str, ws: dict, which: str):
     if ws["demo"]:
         # lazy: demo data is only needed for demo workspaces
         from ..ingest.demo import demo_clients
+        from ..ingest.demo import story
 
-        return dict(zip(("github", "jira", "slack"), demo_clients()))[which]
+        return dict(zip(("github", "jira", "slack"), demo_clients(story if slug == "brightcart" else __import__("hackfront.ingest.demo.data", fromlist=["x"]))))[which]
     secret = lambda key: config.get_secret(slug, key)
     if which == "github":
         if not secret("github_token"):
@@ -122,8 +123,9 @@ def create_workspace(body: NewWorkspace):
         slug = config.create_workspace(body.name, owner=owner)
         if body.demo:
             from ..ingest.demo import DEMO_WORKSPACE
+            from ..ingest.demo.story import WORKSPACE as STORY_WORKSPACE
 
-            config.save_workspace(slug, {**config.EMPTY_WORKSPACE, **DEMO_WORKSPACE,
+            config.save_workspace(slug, {**config.EMPTY_WORKSPACE, **(STORY_WORKSPACE if slug == "brightcart" else DEMO_WORKSPACE),
                                          "name": body.name.strip(), "demo": True, "owner": owner})
     except ValueError as error:
         raise HTTPException(422, str(error)) from None

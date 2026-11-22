@@ -78,3 +78,23 @@ def test_shared_demo_memory_is_read_only_when_accounts_are_on(ws, monkeypatch):
     raw = state.backend().read_workspace("alpha")
     state.backend().write_workspace("alpha", {**raw, "owner": "42"})  # owned: the owner's boundary, writable
     api._writable("alpha")
+
+def test_changed_source_is_reported_and_acknowledging_takes_the_new_text_as_baseline(ws, monkeypatch):
+    from hackfront.api import memory as api
+
+    mid = ws["id"]
+    changed = {"pr1": {"title": "PR 1", "quote": "We decided to cap retries at 3. UPDATE: the root cause was revised."}}
+    monkeypatch.setattr(api, "_current", lambda store, w, entries: changed)
+    found = client.get("/api/w/alpha/memory/drift").json()
+    assert found["available"] and [d["id"] for d in found["items"][mid]] == ["pr1"] and "revised" in found["items"][mid][0]["now"]
+    ack = client.post(f"/api/w/alpha/memory/{mid}/acknowledge", json={"version": 1})
+    assert ack.status_code == 200 and ack.json()["version"] == 2 and "revised" in ack.json()["evidence"][0]["quote"]
+    assert client.get("/api/w/alpha/memory/drift").json()["items"] == {}  # the new text is the baseline now
+    assert client.post(f"/api/w/alpha/memory/{mid}/acknowledge", json={"version": 2}).status_code == 409  # nothing left to check
+
+
+def test_drift_is_unknown_not_an_error_when_the_graph_is_unreachable(ws, monkeypatch):
+    from hackfront.api import memory as api
+
+    monkeypatch.setattr(api, "_current", lambda store, w, entries: None)
+    assert client.get("/api/w/alpha/memory/drift").json() == {"available": False, "items": {}}

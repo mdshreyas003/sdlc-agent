@@ -50,3 +50,8 @@ def test_server_exposes_read_only_why_over_mcp(graph):
     import json
 
     assert not result.is_error and json.loads(result.content[0].text)["refused"] is False
+
+
+def test_lone_pr_number_finds_the_pr_itself_even_when_nothing_mentions_it(graph):
+    rows = Harness(graph).call("find_text", "#pr1")  # no record contains the text "#pr1"; the PR with that native id is named
+    assert rows and rows[0]["id"] == cid("pull_request", "pr1")

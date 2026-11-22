@@ -1,7 +1,7 @@
 // Typed fetch helpers for docs/workbench-api.md. Same-origin: next.config.ts proxies /api/* to FastAPI.
 import type {
   Graph, IntegrationId, Investigation, InvestigationRow, Resource, SecretState, Step, SyncMode, SyncStatus, Targets, TargetsPatch,
-  Ingestion, Me, MemoryEntry, MemoryList, TriageResult, Run, RunMeta, TestResult, UserModels, WorkbenchInfo, WorkspaceRow,
+  Ingestion, Me, MemoryDrift, MemoryEntry, MemoryList, TriageResult, Run, RunMeta, TestResult, UserModels, WorkbenchInfo, WorkspaceRow,
 } from "./types";
 
 export class ApiError extends Error {
@@ -75,6 +75,9 @@ export const wsApi = {
   ingestion: (ws: string) => api<Ingestion>(`${W(ws)}/ingestion`),
   graph: (ws: string) => api<Graph>(`${W(ws)}/graph`),
   memory: (ws: string) => api<MemoryList>(`${W(ws)}/memory`),
+  memoryDrift: (ws: string) => api<MemoryDrift>(`${W(ws)}/memory/drift`),
+  memoryAck: (ws: string, id: string, version: number) =>
+    api<MemoryEntry>(`${W(ws)}/memory/${encodeURIComponent(id)}/acknowledge`, { method: "POST", body: { version, reason: "" } }),
   memoryTriage: (ws: string, anchor: string) => api<TriageResult>(`${W(ws)}/memory/triage`, { method: "POST", body: { anchor } }),
   memoryEdit: (ws: string, id: string, body: { version: number; title?: string; body?: string; kind?: string }) =>
     api<MemoryEntry>(`${W(ws)}/memory/${encodeURIComponent(id)}`, { method: "PUT", body }),

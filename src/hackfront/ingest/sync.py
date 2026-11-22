@@ -291,6 +291,10 @@ def _clients(slug: str, ws: dict, job: _Job):
             from ..eval.corpus import load
 
             return demo_clients(load())
+        if slug == "brightcart":  # the controlled pitch story (docs/story.md), replayed through the same clients
+            from .demo import story
+
+            return demo_clients(story)
         return demo_clients()
     gh, jira, slack = ws["github"], ws["jira"], ws["slack"]
     get = lambda key: config.get_secret(slug, key)  # noqa: E731

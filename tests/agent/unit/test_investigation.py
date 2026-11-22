@@ -1,3 +1,4 @@
+from hackfront.agent.prompts import PROMPT_VERSION
 import json
 
 import pytest
@@ -47,7 +48,7 @@ def test_steps_afterstep_excluded_graph(graph, fake):
     assert [c["id"] for c in i["claims"]] == ["c1", "c2", "c3"]
     assert [c["afterStep"] for c in i["claims"]] == [2, 2, 5] and "note" not in i["claims"][0]
     assert i["claims"][0]["cites"][0] == {"node": PR, "quote": "Fixes PAY-412 retry storm."}
-    assert (i["file"], i["line"], i["mode"], i["prompt_version"], i["provider"]) == (ANCHOR["file"], 3, "why", "v4", "azure")
+    assert (i["file"], i["line"], i["mode"], i["prompt_version"], i["provider"]) == (ANCHOR["file"], 3, "why", PROMPT_VERSION, "azure")
     assert i["nodes"][:3] == [PR, C1, ISSUE] and set(i["nodes"]) == {r["id"] for r in g["nodes"]}
     # excluded: c2 and thread1 are linked to cited nodes; msg1 only reaches thread1 (not cited), issue2 only via a stub
     reasons = {e["node"]: e["reason"] for e in i["excluded"]}

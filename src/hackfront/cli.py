@@ -42,6 +42,11 @@ def main(argv: list[str] | None = None) -> int:
     provider_names = sorted(PROVIDERS)
     cli = argparse.ArgumentParser(prog="hackfront", description=__doc__)
     sub = cli.add_subparsers(dest="cmd", required=True)
+    story_p = sub.add_parser("story", help="load the simulated Payflow pitch story, run triage, replay the ADR lifecycle (docs/story.md)")
+    story_p.add_argument("--stage", type=int, default=0, choices=range(0, 5),
+                         help="0 = the base story and its memory (resets); 1-4 = a later arrival is added, synced, and triage/guard/drift run")
+    story_p.add_argument("--skip-sync", action="store_true", help="the brightcart workspace is already synced")
+    story_p.add_argument("--no-project", action="store_true", help="do not write :Person / :Decision nodes for Bloom")
     sub.add_parser("demo", help="create the 'demo' workspace if missing and sync it (needs only Neo4j)")
     sub.add_parser("eval-load", help="create the 'eval' workspace (Kafka benchmark corpus from data/raw) and sync it")
     sync = sub.add_parser("sync", help="ingest a workspace's sources (credentials from the workspace store or env)")
@@ -122,6 +127,19 @@ def main(argv: list[str] | None = None) -> int:
             from .mcp_client import main as run_client
 
             return run_client(args.anchor, args.workspace)
+        if args.cmd == "story":
+            from .ingest.demo.story import WORKSPACE, apply_stage
+            from .story_seed import advance, run as seed
+
+            apply_stage(args.stage)
+
+            if not any(w["slug"] == "brightcart" for w in config.list_workspaces()):
+                config.create_workspace("Brightcart (simulated)", demo=True, slug="brightcart")
+            config.save_workspace("brightcart", WORKSPACE)
+            if not args.skip_sync and _sync("brightcart", "standard"):
+                return 1
+            _print(advance("brightcart", args.stage, project=not args.no_project) if args.stage else seed("brightcart", project=not args.no_project))
+            return 0
         if args.cmd == "demo":
             from .ingest.demo import DEMO_WORKSPACE
 

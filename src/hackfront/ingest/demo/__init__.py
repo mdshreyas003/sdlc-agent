@@ -34,38 +34,54 @@ class _Transport:
 
 
 class GitHubDemoTransport(_Transport):
-    """Serves /repos/{owner}/{repo}/... with real Link-header pagination."""
+    """Serves /repos/{owner}/{repo}/... with real Link-header pagination. A data module may hold one repo (OWNER, REPO and
+    the lists at module level) or several (REPOS: {"owner/repo": namespace with the same lists})."""
+
+    def _repo(self, owner: str, name: str):
+        repos = getattr(self.d, "REPOS", None)
+        if repos is not None:
+            return repos.get(f"{owner}/{name}")
+        return self.d if (owner, name) == (self.d.OWNER, self.d.REPO) else None
 
     def get(self, url, headers, timeout):
         parts = urlsplit(url)
         q = {k: v[0] for k, v in parse_qs(parts.query).items()}
         if parts.path == "/user":
             return _json(gh_client.HTTPResponse, {"login": "acme-demo-bot"})
-        if re.fullmatch(rf"/(?:orgs|users)/{self.d.OWNER}/repos|/user/repos", parts.path):
-            return _json(gh_client.HTTPResponse, [{"full_name": f"{self.d.OWNER}/{self.d.REPO}", "private": False, "name": self.d.REPO,
-                                                   "pushed_at": "2025-01-01T00:00:00Z"}])
-        if parts.path == f"/repos/{self.d.OWNER}/{self.d.REPO}":
+        owner = getattr(self.d, "OWNER", "")
+        listing = re.fullmatch(rf"/(?:orgs|users)/{owner}/repos|/user/repos", parts.path) if owner else None
+        if listing:
+            names = [r.split("/", 1) for r in getattr(self.d, "REPOS", {f"{owner}/{self.d.REPO}": None})]
+            return _json(gh_client.HTTPResponse, [{"full_name": f"{o}/{n}", "private": False, "name": n,
+                                                   "pushed_at": "2025-01-01T00:00:00Z"} for o, n in names])
+        m0 = re.match(r"/repos/([^/]+)/([^/]+)(/.*)?$", parts.path)
+        rd = self._repo(m0.group(1), m0.group(2)) if m0 else None
+        if rd is None:
+            return _json(gh_client.HTTPResponse, {"message": "Not Found"}, status=404)
+        path = m0.group(3) or ""
+        if path == "":
             return _json(gh_client.HTTPResponse, {"default_branch": "main"})
-        if parts.path == f"/repos/{self.d.OWNER}/{self.d.REPO}/git/trees/main":
+        if path == "/git/trees/main":
             return _json(gh_client.HTTPResponse, {"tree": [], "truncated": False})
-        path = parts.path.removeprefix(f"/repos/{self.d.OWNER}/{self.d.REPO}")
         m = re.fullmatch(r"/(?:pulls|issues)/(\d+)/(commits|reviews|comments|files)", path)
         if path == "/commits":
-            items = self.d.COMMITS
+            items = rd.COMMITS
         elif path == "/pulls":
-            items = self.d.PULLS
+            items = rd.PULLS
         elif m and path.startswith("/pulls") and m.group(2) == "commits":
-            items = self.d.PR_COMMITS.get(int(m.group(1)), [])
+            items = rd.PR_COMMITS.get(int(m.group(1)), [])
         elif m and path.startswith("/pulls") and m.group(2) == "files":
-            items = [{"filename": f["filename"], "status": "modified"}
-                     for commit in self.d.PR_COMMITS.get(int(m.group(1)), [])
-                     for f in commit.get("files", []) if isinstance(f, dict) and f.get("filename")]
+            declared = getattr(rd, "PR_FILES", {}).get(int(m.group(1)))  # open PRs: changed files without a commit on main
+            items = declared if declared is not None else [
+                {"filename": f["filename"], "status": "modified"}
+                for commit in rd.PR_COMMITS.get(int(m.group(1)), [])
+                for f in commit.get("files", []) if isinstance(f, dict) and f.get("filename")]
         elif m and path.startswith("/pulls") and m.group(2) == "reviews":
-            items = self.d.PR_REVIEWS.get(int(m.group(1)), [])
+            items = rd.PR_REVIEWS.get(int(m.group(1)), [])
         elif m and path.startswith("/pulls"):
-            items = self.d.PR_REVIEW_COMMENTS.get(int(m.group(1)), [])
+            items = rd.PR_REVIEW_COMMENTS.get(int(m.group(1)), [])
         elif m and path.startswith("/issues"):
-            items = self.d.PR_ISSUE_COMMENTS.get(int(m.group(1)), [])
+            items = rd.PR_ISSUE_COMMENTS.get(int(m.group(1)), [])
         else:
             return _json(gh_client.HTTPResponse, {"message": "Not Found"}, status=404)
         size, page = int(q.get("per_page", 30)), int(q.get("page", 1))

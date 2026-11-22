@@ -37,6 +37,17 @@ flowchart LR
 - **Serving**: agents read `served` only. Editing an approved entry stages a new version; the approved one keeps being served until the new one is approved. Retiring stops serving.
 - **Reject** needs a reason and is refused while an approved version is live (retire instead). A rejected entry suppresses re-proposals from the same evidence until reopened.
 
+## Evolving over time
+
+| Event | What the system does |
+|---|---|
+| A later source says it *replaces* an earlier decision | New entry with `supersedes`; the old one is retired once the new one is approved, and shows *Retired because* and *Replaced by* |
+| A later source names an entry's anchor ("keeps the limit from #218") | Evidence is added to that entry; it becomes `staged` and the approved version stays live |
+| A cited source is edited | `GET …/memory/drift` lists the entries whose cited text changed; the page shows the old and new text and *I checked it* (`POST …/memory/{id}/acknowledge`) takes the new text as the baseline |
+| An agent asks about a file, ticket or PR | `memory(anchor)` resolves it through the graph and returns approved entries that share cited evidence with it |
+
+A worked, staged example with screenshots is in [story.md](story.md).
+
 ## Edge cases covered
 
 | Case | Behaviour |

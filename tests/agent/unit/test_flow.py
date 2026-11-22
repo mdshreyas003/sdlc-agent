@@ -1,3 +1,4 @@
+from hackfront.agent.prompts import PROMPT_VERSION
 from hackfront import agent
 
 from .conftest import Scripted, cid, url
@@ -28,7 +29,7 @@ def test_full_flow_trace_then_one_verified_answer(graph, fake):
     assert retrieve["cypher"][0]["cypher"].endswith("LIMIT 25"), retrieve["cypher"]
     a = events[-1]["answer"]  # legacy shape for /api/ask, derived from the verified claims
     assert a["citations"] == [url("issue", "issue1")] and "evil" not in a["answer"] and a["confidence"] == "low"
-    assert (a["mode"], a["provider"], a["prompt_version"], a["attempts"]) == ("why", "azure", "v4", 1)
+    assert (a["mode"], a["provider"], a["prompt_version"], a["attempts"]) == ("why", "azure", PROMPT_VERSION, 1)
     ids = {n["id"] for n in events[-1]["evidence"]["nodes"]}
     assert {pr, issue} <= ids and events[-1]["evidence"]["edges"]
     assert f.seen.count("CypherOut") == 1
