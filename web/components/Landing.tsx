@@ -1,237 +1,179 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AgentFlowDiagram, ArchitectureDiagram, DataFlowDiagram } from "./Diagrams";
 import Reveal from "./Reveal";
-import { btnAccent, btnGhost } from "./ui";
+import { Logo } from "./Logo";
+import StageNav from "./StageNav";
+import { ArchDiagram, FlowDiagram, GraphDiagram, HeroArt, MarketDiagram, WhoDiagram } from "./StageDiagrams";
+import { btnAccent } from "./ui";
 
-// Guided, visual-first landing page at "/" (the workspace list lives at /workspaces). Static content; the diagrams
-// animate once with CSS. Order: short hero -> how it works (diagrams) -> how we tested + real results -> the rest, condensed.
-// Benchmark-type numbers come from the deck's canonical numbers (early, single-run, gold set not yet human-verified);
-// the demo counts are those of the live 'kafka' workspace (hackfront migrate-kafka).
+// Landing page at "/": a stage deck, one idea per screen, few words. Order is the pitch order: business impact (who,
+// market) -> what makes it different -> the flow and one concrete moment -> internals (architecture, graph) -> sign in.
+// Content follows the Finale Build Plan (step 0): product "whycode", PR guard, Decisions with quotes, Neo4j graph.
 
-const SECTIONS = [
-  ["overview", "What it is"],
-  ["how", "How it works"],
-  ["proof", "How we tested + real results"],
-  ["agent", "Agent + guardrails"],
-  ["different", "Why it stands out"],
-  ["next", "Status and what's next"],
-  ["glossary", "Glossary"],
+const SLIDES = [
+  ["top", "Start"],
+  ["who", "Who it is for"],
+  ["market", "Where we sit"],
+  ["edge", "What is different"],
+  ["flow", "The flow"],
+  ["moment", "The moment"],
+  ["inside", "Architecture"],
+  ["graph", "The graph"],
+  ["start", "Sign in"],
 ] as const;
 
-type Id = (typeof SECTIONS)[number][0];
-const nn = (i: number) => String(i + 1).padStart(2, "0");
-
-function Section({ id, caption, children }: { id: Id; caption: ReactNode; children: ReactNode }) {
-  const i = SECTIONS.findIndex(([s]) => s === id);
-  const next = SECTIONS[i + 1];
+function Slide({ id, kicker, title, note, children }: { id: string; kicker: string; title: ReactNode; note?: ReactNode; children?: ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-8 border-b border-line py-12">
-      <p className="font-mono text-[12px] text-accent">{nn(i)}</p>
-      <h2 className="mt-1 text-[24px] font-semibold tracking-tight">{SECTIONS[i][1]}</h2>
-      <p className="mt-2 max-w-[680px] text-[14.5px] leading-relaxed text-mute">{caption}</p>
-      <div className="mt-6 space-y-4 text-[13.5px] leading-relaxed text-mute">{children}</div>
-      {next && (
-        <a href={`#${next[0]}`} className="card card-link mt-8 flex items-center justify-between px-5 py-3">
-          <span className="text-[12px] text-dim">Next</span>
-          <span className="text-[14px] font-medium text-fg">{nn(i + 1)} · {next[1]} {"\u2192"}</span>
-        </a>
-      )}
+    <section id={id} aria-labelledby={`${id}-h`} className="relative flex min-h-[100svh] snap-start items-center overflow-hidden border-b border-line/60 px-6 pb-14 pt-24 md:px-16">
+      <div aria-hidden className="px-grid pointer-events-none absolute inset-0 opacity-70 [mask-image:radial-gradient(75%_65%_at_50%_45%,#000,transparent)]" />
+      <div className="relative mx-auto w-full max-w-[1080px]">
+        <p className="font-mono text-[12px] uppercase tracking-[.14em] text-accent">{kicker}</p>
+        <h2 id={`${id}-h`} className="mt-3 max-w-[820px] text-[32px] font-semibold leading-[1.08] tracking-tight md:text-[46px]">{title}</h2>
+        {note && <p className="mt-3 max-w-[640px] text-[16px] leading-relaxed text-mute md:text-[18px]">{note}</p>}
+        {children && <div className="mt-8">{children}</div>}
+      </div>
     </section>
   );
 }
 
-const B = ({ children }: { children: ReactNode }) => <b className="font-semibold text-fg">{children}</b>;
-const C = ({ children }: { children: ReactNode }) => <code className="rounded bg-raised px-1 font-mono text-[12px] text-fg">{children}</code>;
-const More = ({ children, label = "Details" }: { children: ReactNode; label?: string }) => (
-  <details className="more card px-4 py-3"><summary>{label}</summary><div className="mt-3 space-y-2">{children}</div></details>
-);
-const Figure = ({ children }: { children: ReactNode }) => <Reveal className="card overflow-hidden">{children}</Reveal>;
+const Figure = ({ children }: { children: ReactNode }) => <Reveal className="overflow-hidden rounded-2xl border border-line">{children}</Reveal>;
+const Em = ({ children }: { children: ReactNode }) => <span className="text-accent">{children}</span>;
 
-const TIERS: [string, number, string, string][] = [
-  ["A", 16, "answer is in one item", "bg-accent"],
-  ["B", 24, "needs several linked items", "bg-ok"],
-  ["C", 20, "evidence removed → must abstain", "bg-warn"],
-  ["T", 10, "close in time, not linked → must abstain", "bg-bad"],
-  ["N", 5, "nothing in the data answers it", "bg-unk"],
+function Glyph({ kind }: { kind: "quote" | "live" | "guard" }) {
+  const c = "var(--accent)", d = "var(--dim)";
+  return (
+    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden>
+      {kind === "quote" && <><path d="M8 13h28M8 22h28M8 31h16" stroke={d} strokeWidth="2" strokeLinecap="round" /><rect x="5" y="19" width="34" height="6" rx="3" stroke={c} strokeWidth="1.6" /></>}
+      {kind === "live" && <><circle cx="11" cy="22" r="6" stroke={d} strokeWidth="1.8" strokeDasharray="3 3" /><path d="M19 22h7" stroke={c} strokeWidth="1.8" strokeLinecap="round" /><circle cx="33" cy="22" r="6" fill={c} /></>}
+      {kind === "guard" && <><path d="M22 6 36 11v10c0 9-6 15-14 18C14 36 8 30 8 21V11z" stroke={c} strokeWidth="1.8" strokeLinejoin="round" /><path d="m16 22 4 4 8-9" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>}
+    </svg>
+  );
+}
+
+const EDGE: ["quote" | "live" | "guard", string, string][] = [
+  ["quote", "Quoted", "Every claim has a quote. No quote, no answer."],
+  ["live", "Live or dead", "Knows which decision still stands."],
+  ["guard", "Guards the PR", "A warning before the merge. Never a block."],
 ];
-
-// Demo video slot: shown only when web/public/demo.mp4 exists (checked at build/render time; add the file and redeploy).
-const HAS_VIDEO = existsSync(join(process.cwd(), "public", "demo.mp4"));
 
 export default function Landing() {
   return (
-    <div className="theme-dark h-full overflow-auto bg-bg text-fg">
-      <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-[1180px] items-center justify-between px-8">
-          <span className="text-[14px] font-semibold">Engineering Memory <span className="ml-2 font-normal text-dim">prototype guide</span></span>
-          <nav aria-label="Primary" className="flex items-center gap-2">
-            <a href="https://github.com/mdshreyas003/sdlc-agent" className={btnGhost}>GitHub</a>
-            <Link href="/workspaces" className={btnGhost}>Workspaces</Link>
-            <Link href="/w/kafka" className={btnAccent}>Try the demo</Link>
-          </nav>
+    <div id="stage" className="theme-dark h-full snap-y snap-proximity overflow-auto scroll-smooth bg-bg text-fg">
+      <header className="fixed inset-x-0 top-0 z-20 border-b border-line bg-bg/85 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-[1180px] items-center justify-between px-6 md:px-10">
+          <span className="flex items-center gap-2.5 text-[15px] font-semibold"><Logo size={20} />whycode</span>
+          <Link href="/login" className={btnAccent}>Sign in</Link>
         </div>
       </header>
+      <StageNav slides={SLIDES} />
 
-      <div className="mx-auto flex max-w-[1180px] gap-12 px-8">
-        <aside aria-label="Guided path" className="sticky top-14 h-[calc(100vh-3.5rem)] w-[210px] shrink-0 overflow-auto py-10">
-          <p className="label mb-3">Guided path</p>
-          <ol className="space-y-0.5">
-            {SECTIONS.map(([id, t], i) => (
-              <li key={id}>
-                <a href={`#${id}`} className="flex gap-3 rounded-md px-2 py-1.5 text-[13px] text-mute hover:bg-hover hover:text-fg">
-                  <span className="w-5 font-mono text-[11.5px] text-dim">{nn(i)}</span>{t}
-                </a>
-              </li>
-            ))}
-          </ol>
-        </aside>
-
-        <main className="min-w-0 max-w-[840px] flex-1 pb-24">
-          <section id="overview" className="scroll-mt-8 border-b border-line pb-10 pt-12">
-            <p className="font-mono text-[12px] text-accent">For engineers changing or debugging code they didn&rsquo;t write</p>
-            <h1 className="mt-3 text-[30px] font-semibold leading-tight tracking-tight text-fg">
-              Ask <span className="text-accent">&ldquo;why is this code like this?&rdquo;</span> Get an answer from your team&rsquo;s GitHub, Jira and chat history, with a word-for-word quote for every claim, or an honest <span className="text-accent">&ldquo;Not established.&rdquo;</span>
-            </h1>
-            <ul className="mt-5 flex flex-wrap gap-2 text-[12.5px]">
-              {[["↔", "only links a person wrote down", "text-accent"], ["❝", "every claim quoted word for word", "text-ok"], ["✓", "code checks each quote, not the model", "text-ok"], ["∅", "no proof → “Not established”", "text-warn"]].map(([i, t, c]) => (
-                <li key={t} className="flex items-center gap-2 rounded-full border border-line2 bg-raised px-3 py-1.5 text-mute"><span className={`font-mono ${c}`}>{i}</span>{t}</li>
-              ))}
-            </ul>
-            <div className="mt-6 flex gap-3">
-              <Link href="/w/kafka" className={`${btnAccent} h-10 px-5 text-[13.5px]`}>Try the Kafka demo</Link>
-              <a href="#how" className={`${btnGhost} h-10 px-5 text-[13.5px]`}>See how it works {"\u2193"}</a>
+      <main>
+        {/* 01 · Hero */}
+        <section id="top" className="relative flex min-h-[100svh] snap-start items-center overflow-hidden border-b border-line/60 px-6 pb-14 pt-24 md:px-16">
+          <div aria-hidden className="px-grid px-halo pointer-events-none absolute inset-0" />
+          <div className="relative mx-auto grid w-full max-w-[1180px] items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
+            <div>
+              <p className="font-mono text-[12px] uppercase tracking-[.14em] text-accent">The PR guard that remembers why</p>
+              <h1 className="mt-4 text-[40px] font-semibold leading-[1.04] tracking-tight md:text-[64px]">
+                Your team forgets <Em>why.</Em><br />Your agents never knew.
+              </h1>
+              <p className="mt-5 max-w-[520px] text-[18px] leading-relaxed text-mute md:text-[20px]">
+                We catch the pull request that undoes a decision, with the quote, the incident and who to ask.
+              </p>
+              <p className="mt-10 flex items-center gap-2 font-mono text-[12px] text-dim"><span className="px-caret" aria-hidden />press <kbd className="rounded border border-line2 px-1.5 py-0.5 text-fg">↓</kbd> to begin</p>
             </div>
-            {HAS_VIDEO && (
-              <div className="card mt-8 overflow-hidden">
-                <video src="/demo.mp4" controls muted playsInline preload="metadata" className="block h-auto w-full bg-bg" aria-label="Product demo video" />
-              </div>
-            )}
-          </section>
+            <Reveal className="overflow-hidden rounded-2xl border border-line"><HeroArt /></Reveal>
+          </div>
+        </section>
 
-          <Section id="how" caption="The platform in five layers, then layer 2 up close: items are collected and linked only by what is written in them.">
-            <p className="label">A · Architecture</p>
-            <Figure><ArchitectureDiagram /></Figure>
-            <p className="label pt-2">B · Layer 2 up close: how data gets linked, with a real chain from the Kafka data</p>
-            <Figure><DataFlowDiagram /></Figure>
-            <More label="Layers and link rules">
-              <p><B>Sources:</B> connectors pull pull requests, commits, Jira tickets and comments, and Slack threads. <B>Evidence graph:</B> each item is one node; a link exists only where a source says so. <B>Memory</B> (next): repeated evidence becomes a decision with a history. <B>Agent:</B> answers why / debug / is-it-safe-to-change questions with fixed read-only tools. <B>App / API:</B> the web workbench, or the same thing as a service.</p>
-              <p><C>REPLIES_TO</C> a reply belongs to its thread (Slack <C>thread_ts</C>, GitHub <C>in_reply_to_id</C>). <C>CONTAINS</C> a PR contains a commit. <C>REFERENCES</C> one item mentions another: by structure (a comment belongs to its PR or ticket) or by an ID in the text (a Jira key, a PR or commit URL, <C>#123</C> inside GitHub, a Slack permalink, a KIP number).</p>
-              <p>Matching is strict: <C>UTF-8</C>, <C>SHA-256</C> and <C>#333</C> are ignored, and each text link records the exact field and span it came from (e.g. <C>$.title#0-11</C>). The Kafka mailing list is stored in the Slack format as a stand-in for chat.</p>
-            </More>
-          </Section>
+        {/* 02 · Who: business impact starts with the people */}
+        <Slide id="who" kicker="02 · Who it is for" title={<>Built for teams that ship <Em>with agents.</Em></>}>
+          <Figure><WhoDiagram /></Figure>
+        </Slide>
 
-          <Section id="proof" caption="Real Apache Kafka history, three layers of checks. Early numbers: one run each, on a question set not yet human-checked; the full 75-question benchmark is next.">
-            <div className="card p-5">
-              <div className="flex items-baseline justify-between"><p className="text-[14px] font-semibold text-fg">The Kafka demo workspace</p><Link href="/w/kafka" className="text-[12px] text-accent underline underline-offset-2">open it {"\u2192"}</Link></div>
-              <div className="mt-3 grid grid-cols-4 gap-3">
-                {[["1,201", "items", "1,070 mail · 96 Jira · 25 GitHub · 10 KIP pages"], ["2,194", "links between them", "2,854 incl. links to items not loaded"], ["10", "Kafka KIPs", "KIP-98 … KIP-890"], ["4", "saved investigations", "open with their evidence graph"]].map(([big, t, sub]) => (
-                  <div key={t}><p className="text-[28px] font-semibold leading-none tracking-tight text-fg">{big}</p><p className="mt-2 text-[13px] text-mute">{t}</p><p className="mt-0.5 text-[11.5px] text-dim">{sub}</p></div>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {[["5 / 7", "real-model gate passed", "the 2 misses answered with low confidence"], ["26 / 27", "quotes kept on Q050", "Q030: 5 / 5"], ["Q006", "correctly “Not established”", "no answer in the data"],
-                ["6 → 19", "of 33 gold sources reachable", "questions 1/18 → 9/18 · 0 regressions"], ["445", "automated tests passed", "7 skipped"], ["0 / 75", "gold questions human-verified", "so no accuracy numbers yet"]].map(([big, t, sub]) => (
-                <div key={t} className="card p-4">
-                  <p className="text-[30px] font-semibold leading-none tracking-tight text-fg">{big}</p>
-                  <p className="mt-2 text-[13px] text-mute">{t}</p>
-                  <p className="mt-0.5 text-[12px] text-dim">{sub}</p>
+        {/* 03 · Market */}
+        <Slide id="market" kicker="03 · Where we sit" title={<>Others answer why. <Em>We guard it.</Em></>}>
+          <div className="grid items-center gap-6 lg:grid-cols-[1.5fr_1fr]">
+            <Figure><MarketDiagram /></Figure>
+            <dl className="grid gap-3">
+              {[["Pain", "An agent “simplifies” code and re-opens a past outage."], ["Value", "One prevented repeat incident pays for years."], ["Price", "₹1,999 / repo / month. Agents are never seats."]].map(([t, d]) => (
+                <div key={t} className="rounded-xl border border-line bg-panel p-4">
+                  <dt className="font-mono text-[11.5px] uppercase tracking-[.14em] text-accent">{t}</dt>
+                  <dd className="mt-1 text-[16px] leading-snug text-fg">{d}</dd>
                 </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="card p-5">
-                <div className="flex items-baseline justify-between"><p className="text-[14px] font-semibold text-fg">75 gold questions</p><p className="text-[12px] text-dim">19 tuning · 56 held back</p></div>
-                <div className="mt-3 flex h-8 overflow-hidden rounded-md">
-                  {TIERS.map(([t, n, , c]) => <div key={t} className={`${c} flex items-center justify-center font-mono text-[11.5px] font-semibold text-bg`} style={{ width: `${(n / 75) * 100}%` }}>{t} {n}</div>)}
-                </div>
-                <ul className="mt-3 space-y-0.5 text-[11.5px] text-dim">{TIERS.map(([t, , d]) => <li key={t}><B>{t}</B> {d}</li>)}</ul>
-              </div>
-              <div className="card p-5">
-                <p className="text-[14px] font-semibold text-fg">The 7-question gate</p>
-                <p className="text-[12px] text-dim">real AI model, end to end, on a small made-up company</p>
-                <div className="mt-3 flex gap-2">
-                  {[0, 1, 2, 3].map((k) => <span key={k} className="h-8 flex-1 rounded-md bg-ok/70" />)}
-                  {[0, 1].map((k) => <span key={k} className="h-8 flex-1 rounded-md bg-warn/70" />)}
-                  <span className="h-8 flex-1 rounded-md bg-unk/60" />
-                </div>
-                <p className="mt-3 text-[11.5px] leading-relaxed text-dim"><span className="text-ok">■</span> 4 answerable · <span className="text-warn">■</span> 2 must say &ldquo;Not established&rdquo; · <span className="text-unk">■</span> 1 check that another workspace sees nothing</p>
-              </div>
-            </div>
-            <More label="Example tests and a gold question">
-              <p><B>Links are strict:</B> a PR body with &ldquo;Fixes PAY-412 … see #190 and UTF-8, SHA-256, OTHER-9; color: #333&rdquo; must give exactly 3 links. <B>Bad IDs never reach the DB:</B> an unseen ID, or <C>x{"}"}) DETACH DELETE (n //</C>, is refused first. <B>Misquotes are dropped:</B> of three citations, only the exact quote &ldquo;Fixes PAY-412&rdquo; survives, and confidence drops to low.</p>
-              <p><B>Q050 (tier B):</B> <i>&ldquo;Why does the broker retry AddPartitionsToTxn on its own when it hits CONCURRENT_TRANSACTIONS, with separate backoff settings, instead of just returning the error to the producer to retry?&rdquo;</i> The gold answer quotes Calvin Liu&rsquo;s mail, Jira KAFKA-18654 and a follow-up reply: the chain in diagram B above.</p>
-            </More>
-          </Section>
-
-          <Section id="agent" caption="Seven steps, at most 3 rounds of planning; read-only by construction, and code has the last word.">
-            <Figure><AgentFlowDiagram /></Figure>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="card p-4">
-                <p className="label mb-3 text-ok">Does</p>
-                <div className="flex flex-wrap gap-2">
-                  {["find_text", "file_history", "neighbors", "evidence_chain", "get"].map((t) => <span key={t} className="rounded-md border border-line2 bg-raised px-2 py-1 font-mono text-[12px] text-fg">{t}</span>)}
-                  <span className="rounded-md border border-dashed border-line2 px-2 py-1 font-mono text-[12px] text-dim">cypher_query (guarded)</span>
-                </div>
-                <p className="mt-3 text-[12.5px] text-dim">5 fixed read-only tools, plus one guarded escape hatch that may only find IDs.</p>
-              </div>
-              <div className="card p-4">
-                <p className="label mb-1 text-bad">Refuses</p>
-                <ul className="space-y-2.5">
-                {[["No writes", "write words blocked; read-only route; queries time-limited"], ["No invented IDs", "only IDs already seen can be opened"], ["No paraphrased quotes", "quote must be word for word in that item"], ["No guessing", "no verified quote → “Not established”"]].map(([t, d]) => (
-                  <li key={t} className="flex gap-2.5"><span className="text-bad">✕</span><span><B>{t}</B> <span className="text-dim">· {d}</span></span></li>
-                ))}
-                </ul>
-              </div>
-            </div>
-            <More>
-              <p><B>Seed</B> pulls exact IDs from the question (ticket keys, PR numbers, commit hashes, file paths) with no AI. <B>Plan</B> picks up to 5 tool calls per round. <B>Retrieve</B> runs read-only searches, then follows one hop of links from the best hits.</p>
-              <p><B>Verify</B> checks every quote against the full source text and drops failures. The answer is established only if the evidence was judged enough <B>and</B> a claim still has a verified quote.</p>
-            </More>
-          </Section>
-
-          <Section id="different" caption="Memory tools and coding agents solve other problems. Compared on the four points above.">
-            <table className="card w-full text-left text-[12.5px]">
-              <thead className="text-dim"><tr><th className="px-4 py-2"><span className="sr-only">Point</span></th><th>Engineering Memory</th><th>Mem0 · Zep/Graphiti · GraphRAG</th><th>Coding agents</th></tr></thead>
-              <tbody>
-                {[["Links", "only links a person wrote down", "relations extracted or inferred by an LLM", "not about team history"],
-                  ["Proof", "word-for-word quote, checked in code", "traceable sources or record IDs, not checked quotes", "tests and linters check code edits"],
-                  ["When unsure", "“Not established”, enforced in code", "prompt-level or not measured", "not documented"],
-                  ["Database access", "fixed read-only tools + ID guard", "not their focus (memory layers)", "sandbox or permission rules"]].map((r) => (
-                  <tr key={r[0]} className="border-t border-line align-top">{r.map((c, j) => <td key={j} className={`py-2 pr-3 ${j === 0 ? "px-4 font-medium text-fg" : ""}`}>{c}</td>)}</tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="text-[12.5px] text-dim">Plus a test set with traps: for tiers C, T and N the right answer is to abstain.</p>
-          </Section>
-
-          <Section id="next" caption="The core runs end to end today; memory and the full benchmark come next.">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="card p-4">
-                <p className="label mb-3 text-ok">Running today</p>
-                <ol className="space-y-1.5 text-fg">{["Sources", "Evidence graph with explicit links", "Guarded agent + quote checker", "API and web workbench", "Benchmark harness"].map((t) => <li key={t}><span className="text-ok">✓</span> {t}</li>)}</ol>
-              </div>
-              <div className="card p-4">
-                <p className="label mb-3 text-accent">Next</p>
-                <ol className="space-y-1.5 text-fg">{["Memory: versioned decisions", "decides / supersedes links", "Live sync from a saved position", "Human-check the 75 questions, then compare vs no-retrieval, BM25 and Graphiti", "Later: more sources, one identity per person, access for other agents"].map((t) => <li key={t}><span className="text-accent">→</span> {t}</li>)}</ol>
-              </div>
-            </div>
-          </Section>
-
-          <Section id="glossary" caption="Eight words, in plain terms.">
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-2.5">
-              {[["Agent", "an AI program that takes steps to answer a question"], ["Graph", "a map of items (dots) and links (lines)"], ["Link", "a connection a person actually wrote down"], ["Commit", "one saved change to the code"],
-                ["Test", "an automatic check the code still works"], ["Gold question", "a question with its answer and quotes written in advance"], ["Citation", "the exact source and quote behind a sentence"], ["Abstain", "say “Not established” instead of guessing"]].map(([t, d]) => (
-                <div key={t} className="flex gap-3"><dt className="w-[96px] shrink-0 font-medium text-fg">{t}</dt><dd>{d}</dd></div>
               ))}
             </dl>
-            <div className="pt-4"><Link href="/w/kafka" className={`${btnAccent} h-10 px-5 text-[13.5px]`}>Try the demo {"\u2192"}</Link></div>
-          </Section>
-        </main>
-      </div>
+          </div>
+        </Slide>
+
+        {/* 04 · Difference */}
+        <Slide id="edge" kicker="04 · What is different" title={<>Three things that <Em>set us apart.</Em></>}>
+          <div className="grid gap-4 md:grid-cols-3">
+            {EDGE.map(([g, t, d]) => (
+              <div key={t} className="rounded-2xl border border-line bg-panel p-6">
+                <Glyph kind={g} />
+                <h3 className="mt-5 text-[24px] font-semibold tracking-tight">{t}</h3>
+                <p className="mt-2 text-[16px] leading-snug text-mute">{d}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-8 text-[18px] text-mute">Vector search finds text. <span className="text-fg">Only the graph knows which decision won.</span></p>
+        </Slide>
+
+        {/* 05 · Flow */}
+        <Slide id="flow" kicker="05 · The flow" title={<>One loop. <Em>Memory stays fresh.</Em></>} note="Updating is a side effect of reviewing, not a chore.">
+          <Figure><FlowDiagram /></Figure>
+        </Slide>
+
+        {/* 06 · The moment: what the judges will see */}
+        <Slide id="moment" kicker="06 · The moment" title={<>A PR undoes a decision. <Em>We say so.</Em></>}>
+          <div className="grid items-stretch gap-4 lg:grid-cols-2">
+            <div className="rounded-2xl border border-line bg-panel p-5">
+              <p className="font-mono text-[11.5px] uppercase tracking-[.14em] text-dim">Pull request</p>
+              <p className="mt-2 text-[20px] font-semibold tracking-tight">Simplify commit retry</p>
+              <pre className="mt-4 overflow-x-auto rounded-lg border border-line bg-bg p-4 font-mono text-[13.5px] leading-7" aria-label="Code diff">
+                <span className="block text-bad">- retryOnConflict(tx, 3)</span>
+                <span className="block text-ok">+ return tx.Commit()</span>
+              </pre>
+            </div>
+            <div className="px-glow rounded-2xl bg-panel p-5">
+              <p className="flex items-center justify-between font-mono text-[11.5px] uppercase tracking-[.14em]"><span className="text-accent">whycode · advisory</span><span className="text-dim">a human decides</span></p>
+              <p className="mt-2 flex items-center gap-2 text-[20px] font-semibold tracking-tight"><span aria-hidden className="text-warn">▲</span>This undoes a live Decision</p>
+              <dl className="mt-4 space-y-3 text-[15px]">
+                <div className="flex gap-3"><dt className="w-20 shrink-0 font-mono text-[12px] uppercase tracking-wider text-dim">Quote</dt><dd className="border-l-2 border-accent pl-3 text-fg">“Retry on conflict. A single attempt caused the outage.”</dd></div>
+                <div className="flex gap-3"><dt className="w-20 shrink-0 font-mono text-[12px] uppercase tracking-wider text-dim">Incident</dt><dd className="text-fg">The outage this rule came from</dd></div>
+                <div className="flex gap-3"><dt className="w-20 shrink-0 font-mono text-[12px] uppercase tracking-wider text-dim">Ask</dt><dd className="text-fg">The person who decided it</dd></div>
+              </dl>
+            </div>
+          </div>
+          <p className="mt-3 text-[12px] text-dim">Illustrative example.</p>
+        </Slide>
+
+        {/* 07 · Architecture */}
+        <Slide id="inside" kicker="07 · Under the hood" title={<>Simple parts. <Em>One graph.</Em></>}>
+          <Figure><ArchDiagram /></Figure>
+          <ul className="mt-5 flex flex-wrap gap-2 text-[13px]">
+            {["GitHub: read-only", "Never stores source files", "No endpoint returns code", "Models never trained on your data"].map((t) => (
+              <li key={t} className="flex items-center gap-2 rounded-full border border-line2 bg-raised px-3 py-1.5 text-mute"><span aria-hidden className="text-ok">✓</span>{t}</li>
+            ))}
+          </ul>
+        </Slide>
+
+        {/* 08 · Graph */}
+        <Slide id="graph" kicker="08 · Why a graph" title={<>“Is this still live?” is a <Em>path.</Em></>} note="The guard is one query: diff, function, live Decision, incident, person.">
+          <Figure><GraphDiagram /></Figure>
+          <p className="mt-4 font-mono text-[12px] text-dim">Graph database: Neo4j</p>
+        </Slide>
+
+        {/* 09 · Close */}
+        <section id="start" aria-labelledby="start-h" className="relative flex min-h-[100svh] snap-start items-center overflow-hidden px-6 pb-14 pt-24 md:px-16">
+          <div aria-hidden className="px-grid px-halo pointer-events-none absolute inset-0" />
+          <div className="relative mx-auto w-full max-w-[1080px] text-center">
+            <h2 id="start-h" className="text-[38px] font-semibold leading-[1.06] tracking-tight md:text-[60px]">Connect a repo.<br /><Em>Never lose the why.</Em></h2>
+            <div className="mt-10"><Link href="/login" className={`${btnAccent} h-12 px-8 text-[15px]`}>Sign in</Link></div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
