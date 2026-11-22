@@ -74,6 +74,7 @@ export default function Login() {
     <main className="grid h-full place-items-center bg-panel">
       <div className="px-halo grid h-full w-full place-items-center">
         <div className="card w-[400px] max-w-[92vw] p-8">
+          <Link href="/" className="mb-4 inline-flex items-center gap-1 text-[12px] text-dim hover:text-fg"><Icon name="back" size={12} />Back to home</Link>
           <div className="mb-6 flex items-center gap-3">
             <Logo size={26} />
             <div>
