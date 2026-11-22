@@ -184,6 +184,7 @@ export const fmtTime = (iso: string) =>
 export interface Me {
   auth: "enabled" | "disabled";
   methods?: ("github" | "password")[];
+  callback_url?: string; // the GitHub OAuth callback URL this server uses (must match the OAuth app exactly)
   user: { id: string; login: string; name: string; avatar_url: string } | null;
 }
 export interface ModelField { key: string; label: string; secret: boolean; set: boolean; hint?: string; value?: string }

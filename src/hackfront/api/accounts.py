@@ -32,15 +32,24 @@ def _secure(request: Request) -> bool:
 
 
 def _base(request: Request) -> str:
+    """The browser-facing origin: HACKFRONT_PUBLIC_URL, else what the web proxy forwarded, else this request's own host
+    (which, behind the proxy, is the API's address and is NOT what GitHub has registered)."""
+    host = request.headers.get("x-forwarded-host")
+    proto = request.headers.get("x-forwarded-proto", "https" if _secure(request) else "http")
+    if host and re.fullmatch(r"[A-Za-z0-9.\-]+(:\d{1,5})?", host) and proto in ("http", "https"):
+        return auth.public_url(f"{proto}://{host}")
     return auth.public_url(f"{request.url.scheme}://{request.headers.get('host', request.url.netloc)}")
 
 
 @router.get("/api/me")
-def me():
+def me(request: Request):
     mode = auth.mode()
     user = auth.current() if mode == "enabled" else (auth.LOCAL if mode == "disabled" else None)
-    return {"auth": "enabled" if mode != "disabled" else "disabled", "methods": auth.methods() if mode != "disabled" else [],
-            "user": user.public() if user else None}
+    out = {"auth": "enabled" if mode != "disabled" else "disabled", "methods": auth.methods() if mode != "disabled" else [],
+           "user": user.public() if user else None}
+    if "github" in out["methods"]:
+        out["callback_url"] = f"{_base(request)}/api/auth/github/callback"  # what the GitHub OAuth app must list, exactly
+    return out
 
 
 @router.get("/api/auth/github/login")

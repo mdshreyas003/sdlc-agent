@@ -99,6 +99,13 @@ export default function Login() {
                     <Icon name="github" size={16} />Continue with GitHub
                   </a>
                   <p className="mt-4 text-[11.5px] text-dim">We read your GitHub profile (name, avatar) to identify you. Source tokens are added later, per workspace.</p>
+                  {code === "redirect_uri_mismatch" || me.callback_url ? (
+                    <details className="more mt-3">
+                      <summary>GitHub says “redirect_uri is not associated”?</summary>
+                      <p className="mt-1.5 text-[11.5px] text-dim">The OAuth app’s <b className="font-medium text-mute">Authorization callback URL</b> must be exactly:</p>
+                      <code className="mt-1 block break-all rounded border border-line bg-panel px-2 py-1 font-mono text-[11px] text-mute">{me.callback_url}</code>
+                    </details>
+                  ) : null}
                 </>
               )}
             </>

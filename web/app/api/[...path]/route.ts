@@ -15,6 +15,11 @@ async function proxy(req: Request, ctx: { params: Promise<{ path: string[] }> })
     if (value) headers.set(name, value);
   }
   if (TOKEN) headers.set("authorization", `Bearer ${TOKEN}`);
+  // The browser-facing origin, so the API can build the GitHub OAuth callback URL users actually registered
+  // (HACKFRONT_PUBLIC_URL on the API still wins when set).
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (host) headers.set("x-forwarded-host", host);
+  headers.set("x-forwarded-proto", req.headers.get("x-forwarded-proto") ?? new URL(req.url).protocol.replace(":", ""));
 
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
   let upstream: Response;
