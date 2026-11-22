@@ -223,3 +223,16 @@ export interface IngestPlan {
     max: { standard: number | null; deep: number | null } }[] }[];
 }
 export const fmtStamp = (iso?: string | null) => (iso ? `${fmtDate(iso)} ${fmtTime(iso)} UTC` : "");
+
+// Memory (docs/memory.md): ADRs, rules and episodes proposed from evidence and approved by a person.
+export type MemoryKind = "adr" | "rule" | "episode";
+export type MemoryStatus = "draft" | "staged" | "approved" | "rejected" | "retired";
+export interface MemoryEvidence { id: string; kind: string; title: string | null; quote: string; url: string | null; time: string | null }
+export interface MemoryEntry {
+  id: string; kind: MemoryKind; status: MemoryStatus; title: string; body: string; evidence: MemoryEvidence[]; anchor: string;
+  triage: string; version: number; reason?: string | null; created_at: string; updated_at: string;
+  served: { version: number; title: string; body: string; approved_by: string; approved_at: string } | null;
+  revisions: { version: number; at: string; by: string; note: string }[];
+}
+export interface MemoryList { counts: Record<MemoryStatus, number>; items: MemoryEntry[] }
+export interface TriageResult { action: "created" | "refined" | "unchanged" | "suppressed" | "nothing"; entry: MemoryEntry | null; note: string }

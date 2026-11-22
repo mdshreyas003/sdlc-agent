@@ -9,9 +9,9 @@ import { Icon, type IconName } from "./icons";
 import { Logo } from "./Logo";
 
 /** Workspace pages that live beside the repo routes: /w/[ws]/<section>/... */
-export const SECTIONS = ["setup", "sync", "ingestion", "settings"] as const;
+export const SECTIONS = ["overview", "setup", "sync", "ingestion", "memory", "settings"] as const;
 export type Section = (typeof SECTIONS)[number];
-const SECTION_LABEL: Record<Section, string> = { setup: "Set up", sync: "Sync", ingestion: "Ingestion", settings: "Settings" };
+const SECTION_LABEL: Record<Section, string> = { overview: "Overview", setup: "Set up", sync: "Sync", ingestion: "Ingestion", memory: "Memory", settings: "Settings" };
 
 /** Parse /w/[ws]/[repo]/(f|why)/... or /w/[ws]/<section> into its parts. */
 export function useLocation() {
@@ -64,7 +64,7 @@ export function Switcher({ rail = false, compact = false }: { rail?: boolean; co
         <div role="menu" className={`fade-up absolute left-0 z-40 rounded-lg border border-line2 bg-bg p-1 shadow-xl shadow-black/20 ${rail ? "top-12 w-[240px]" : "top-9 w-56"}`}>
           <div className="max-h-[260px] overflow-auto">
             {(workspaces ?? (cur ? [{ slug: cur.slug, name: cur.name }] : [])).map((w) => (
-              <Link key={w.slug} href={`/w/${w.slug}`} onClick={() => setOpen(false)} role="menuitem"
+              <Link key={w.slug} href={`/w/${w.slug}/overview`} onClick={() => setOpen(false)} role="menuitem"
                 className="flex h-8 items-center gap-2 rounded-md px-2 hover:bg-hover">
                 <span className="grid h-5 w-5 shrink-0 place-items-center rounded bg-raised text-[11px] font-semibold">{w.name[0]?.toUpperCase()}</span>
                 <span className="truncate">{w.name}</span>{w.slug === ws && <Icon name="check" size={13} className="ml-auto shrink-0 text-dim" />}
@@ -110,7 +110,7 @@ function UserMenu() {
             <p className="truncate font-mono text-[11px] text-dim">{u ? `@${u.login}` : "sign-in is off"}</p>
           </div>
           <div className="my-1 border-t border-line" />
-          {([["/settings", "Settings", "sliders"], ["/settings/models", "Models", "spark"], ["/workspaces", "Workspaces", "home"]] as const).map(([href, l, ic]) => (
+          {([["/settings", "Settings", "sliders"], ["/settings/models", "Models", "spark"], ["/workspaces", "Workspaces", "home"], ["/", "Product overview", "spark"]] as const).map(([href, l, ic]) => (
             <Link key={href} href={href} onClick={() => setOpen(false)} role="menuitem" className="flex h-8 items-center gap-2 rounded-md px-2 text-mute hover:bg-hover hover:text-fg">
               <Icon name={ic} size={13} />{l}
             </Link>
@@ -133,26 +133,47 @@ const pageTitle = (path: string) => (path.startsWith("/settings") ? "Settings" :
 
 function Topbar({ onPalette }: { onPalette: () => void }) {
   const path = usePathname();
-  const { info } = useData();
+  const { info, workspaces } = useData();
   const { ws, repo, section, file } = useLocation();
   const [theme, toggle] = useTheme();
-  const parts = file?.split("/") ?? [];
+  const [last, setLast] = useState<string | null>(null);
+  useEffect(() => {
+    try { if (ws) localStorage.setItem("wb-last-ws", ws); else setLast(localStorage.getItem("wb-last-ws")); } catch {}
+  }, [ws, path]);
+  const wsName = info?.workspace.name ?? ws;
+  // One rule: Workspaces / <workspace> / <page> [/ file]. Every part is a link; the last one is the page you are on.
+  const crumbs: { label: string; href: string; mono?: boolean }[] = ws
+    ? [
+        { label: "Workspaces", href: "/workspaces" },
+        { label: wsName ?? ws, href: `/w/${ws}/overview` },
+        { label: section ? SECTION_LABEL[section] : "Ask", href: `/w/${ws}${section ? `/${section}` : ""}` },
+        ...(repo && !section ? [{ label: repo, href: `/w/${ws}/${repo}` }] : []),
+        ...(file?.split("/").map((p, i, all) => ({ label: p, href: "", mono: true, last: i === all.length - 1 })) ?? []),
+      ]
+    : [{ label: pageTitle(path) || "Workspaces", href: path }];
+  const back = !ws && last ? { slug: last, name: workspaces?.find((w) => w.slug === last)?.name ?? last } : null;
   return (
-    <header className="flex h-12 shrink-0 items-center gap-1.5 border-b border-line px-3">
-      <Link href="/workspaces" aria-label="All workspaces" className="grid h-8 w-8 place-items-center rounded-md hover:bg-hover">
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-3">
+      <Link href="/workspaces" aria-label="Whycode home: all workspaces" title="All workspaces" className="grid h-8 w-8 place-items-center rounded-md hover:bg-hover">
         <Logo />
       </Link>
-      {/* Inside a workspace the switcher lives in the sidebar; the bar only says where you are. */}
-      {!ws && <><span className="text-line2">/</span><span className="font-medium">{pageTitle(path)}</span></>}
-      {ws && (repo || section) && (
-        <nav aria-label="Location" className="flex min-w-0 items-center gap-1.5 text-[12.5px]">
-          <Link href={`/w/${ws}`} className="max-w-[160px] truncate text-dim hover:text-fg">{info?.workspace.name ?? ws}</Link>
-          <span className="text-line2">/</span>
-          <Link href={`/w/${ws}/${section ?? repo}`} className={`font-medium ${parts.length ? "text-mute hover:text-fg" : ""}`}>{section ? SECTION_LABEL[section] : repo}</Link>
-          {parts.map((p, i) => (
-            <Fragment key={i}><span className="text-line2">/</span><span className={`truncate font-mono text-[12px] ${i === parts.length - 1 ? "text-fg" : "text-dim"}`}>{p}</span></Fragment>
-          ))}
-        </nav>
+      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[12.5px]">
+        {crumbs.map((c, i) => {
+          const isLast = i === crumbs.length - 1;
+          return (
+            <Fragment key={`${i}:${c.label}`}>
+              {i > 0 && <span aria-hidden className="text-line2">/</span>}
+              {isLast || !c.href
+                ? <span aria-current={isLast ? "page" : undefined} className={`truncate ${c.mono ? "font-mono text-[12px]" : ""} ${isLast ? "font-medium text-fg" : "text-dim"}`}>{c.label}</span>
+                : <Link href={c.href} className={`max-w-[180px] truncate text-dim hover:text-fg ${c.mono ? "font-mono text-[12px]" : ""}`}>{c.label}</Link>}
+            </Fragment>
+          );
+        })}
+      </nav>
+      {back && (
+        <Link href={`/w/${back.slug}/overview`} className="ml-2 flex h-7 items-center gap-1 rounded-md border border-line px-2 text-[12px] text-mute hover:border-line2 hover:text-fg">
+          <Icon name="back" size={12} />Back to {back.name}
+        </Link>
       )}
       <div className="ml-auto flex items-center gap-1.5">
         <button onClick={onPalette} className="flex h-8 items-center gap-2 rounded-md border border-line bg-bg pl-2.5 pr-1.5 text-dim hover:border-line2 hover:text-mute">
@@ -187,8 +208,10 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
       ...(workspaces ?? (info ? [info.workspace] : [])).map((w) => ({ group: "Workspaces", label: w.name, icon: "home" as const, href: `/w/${w.slug}` })),
       ...(ws ? repos.map((r) => ({ group: "Repositories", label: r, icon: "repo" as const, href: `/w/${ws}/${repoSlug(r)}` })) : []),
       ...(ws ? [
+        { group: "Go to", label: "Overview", icon: "home" as const, href: `/w/${ws}/overview` },
         { group: "Go to", label: "Sync", icon: "replay" as const, href: `/w/${ws}/sync` },
         { group: "Go to", label: "Ingestion", icon: "layers" as const, href: `/w/${ws}/ingestion` },
+        { group: "Go to", label: "Memory review", icon: "shield" as const, href: `/w/${ws}/memory` },
         { group: "Go to", label: "Workspace settings", icon: "sliders" as const, href: `/w/${ws}/settings` },
         { group: "Go to", label: "Set up this workspace", icon: "list" as const, href: `/w/${ws}/setup` },
       ] : []),

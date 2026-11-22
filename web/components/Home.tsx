@@ -69,7 +69,7 @@ function Card({ w, onDeleted }: { w: WorkspaceRow; onDeleted: () => void }) {
       </div>
       <p className="mt-2 text-[12px]"><SyncLine s={w.last_sync} /></p>
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <Link href={`/w/${w.slug}`} className={btnPrimary}>Open</Link>
+        <Link href={`/w/${w.slug}/overview`} className={btnPrimary}>Open</Link>
         <Link href={`/w/${w.slug}/sync`} className={btnGhost}><Icon name="replay" size={13} />Sync</Link>
         <Link href={`/w/${w.slug}/ingestion`} className={btnGhost}><Icon name="layers" size={13} />Ingestion</Link>
         <Link href={`/w/${w.slug}/settings`} className={btnGhost} aria-label={`Settings of ${w.name}`}><Icon name="sliders" size={13} /></Link>

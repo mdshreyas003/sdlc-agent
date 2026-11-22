@@ -25,6 +25,13 @@ from datetime import datetime, timezone
 CACHE_SECONDS = 2.0  # neo4j reads: a page load makes ~15 of them; other instances see a change within this window
 
 
+class Stale(Exception):
+    """A compare-and-swap write found a different version than the caller read (someone else saved first)."""
+
+
+_memory_lock = threading.Lock()  # file backend: one process; the neo4j backend does its check inside the query
+
+
 def backend():
     """On Vercel (VERCEL is set; its filesystem is read-only) the default is neo4j; elsewhere file."""
     chosen = (os.environ.get("HACKFRONT_STATE") or ("neo4j" if os.environ.get("VERCEL") else "file")).lower()
@@ -101,6 +108,29 @@ class FileState:
             except (OSError, ValueError):
                 continue
         return sorted(out, key=lambda r: r["created_at"] or "", reverse=True)
+
+    def put_memory(self, ws, mid, doc: dict, expect: int | None = None) -> None:
+        """Save an entry. With `expect` (the version the caller read) the write fails with Stale if it moved on."""
+        d = self._dir(ws) / "memory"
+        d.mkdir(parents=True, exist_ok=True)
+        with _memory_lock:
+            if expect is not None:
+                try:
+                    have = json.loads((d / f"{mid}.json").read_text(encoding="utf-8")).get("version")
+                except (OSError, ValueError):
+                    have = None
+                if have != expect:
+                    raise Stale(f"entry is now v{have}")
+            _atomic(d / f"{mid}.json", json.dumps(doc))
+
+    def list_memory(self, ws) -> list[dict]:
+        d, out = self._dir(ws) / "memory", []
+        for p in sorted(d.glob("*.json")) if d.exists() else []:
+            try:
+                out.append(json.loads(p.read_text(encoding="utf-8")))
+            except (OSError, ValueError):
+                continue
+        return sorted(out, key=lambda e: e["created_at"], reverse=True)
 
     def read_sync(self, slug) -> dict | None:
         try:
@@ -192,6 +222,7 @@ SCHEMA = (
     "CREATE CONSTRAINT hf_secret_slug IF NOT EXISTS FOR (n:HfSecret) REQUIRE n.slug IS UNIQUE",
     "CREATE CONSTRAINT hf_sync_slug IF NOT EXISTS FOR (n:HfSync) REQUIRE n.slug IS UNIQUE",
     "CREATE CONSTRAINT hf_investigation_key IF NOT EXISTS FOR (n:HfInvestigation) REQUIRE n.key IS UNIQUE",
+    "CREATE CONSTRAINT hf_memory_key IF NOT EXISTS FOR (n:HfMemory) REQUIRE n.key IS UNIQUE",
     "CREATE CONSTRAINT hf_user_uid IF NOT EXISTS FOR (n:HfUser) REQUIRE n.uid IS UNIQUE",
     "CREATE CONSTRAINT hf_user_secret_uid IF NOT EXISTS FOR (n:HfUserSecret) REQUIRE n.uid IS UNIQUE",
     "CREATE CONSTRAINT hf_run_key IF NOT EXISTS FOR (n:HfRun) REQUIRE n.key IS UNIQUE",
@@ -287,6 +318,7 @@ class Neo4jState:
         _run("MATCH (n) WHERE (n:HfWorkspace OR n:HfSecret OR n:HfSync) AND n.slug = $slug DETACH DELETE n", write=True, slug=slug)
         _run("MATCH (i:HfInvestigation {ws: $slug}) DELETE i", write=True, slug=slug)
         _run("MATCH (r:HfRun {ws: $slug}) DELETE r", write=True, slug=slug)
+        _run("MATCH (m:HfMemory {ws: $slug}) DELETE m", write=True, slug=slug)
         _forget(("ws", slug), ("slugs",), ("secrets", slug), ("sync", slug))
 
     def read_secrets(self, slug) -> dict:
@@ -330,6 +362,25 @@ class Neo4jState:
                     "i.line AS line, i.confidence AS confidence, i.created_at AS created_at, i.owner AS owner "
                     "ORDER BY i.created_at DESC LIMIT $n", ws=ws, n=limit)
         return [{k: v for k, v in r.items() if not (k == "owner" and v is None)} for r in rows]
+
+    def put_memory(self, ws, mid, doc: dict, expect: int | None = None) -> None:
+        key, args = f"{ws}/{mid}", dict(ws=ws, id=mid, doc=json.dumps(doc), v=doc.get("version"))
+        if expect is None:
+            _run("MERGE (m:HfMemory {key: $key}) SET m.ws = $ws, m.id = $id, m.doc = $doc, m.version = $v", write=True, key=key, **args)
+            return
+        rows = _run("MATCH (m:HfMemory {key: $key}) WHERE m.version = $expect "  # compare-and-swap inside one query
+                    "SET m.doc = $doc, m.version = $v RETURN count(m) AS n", write=True, key=key, expect=expect, **args)
+        if not rows or rows[0]["n"] == 0:
+            raise Stale("entry changed since it was read")
+
+    def list_memory(self, ws) -> list[dict]:
+        out = []
+        for r in _run("MATCH (m:HfMemory {ws: $ws}) RETURN m.doc AS d", ws=ws):
+            try:
+                out.append(json.loads(r["d"]))
+            except ValueError:
+                continue
+        return sorted(out, key=lambda e: e["created_at"], reverse=True)
 
     def read_sync(self, slug) -> dict | None:
         rows = _run("MATCH (s:HfSync {slug: $slug}) RETURN s.doc AS d", slug=slug)  # not cached: polled for live progress

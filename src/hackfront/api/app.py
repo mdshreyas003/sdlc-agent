@@ -79,7 +79,7 @@ def health() -> dict:
     return {"ok": True}  # unauthenticated, for the host's health check; reveals nothing
 
 
-from . import accounts, admin, investigate, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
+from . import accounts, admin, investigate, memory, sync, workbench, workspaces  # noqa: E402  (routers; after app + middleware exist)
 
-for module in (accounts, workspaces, sync, workbench, investigate, admin):
+for module in (accounts, workspaces, sync, workbench, investigate, memory, admin):
     app.include_router(module.router)

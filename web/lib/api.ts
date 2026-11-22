@@ -1,7 +1,7 @@
 // Typed fetch helpers for docs/workbench-api.md. Same-origin: next.config.ts proxies /api/* to FastAPI.
 import type {
   Graph, IntegrationId, Investigation, InvestigationRow, Resource, SecretState, Step, SyncMode, SyncStatus, Targets, TargetsPatch,
-  Ingestion, Me, Run, RunMeta, TestResult, UserModels, WorkbenchInfo, WorkspaceRow,
+  Ingestion, Me, MemoryEntry, MemoryList, TriageResult, Run, RunMeta, TestResult, UserModels, WorkbenchInfo, WorkspaceRow,
 } from "./types";
 
 export class ApiError extends Error {
@@ -74,6 +74,12 @@ export const wsApi = {
   run: (ws: string, id: string, signal?: AbortSignal) => api<Run>(`${W(ws)}/runs/${encodeURIComponent(id)}`, { signal }),
   ingestion: (ws: string) => api<Ingestion>(`${W(ws)}/ingestion`),
   graph: (ws: string) => api<Graph>(`${W(ws)}/graph`),
+  memory: (ws: string) => api<MemoryList>(`${W(ws)}/memory`),
+  memoryTriage: (ws: string, anchor: string) => api<TriageResult>(`${W(ws)}/memory/triage`, { method: "POST", body: { anchor } }),
+  memoryEdit: (ws: string, id: string, body: { version: number; title?: string; body?: string; kind?: string }) =>
+    api<MemoryEntry>(`${W(ws)}/memory/${encodeURIComponent(id)}`, { method: "PUT", body }),
+  memoryMove: (ws: string, id: string, action: "approve" | "reject" | "retire" | "reopen", version: number, reason = "") =>
+    api<MemoryEntry>(`${W(ws)}/memory/${encodeURIComponent(id)}/${action}`, { method: "POST", body: { version, reason } }),
   investigations: (ws: string) => api<InvestigationRow[]>(`${W(ws)}/investigations`),
   investigation: (ws: string, id: string) => api<{ investigation: Investigation; graph: Graph }>(`${W(ws)}/investigations/${encodeURIComponent(id)}`),
   files: (ws: string, repo: string, signal?: AbortSignal) => api<{ files: string[] }>(`${W(ws)}/repo/${slash(repo)}/files`, { signal }),

@@ -22,7 +22,7 @@ A working prototype, not a memory product with a lasting-facts store. What runs 
 - **A workbench.** FastAPI plus the Next.js app in `web/`: workspaces, sync, blame, an ask box, a live trace, and claim-level answers.
 - **A benchmark harness** over a public Kafka corpus and 75 gold questions. The questions are in the repo. None are marked human-verified, so this README does not claim an accuracy score. The full comparison against no-retrieval, BM25, and Graphiti is still ahead (`data/EVAL_PLAN.md`).
 
-**Memory** — versioned decisions that point at evidence and are never cited themselves — is the next layer. The landing diagram draws it dashed.
+**Memory** — decisions, rules and past incidents that point at evidence and are never cited themselves. A first, controlled slice is on `feat/memory-triage-adrs`: triage proposes ADR / rule / episode drafts from the evidence graph, a senior developer edits and approves them in the **Memory** page, and only approved entries reach agents through the MCP `memory` tool. Screens (Overview, Memory review), the demo script and the lifecycle are in [docs/memory.md](docs/memory.md). The landing diagram still draws it dashed.
 
 The seeded **Kafka** workspace is the demo the landing describes: real Apache Kafka mail, Jira, GitHub, and KIP pages, with saved investigations. A smaller synthetic workspace (Acme) still exists for a local run with no corpus: `uv run hackfront demo`.
 
@@ -46,7 +46,7 @@ The four questions filed for the Kafka demo are in `data/kafka_demo_questions.js
 
 `why(anchor)` over a workspace's evidence graph. Read-only, no model, scoped to one workspace, and refuses with
 "Not established" when nothing supports an answer. Each result carries a verbatim excerpt and a source link.
-Decision status (live / refined / dead) and `check_change(diff)` are not built yet. Security notes and known gaps:
+`memory(anchor)` returns approved ADRs, rules and episodes only ([docs/memory.md](docs/memory.md)). Decision status (live / refined / dead) on `why` results and `check_change(diff)` are not built yet. Security notes and known gaps:
 [docs/adr/0001-mcp-server-for-coding-agents.md](docs/adr/0001-mcp-server-for-coding-agents.md).
 
 ### Usage guide
@@ -159,13 +159,14 @@ data/gold/questions.jsonl   75 gold questions
 data/kafka_demo_questions.json  four Kafka demo questions
 data/raw/               Kafka corpus, gitignored; see data/MANIFEST.md
 docs/architecture.md    platform, evidence chain, agent loop, graph contract
+docs/memory.md          memory lifecycle: triage, review, approve, serve to agents
 docs/workbench-api.md   UI ↔ API contract
 docs/deploy.md          UI on Vercel, API on a container host, Neo4j Aura
 docs/deploy-vercel.md   API and UI both on Vercel
 SPEC.md                 product scope
 ```
 
-There is no `docs/adr/` tree in this repo. Architecture decisions that are written down live in [docs/architecture.md](docs/architecture.md) and [SPEC.md](SPEC.md). [docs/Claim Processing Engine.html](docs/Claim%20Processing%20Engine.html) is a proposed claim engine. The page says it is not implemented.
+Architecture decisions live in [docs/adr/](docs/adr/), [docs/architecture.md](docs/architecture.md) and [SPEC.md](SPEC.md). [docs/Claim Processing Engine.html](docs/Claim%20Processing%20Engine.html) is a proposed claim engine. The page says it is not implemented.
 
 Video pipeline: story in [video/script.md](video/script.md), Remotion scenes in [video/remotion/](video/remotion/) (S1–S3 and S5–S9; S4 is a Playwright recording), stitch steps in [video/README.md](video/README.md). The rendered file checked in for review is [docs/engineering-memory.mp4](docs/engineering-memory.mp4).
 

@@ -187,3 +187,17 @@ def test_api_end_to_end_on_neo4j_state(pg, monkeypatch):
     r = client.put(f"/api/w/{slug}/secrets", json={"github_token": "x"})
     assert r.status_code == 422 and "HACKFRONT_SECRET_KEY" in r.json()["detail"]
     assert client.delete(f"/api/workspaces/{slug}").status_code == 200 and client.get("/api/workspaces").json() == []
+
+
+# ---------------------------------------------------------------- memory entries
+def test_memory_compare_and_swap_and_cleanup_on_delete(kind):
+    a = config.create_workspace("Acme Team")
+    st = state.backend()
+    st.put_memory(a, "m1", {"id": "m1", "version": 1, "created_at": "2026-01-01"})
+    st.put_memory(a, "m1", {"id": "m1", "version": 2, "created_at": "2026-01-01"}, expect=1)  # first writer wins
+    with pytest.raises(state.Stale):
+        st.put_memory(a, "m1", {"id": "m1", "version": 2, "created_at": "2026-01-01", "x": "lost"}, expect=1)  # second one read v1
+    assert [e["version"] for e in st.list_memory(a)] == [2] and "x" not in st.list_memory(a)[0]
+    config.delete_workspace(a)
+    b = config.create_workspace("Acme Team")  # same slug is free again and must start empty
+    assert b == a and state.backend().list_memory(b) == []

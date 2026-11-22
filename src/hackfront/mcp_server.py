@@ -50,7 +50,15 @@ def why(harness: Harness, anchor: str) -> dict:
     return {"anchor": anchor, "refused": False, "evidence": evidence, "note": None}
 
 
-def build_server(harness: Harness):
+def recall(entries: list[dict], anchor: str) -> dict:
+    """Approved memory only (ADRs, rules, episodes a human signed off). Drafts, staged revisions and rejects never leave."""
+    from .memory import served
+
+    items = served(entries, anchor)
+    return {"anchor": anchor, "items": items, "note": None if items else "No approved memory matches. Use `why` for raw history."}
+
+
+def build_server(harness: Harness, workspace: str | None = None):
     from mcp.server.mcpserver import MCPServer
     from mcp.types import ToolAnnotations
 
@@ -62,6 +70,15 @@ def build_server(harness: Harness):
         Returns evidence (commits, PRs, tickets, threads) with verbatim quotes and links, or refused=true."""
         return why(harness, anchor)
 
+    if workspace:
+        from . import state
+
+        @server.tool(name="memory", annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False))
+        def memory_tool(anchor: str = "") -> dict:
+            """Team-approved decisions (ADRs), rules and past incidents for this workspace, each citing its evidence ids.
+            Read these before editing; they were reviewed by a senior developer. Empty `anchor` lists everything."""
+            return recall(state.backend().list_memory(workspace), anchor)
+
     return server
 
 
@@ -71,4 +88,4 @@ def main(workspace: str) -> None:
 
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     harness = Harness(config.neo4j_driver(), scopes=flat_scopes(config.scopes(workspace)))
-    build_server(harness).run()
+    build_server(harness, workspace).run()
