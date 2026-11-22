@@ -1,9 +1,9 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import Reveal from "./Reveal";
 import { Logo } from "./Logo";
 import StageNav from "./StageNav";
 import { ArchDiagram, FlowDiagram, GraphDiagram, HeroArt, MarketDiagram, WhoDiagram } from "./StageDiagrams";
+import LandingCta from "./LandingCta";
 import { btnAccent } from "./ui";
 
 // Landing page at "/": a stage deck, one idea per screen, few words. Order is the pitch order: business impact (who,
@@ -62,7 +62,7 @@ export default function Landing() {
       <header className="fixed inset-x-0 top-0 z-20 border-b border-line bg-bg/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1180px] items-center justify-between px-6 md:px-10">
           <span className="flex items-center gap-2.5 text-[15px] font-semibold"><Logo size={20} />whycode</span>
-          <Link href="/login" className={btnAccent}>Sign in</Link>
+          <LandingCta className={btnAccent} />
         </div>
       </header>
       <StageNav slides={SLIDES} />
@@ -170,7 +170,7 @@ export default function Landing() {
           <div aria-hidden className="px-grid px-halo pointer-events-none absolute inset-0" />
           <div className="relative mx-auto w-full max-w-[1080px] text-center">
             <h2 id="start-h" className="text-[38px] font-semibold leading-[1.06] tracking-tight md:text-[60px]">Connect a repo.<br /><Em>Never lose the why.</Em></h2>
-            <div className="mt-10"><Link href="/login" className={`${btnAccent} h-12 px-8 text-[15px]`}>Sign in</Link></div>
+            <div className="mt-10"><LandingCta className={`${btnAccent} h-12 px-8 text-[15px]`} /></div>
           </div>
         </section>
       </main>
