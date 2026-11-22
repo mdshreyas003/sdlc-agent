@@ -34,6 +34,13 @@ def _store(ws: str):
     return state.backend()
 
 
+def _writable(ws: str) -> None:
+    """Memory belongs to the workspace owner. A shared demo (no owner) is read-only for everyone when accounts are on."""
+    raw = state.backend().read_workspace(config.check_slug(ws))
+    if auth.enabled() and raw and auth.is_shared(raw):
+        raise HTTPException(403, "Shared demo memory is read-only. Create your own workspace to review and approve.")
+
+
 def _who() -> str:
     user = auth.current()
     return (user.login or user.name or user.id) if user else "local"
@@ -73,6 +80,7 @@ def list_memory(ws: str, status: str | None = None) -> dict:
 def triage(ws: str, body: TriageBody) -> dict:
     """The hook a new PR/change calls: gather evidence for the anchor, then create, refine or skip. Never approves."""
     store = _store(ws)
+    _writable(ws)
     anchor = body.anchor.strip()
     if not 1 <= len(anchor) <= 200:
         raise HTTPException(422, "anchor must be 1-200 characters")
@@ -100,6 +108,7 @@ def triage(ws: str, body: TriageBody) -> dict:
 @router.put("/api/w/{ws}/memory/{mid}")
 def edit(ws: str, mid: str, body: EditBody) -> dict:
     store = _store(ws)
+    _writable(ws)
     old = _entry(store, ws, mid)
     new = _guard(memory.edit, old, body.version, _who(), body.title, body.body, body.kind)
     _save(store, ws, old, new)
@@ -109,6 +118,7 @@ def edit(ws: str, mid: str, body: EditBody) -> dict:
 @router.post("/api/w/{ws}/memory/{mid}/{action}")
 def move(ws: str, mid: str, action: str, body: MoveBody) -> dict:
     store = _store(ws)
+    _writable(ws)
     old = _entry(store, ws, mid)
     new = _guard(memory.move, old, action, body.version, _who(), body.reason)
     _save(store, ws, old, new)
