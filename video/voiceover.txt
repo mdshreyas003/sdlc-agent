@@ -1,0 +1,19 @@
+Look at this line. Try a payment at most three times. Why three? Nobody remembers.
+
+A new engineer sees a low number and raises it. So does an AI agent. The reason is lost in old tickets, chat and pull requests.
+
+Meet Brightcart, a simulated online store. In one outage, 214 customers were charged twice. So the team set a limit: try a payment at most three times.
+
+We connect GitHub, Jira and team chat. We build a connected map from the links people wrote. You ask why, and you get quotes. A person approves each decision note. Coding agents read those notes before they edit.
+
+Starting is easy. Connect your tools and test the connection. Before a sync runs, you see what it will pull. While it runs, you watch every source.
+
+Open a file. Every line shows who changed it and why. Each answer carries an exact quote, and code checks it. No proof? It says: not established.
+
+Months later, a coding agent opens a pull request: raise the limit from three to eight. Before it edits, it asks our memory. Three approved notes come back. The agent learns what it would undo, and who must review it.
+
+The memory keeps up. A new chat thread joins the map. Two days later, a ticket is corrected. Every note that cites it is flagged for review. Nothing goes stale in silence.
+
+Real Kafka data: 1,201 items and 2,194 links. Out of 18 questions, plain search fully answered one. The connected map answered nine. A real model passed five of seven first checks. Our 75 gold questions are not checked by a person yet. So we give no accuracy number. No proof means not established. Nothing goes live without a person.
+
+Agents write code. We guard it and remember why. The memory feeds the next agent. Engineering Memory: answers your team can check.
