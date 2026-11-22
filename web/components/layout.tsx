@@ -12,12 +12,13 @@ import { Icon } from "./icons";
 
 const KEY = "wb-layout";
 const NARROW = 1180;
-export const LIMITS = { treeW: [180, 420], answerW: [320, 720], evH: [140, 640], codeSize: [11, 18] } as const;
+export const LIMITS = { treeW: [180, 420], answerW: [320, 720], evH: [140, 640], codeSize: [11, 18], detailW: [260, 800] } as const;
+export const GRAPH_ZOOMS = [0, 100, 150, 200, 300] as const; // 0 = fit the pane
 
-interface Stored { treeW: number; treeOpen: boolean | null; answerW: number; answerOpen: boolean; evH: number; evOpen: boolean; codeSize: number; wrap: boolean }
+interface Stored { treeW: number; treeOpen: boolean | null; answerW: number; answerOpen: boolean; evH: number; evOpen: boolean; codeSize: number; wrap: boolean; detailW: number; graphZoom: number }
 // Wrap is on by default: a long line should never hide off the right edge of a narrow pane.
-export const DEFAULT_SIZES = { treeW: 232, answerW: 380, evH: 260 } as const;
-const DEFAULTS: Stored = { ...DEFAULT_SIZES, treeOpen: null, answerOpen: true, evOpen: true, codeSize: 13, wrap: true };
+export const DEFAULT_SIZES = { treeW: 232, answerW: 380, evH: 260, detailW: 380 } as const;
+const DEFAULTS: Stored = { ...DEFAULT_SIZES, treeOpen: null, answerOpen: true, evOpen: true, codeSize: 13, wrap: true, graphZoom: 0 };
 const clamp = (n: number, [lo, hi]: readonly [number, number]) => Math.min(hi, Math.max(lo, n));
 
 function load(): Stored {
@@ -30,6 +31,8 @@ function load(): Stored {
       answerW: num(raw.answerW, DEFAULTS.answerW, LIMITS.answerW), answerOpen: bool(raw.answerOpen, true),
       evH: num(raw.evH, DEFAULTS.evH, LIMITS.evH), evOpen: bool(raw.evOpen, true),
       codeSize: num(raw.codeSize, DEFAULTS.codeSize, LIMITS.codeSize), wrap: bool(raw.wrap, DEFAULTS.wrap),
+      detailW: num(raw.detailW, DEFAULTS.detailW, LIMITS.detailW),
+      graphZoom: typeof raw.graphZoom === "number" && (GRAPH_ZOOMS as readonly number[]).includes(raw.graphZoom) ? raw.graphZoom : 0,
     };
   } catch { return DEFAULTS; }
 }
@@ -37,10 +40,11 @@ function load(): Stored {
 interface Layout {
   vw: number;
   focus: boolean; // temporary "code only" mode, never remembered
-  treeW: number; answerW: number; evH: number; codeSize: number; wrap: boolean;
+  evMax: boolean; // temporary full view of the evidence drawer (code hidden), never remembered
+  treeW: number; answerW: number; evH: number; codeSize: number; wrap: boolean; detailW: number; graphZoom: number;
   treeVisible: boolean; answerVisible: boolean; evidenceOpen: boolean;
   set: (patch: Partial<Stored>) => void;
-  toggleTree: () => void; toggleAnswer: () => void; toggleEvidence: () => void; toggleFocus: () => void; reset: () => void;
+  toggleTree: () => void; toggleAnswer: () => void; toggleEvidence: () => void; toggleFocus: () => void; toggleEvMax: () => void; reset: () => void;
 }
 const Ctx = createContext<Layout | null>(null);
 export const useLayout = () => {
@@ -53,6 +57,7 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
   const [s, setS] = useState<Stored>(DEFAULTS);
   const [loaded, setLoaded] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [evMax, setEvMax] = useState(false);
   const [vw, setVw] = useState(1440);
   useEffect(() => { setS(load()); setLoaded(true); }, []);
   useEffect(() => {
@@ -66,17 +71,18 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
   const set = useCallback((patch: Partial<Stored>) => setS((p) => ({ ...p, ...patch })), []);
   const treeOpen = s.treeOpen ?? vw >= NARROW; // no saved choice: auto by window width
   const l = useMemo<Layout>(() => ({
-    vw, focus, treeW: s.treeW, answerW: s.answerW, evH: s.evH, codeSize: s.codeSize, wrap: s.wrap,
+    vw, focus, evMax, treeW: s.treeW, answerW: s.answerW, evH: s.evH, codeSize: s.codeSize, wrap: s.wrap, detailW: s.detailW, graphZoom: s.graphZoom,
     treeVisible: treeOpen && !focus, answerVisible: s.answerOpen && !focus, evidenceOpen: s.evOpen && !focus,
     set,
     toggleTree: () => { setFocus(false); set({ treeOpen: !treeOpen }); },
     toggleAnswer: () => { setFocus(false); set({ answerOpen: !s.answerOpen }); },
     toggleEvidence: () => { setFocus(false); set({ evOpen: !s.evOpen }); },
-    toggleFocus: () => setFocus((f) => !f),
-    reset: () => { setFocus(false); setS(DEFAULTS); },
-  }), [vw, focus, s, treeOpen, set]);
+    toggleFocus: () => { setEvMax(false); setFocus((f) => !f); },
+    toggleEvMax: () => { setFocus(false); if (!evMax) set({ evOpen: true }); setEvMax(!evMax); },
+    reset: () => { setFocus(false); setEvMax(false); setS(DEFAULTS); },
+  }), [vw, focus, evMax, s, treeOpen, set]);
 
-  // Shortcuts (ignored while typing): \ files · ] answer · e evidence · z code only
+  // Shortcuts (ignored while typing): \ files · ] answer · e evidence · m evidence full view · z code only
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
@@ -85,6 +91,7 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
       else if (e.key === "]") l.toggleAnswer();
       else if (e.key === "e") l.toggleEvidence();
       else if (e.key === "z") l.toggleFocus();
+      else if (e.key === "m") l.toggleEvMax();
     };
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
@@ -128,7 +135,7 @@ export function Splitter({ orientation, value, min, max, onChange, onReset, inve
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); start.current = { p: horiz ? e.clientY : e.clientX, v: value }; document.body.style.userSelect = "none"; }}
       onPointerMove={move} onPointerUp={end} onPointerCancel={end} onDoubleClick={onReset} onKeyDown={key}
       className={`group relative shrink-0 touch-none bg-line outline-none transition-colors hover:bg-accent focus-visible:bg-accent ${horiz ? "h-px w-full cursor-row-resize" : "h-full w-px cursor-col-resize"}`}>
-      <span aria-hidden className={`absolute ${horiz ? "inset-x-0 -inset-y-1" : "inset-y-0 -inset-x-1"}`} />
+      <span aria-hidden className={`absolute ${horiz ? "inset-x-0 -inset-y-1.5" : "inset-y-0 -inset-x-1.5"}`} />
     </div>
   );
 }

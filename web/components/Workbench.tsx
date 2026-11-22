@@ -15,7 +15,7 @@ function Layout() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "Escape") { wb.selectNode(null); wb.setClaim(null); }
+      if (e.key === "Escape") { if (L.evMax) L.toggleEvMax(); else { wb.selectNode(null); wb.setClaim(null); } }
       else if (e.key === "j") wb.stepNode(1);
       else if (e.key === "k") wb.stepNode(-1);
       else if (e.key === "1") wb.setTab("timeline");
@@ -35,8 +35,8 @@ function Layout() {
   return (
     <div className="relative flex h-full min-w-0">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <CodePane />
-        {wb.inv && L.evidenceOpen && (
+        {!(L.evMax && wb.inv) && <CodePane />}
+        {wb.inv && L.evidenceOpen && !L.evMax && (
           <Splitter orientation="horizontal" invert label="Evidence height" value={L.evH} min={LIMITS.evH[0]} max={evMax} onChange={(v) => L.set({ evH: v })} onReset={() => L.set({ evH: DEFAULT_SIZES.evH })} />
         )}
         <Evidence />
