@@ -31,7 +31,9 @@ def signed_in(login: str, uid: str | None = None) -> TestClient:
 
 def test_enabled_requires_a_session_and_me_is_public():
     anon = TestClient(app)
-    assert anon.get("/api/me").json() == {"auth": "enabled", "methods": ["github"], "user": None}
+    me0 = anon.get("/api/me").json()
+    assert {k: me0[k] for k in ("auth", "methods", "user")} == {"auth": "enabled", "methods": ["github"], "user": None}
+    assert me0["callback_url"].endswith("/api/auth/github/callback")
     assert anon.get("/api/workspaces").status_code == 401
     assert anon.get("/api/w/x/workbench").status_code == 401
     alice = signed_in("alice", "gh-1")
@@ -341,3 +343,17 @@ def test_github_callback_rejects_accounts_off_the_allowlist(monkeypatch):
     ok = c.get(f"/api/auth/github/callback?code=abc&state={packed}", cookies={auth.STATE_COOKIE: nonce})
     assert ok.headers["location"] == "/login?error=not_allowed" and auth.COOKIE not in ok.headers.get("set-cookie", "")
     assert state.backend().read_user("gh-66") is None  # nothing was created
+
+
+def test_callback_url_uses_the_browser_origin_not_the_api_host(monkeypatch):
+    c = TestClient(app, follow_redirects=False)
+    api_only = c.get("/api/auth/github/login").headers["location"]
+    assert "redirect_uri=http%3A%2F%2Ftestserver%2Fapi%2Fauth%2Fgithub%2Fcallback" in api_only  # the API's own host: wrong behind a proxy
+    fwd = {"x-forwarded-host": "localhost:3000", "x-forwarded-proto": "http"}
+    assert "redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fgithub%2Fcallback" in c.get("/api/auth/github/login", headers=fwd).headers["location"]
+    assert c.get("/api/me", headers=fwd).json()["callback_url"] == "http://localhost:3000/api/auth/github/callback"
+    bad = c.get("/api/auth/github/login", headers={"x-forwarded-host": "evil.com/x y", "x-forwarded-proto": "http"}).headers["location"]
+    assert "evil.com" not in bad  # a malformed forwarded host is ignored
+    monkeypatch.setenv("HACKFRONT_PUBLIC_URL", "https://memory.example.com/")
+    assert "redirect_uri=https%3A%2F%2Fmemory.example.com%2Fapi" in c.get("/api/auth/github/login", headers=fwd).headers["location"]  # env wins
+    assert c.get("/api/me").json()["callback_url"] == "https://memory.example.com/api/auth/github/callback"
