@@ -1,3 +1,5 @@
+> The deck is now 7 slides: title, the problem, who buys, where we sit, architecture, a real use case end to end, proof. Rows below for removed slides no longer apply.
+
 # Brightcart pitch deck: sources
 
 Deck: `docs/Brightcart-Pitch.pptx` (14 slides, speaker notes on every slide). Every number and claim below was checked against the file named.
