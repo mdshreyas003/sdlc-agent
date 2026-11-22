@@ -72,6 +72,30 @@ Decision status (live / refined / dead) and `check_change(diff)` are not built y
 4. **Ask before editing.** In the agent: "Use the why tool on `clients/.../Sender.java` before changing its retry
    logic." The `anchor` can be a file path, a ticket key (`KAFKA-18654`), a PR number (`#18720`) or a few words.
 
+### Connect to the deployed API (no database login on the client)
+
+The deployed backend serves the same tool over HTTP at `https://<your-api>/mcp`. Agents authenticate with a
+per-workspace bearer token; only the backend holds the Neo4j login.
+
+1. Redeploy the API with this version (Render rebuilds from the repo).
+2. Issue a token for a workspace. It is shown once and replaces any earlier one:
+
+   ```sh
+   curl -X POST https://<your-api>/api/w/kafka/mcp-token -H "Authorization: Bearer $HACKFRONT_ACCESS_TOKEN"
+   # or, with the same NEO4J_* and HACKFRONT_STATE=neo4j / HACKFRONT_SECRET_KEY as the deployment:
+   uv run hackfront mcp-token --workspace kafka
+   ```
+
+   If sign-in is enabled the curl route also needs your session cookie; the CLI route does not.
+3. Add it to Claude Code:
+
+   ```sh
+   claude mcp add --transport http why https://<your-api>/mcp --header "Authorization: Bearer hfm_kafka.<token>"
+   ```
+
+   Revoke with `DELETE /api/w/kafka/mcp-token` or `uv run hackfront mcp-token --workspace kafka --revoke`.
+   Treat the token like a password. Render's free plan sleeps after 15 idle minutes, so the first call can take about a minute.
+
 ### What you get back
 
 ```json
