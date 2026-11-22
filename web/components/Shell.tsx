@@ -37,7 +37,7 @@ function useTheme() {
 }
 
 /** Workspace switcher. `rail` = the full-width block at the top of the workspace sidebar (its one home). */
-export function Switcher({ rail = false }: { rail?: boolean }) {
+export function Switcher({ rail = false, compact = false }: { rail?: boolean; compact?: boolean }) {
   const { ws } = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -52,13 +52,13 @@ export function Switcher({ rail = false }: { rail?: boolean }) {
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title={cur?.name}
-        className={rail ? "flex h-11 w-full items-center gap-2.5 rounded-lg border border-line bg-bg px-2 text-left hover:border-line2" : "flex h-8 items-center gap-2 rounded-md pl-1.5 pr-2 hover:bg-hover"}>
+        className={compact ? "grid h-11 w-full place-items-center rounded-lg border border-line bg-bg hover:border-line2" : rail ? "flex h-11 w-full items-center gap-2.5 rounded-lg border border-line bg-bg px-2 text-left hover:border-line2" : "flex h-8 items-center gap-2 rounded-md pl-1.5 pr-2 hover:bg-hover"}>
         {cur && <span className={`grid shrink-0 place-items-center rounded bg-fg font-semibold text-bg ${rail ? "h-7 w-7 text-[13px]" : "h-5 w-5 text-[11px]"}`}>{cur.name[0]?.toUpperCase()}</span>}
-        <span className="min-w-0 flex-1">
+        {!compact && <span className="min-w-0 flex-1">
           {rail && <span className="block font-mono text-[10px] uppercase leading-none tracking-wide text-dim">Workspace</span>}
           <span className="block truncate font-medium leading-tight">{cur?.name ?? "Workspaces"}</span>
-        </span>
-        <Icon name="updown" size={12} className="shrink-0 text-dim" />
+        </span>}
+        {!compact && <Icon name="updown" size={12} className="shrink-0 text-dim" />}
       </button>
       {open && (
         <div role="menu" className={`fade-up absolute left-0 z-40 rounded-lg border border-line2 bg-bg p-1 shadow-xl shadow-black/20 ${rail ? "top-12 w-[240px]" : "top-9 w-56"}`}>
