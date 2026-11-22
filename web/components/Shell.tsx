@@ -144,17 +144,18 @@ function Topbar({ onPalette }: { onPalette: () => void }) {
   // One rule: Workspaces / <workspace> / <page> [/ file]. Every part is a link; the last one is the page you are on.
   const crumbs: { label: string; href: string; mono?: boolean }[] = ws
     ? [
+        { label: "Home", href: "/" },
         { label: "Workspaces", href: "/workspaces" },
         { label: wsName ?? ws, href: `/w/${ws}/overview` },
         { label: section ? SECTION_LABEL[section] : "Ask", href: `/w/${ws}${section ? `/${section}` : ""}` },
         ...(repo && !section ? [{ label: repo, href: `/w/${ws}/${repo}` }] : []),
         ...(file?.split("/").map((p, i, all) => ({ label: p, href: "", mono: true, last: i === all.length - 1 })) ?? []),
       ]
-    : [{ label: pageTitle(path) || "Workspaces", href: path }];
+    : [{ label: "Home", href: "/" }, { label: pageTitle(path) || "Page not found", href: path }];
   const back = !ws && last ? { slug: last, name: workspaces?.find((w) => w.slug === last)?.name ?? last } : null;
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-3">
-      <Link href="/workspaces" aria-label="Whycode home: all workspaces" title="All workspaces" className="grid h-8 w-8 place-items-center rounded-md hover:bg-hover">
+      <Link href="/" aria-label="whycode home" title="Home" className="grid h-8 w-8 place-items-center rounded-md hover:bg-hover">
         <Logo />
       </Link>
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[12.5px]">

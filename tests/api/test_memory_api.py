@@ -62,3 +62,19 @@ def test_concurrent_save_is_refused_not_silently_overwritten(ws, monkeypatch):
     r = client.put(f"/api/w/alpha/memory/{ws['id']}", json={"version": 1, "body": "mine"})
     assert r.status_code == 409
     assert state.backend().list_memory("alpha")[0]["title"] == "rival title"
+
+
+def test_shared_demo_memory_is_read_only_when_accounts_are_on(ws, monkeypatch):
+    from fastapi import HTTPException
+
+    from hackfront import auth
+    from hackfront.api import memory as api
+
+    monkeypatch.setattr(auth, "enabled", lambda: True)
+    config.save_workspace("alpha", {**config.load_workspace("alpha"), "demo": True})  # demo, no owner = shared
+    with pytest.raises(HTTPException) as shared:
+        api._writable("alpha")
+    assert shared.value.status_code == 403
+    raw = state.backend().read_workspace("alpha")
+    state.backend().write_workspace("alpha", {**raw, "owner": "42"})  # owned: the owner's boundary, writable
+    api._writable("alpha")
