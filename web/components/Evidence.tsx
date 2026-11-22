@@ -1,9 +1,10 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useData } from "@/lib/data";
 import { KINDS, KIND_COLOR, fmtDate, fmtTime, type Kind } from "@/lib/types";
 import Detail from "./Detail";
 import { Icon } from "./icons";
+import { useLayout } from "./layout";
 import { useWb } from "./store";
 
 const KIND_ICON = { doc: "file", issue: "issue", discussion: "discussion", pr: "pr", commit: "commit" } as const;
@@ -19,14 +20,15 @@ export function KindBadge({ kind, label }: { kind: Kind; label?: string }) {
 export default function Evidence() {
   const { inv, tab, setTab, hiddenKinds, toggleKind, showInferred, setShowInferred, visible, selected } = useWb();
   const { hasInferred } = useData();
-  const [open, setOpen] = useState(true);
+  const L = useLayout();
+  const open = L.evidenceOpen; // remembered; collapses to this header bar
   if (!inv) return null;
   const tabs = [{ id: "timeline", label: "Timeline", key: "1" }, { id: "graph", label: "Graph", key: "2" }] as const;
 
   return (
-    <section aria-label="Evidence" className={`flex shrink-0 flex-col border-t border-line ${open ? "h-[36%] min-h-[220px]" : ""}`}>
+    <section aria-label="Evidence" style={open ? { height: L.evH } : undefined} className={`flex shrink-0 flex-col ${open ? "" : "border-t border-line"}`}>
       <div className="flex h-10 shrink-0 items-center gap-1 px-2">
-        <button onClick={() => setOpen((o) => !o)} aria-label={open ? "Collapse evidence" : "Expand evidence"} className="grid h-7 w-7 place-items-center rounded-md text-dim hover:bg-hover hover:text-fg">
+        <button onClick={L.toggleEvidence} aria-label={open ? "Collapse evidence (e)" : "Expand evidence (e)"} title={open ? "Collapse evidence (e)" : "Expand evidence (e)"} className="grid h-7 w-7 place-items-center rounded-md text-dim hover:bg-hover hover:text-fg">
           <Icon name="chevron" size={13} className={`transition-transform ${open ? "" : "-rotate-90"}`} />
         </button>
         <span className="mr-2 text-[12.5px] font-medium">Evidence <span className="font-normal text-dim">{visible.length}</span></span>

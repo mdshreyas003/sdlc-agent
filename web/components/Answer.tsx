@@ -6,6 +6,7 @@ import { lockedReason, useData } from "@/lib/data";
 import type { Claim, Status, Step } from "@/lib/types";
 import { KindBadge } from "./Evidence";
 import { Icon, type IconName } from "./icons";
+import { useLayout } from "./layout";
 import { useWb } from "./store";
 
 const ST: Record<Status, { label: string; color: string; icon: IconName }> = {
@@ -63,6 +64,7 @@ export default function Answer() {
   const { info } = useData();
   const [q, setQ] = useState(useSearchParams().get("q") ?? ""); // the setup page's suggested questions arrive as ?q=
   const providers = (info?.providers ?? []).filter((p) => p.configured);
+  const L = useLayout();
 
   const submit = (e: { preventDefault(): void }) => {
     e.preventDefault();
@@ -73,8 +75,11 @@ export default function Answer() {
   };
 
   return (
-    <aside className="flex h-full min-w-0 flex-col border-l border-line" aria-label="Answer">
-      <div className="flex h-10 shrink-0 items-center border-b border-line px-2"><Picker /></div>
+    <aside className="flex h-full min-w-0 flex-col text-[14px] leading-relaxed" aria-label="Answer">
+      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-line px-2">
+        <Picker />
+        <button onClick={L.toggleAnswer} aria-label="Hide answer (])" title="Hide answer (])" className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-dim hover:bg-hover hover:text-fg"><Icon name="right" size={13} /></button>
+      </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {running ? <LiveBody /> : inv ? <Body key={inv.id} /> : (
           <div className="p-3">
@@ -163,9 +168,21 @@ function Body() {
   );
 }
 
+/** A trace step's detail: three lines, then "more" (long model text otherwise pushes the answer off screen). */
+function Detail3({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > 160;
+  return (
+    <div className="text-[12.5px] leading-snug text-dim">
+      <p className={!open && long ? "line-clamp-3" : ""}>{text}</p>
+      {long && <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mt-0.5 text-[11.5px] text-accent underline underline-offset-2">{open ? "less" : "more"}</button>}
+    </div>
+  );
+}
+
 function TraceList({ trace, step }: { trace: Step[]; step: number }) {
   return (
-    <ol className="space-y-1.5">
+    <ol className="space-y-2">
       {trace.map((s, i) => {
         const state = i < step ? "done" : i === step ? "active" : "pending";
         return (
@@ -173,7 +190,7 @@ function TraceList({ trace, step }: { trace: Step[]; step: number }) {
             <span className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full ${state === "done" ? "bg-ok/15 text-ok" : state === "active" ? "pulse2 bg-accent/20 text-accent" : "bg-line text-dim"}`}>
               <Icon name={state === "done" ? "check" : STEP_ICON[s.kind]} size={9} />
             </span>
-            <div className="min-w-0"><div className={s.kind === "tool" ? "font-mono text-[12px]" : ""}>{s.label}</div><div className="text-[11.5px] text-dim">{s.detail}</div></div>
+            <div className="min-w-0"><div className={s.kind === "tool" ? "font-mono text-[12.5px]" : "font-medium"}>{s.label}</div><Detail3 text={s.detail} /></div>
           </li>
         );
       })}
