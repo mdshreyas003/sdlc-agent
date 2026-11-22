@@ -69,3 +69,12 @@ def test_errors_are_events_not_exceptions(graph):
     ev = list(agent.run("q", provider="sarvam", driver=graph))[0]  # not configured in test env
     assert ev["event"] == "error" and "SARVAM_API_KEY" in ev["message"]
     assert collect(graph, " ")[0]["event"] == "error"
+
+
+def test_retrieve_follows_links_from_commits_to_prs_and_issues(graph, fake):
+    # the planner only does a keyword search that hits the commit; PR and issue arrive through the automatic chain
+    fake(Scripted([{"tool": "find_text", "arg": "cap gateway retries"}], synth()))
+    events = collect(graph, "why are retries capped?")
+    retrieve = next(e for e in events if e.get("node") == "retrieve")["data"]
+    assert f"evidence_chain({cid('commit', 'c1')})" in retrieve["calls"]
+    assert {cid("pull_request", "pr1"), cid("issue", "issue1")} <= set(retrieve["evidence_ids"])

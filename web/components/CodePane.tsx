@@ -1,8 +1,9 @@
 "use client";
-import { useMemo } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/lib/data";
 import { fmtDate } from "@/lib/types";
 import Empty from "./Empty";
+import { Icon } from "./icons";
 import { useWb } from "./store";
 
 const PR_COLORS = ["#8b5cf6", "#14b8a6", "#f59e0b", "#f43f5e"];
@@ -24,8 +25,40 @@ function highlight(src: string) {
   return out;
 }
 
+/** Question box under the chosen line. Enter sends (Shift+Enter = new line), Escape closes; nothing runs before that. */
+function Composer({ line, text }: { line: number; text: string }) {
+  const { askLine, closeComposer, running, askError } = useWb();
+  const [q, setQ] = useState("");
+  const box = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { box.current?.focus(); }, [line]);
+  const send = () => { if (q.trim() && !running) askLine(q, line); };
+  return (
+    <div className="fade-up my-1.5 ml-[100px] mr-4 max-w-[640px] whitespace-normal rounded-lg border border-line2 bg-bg p-2 font-sans text-[13px] leading-normal shadow-lg shadow-black/10"
+      role="group" aria-label={`Ask about line ${line}`}>
+      <div className="mb-1.5 flex items-center gap-2 text-[11.5px] text-dim">
+        <span className="shrink-0">Ask about line {line}</span>
+        <code className="min-w-0 truncate font-mono text-[11px] text-mute">{text.trim()}</code>
+        <button type="button" onClick={closeComposer} aria-label="Close" className="ml-auto grid h-5 w-5 shrink-0 place-items-center rounded hover:bg-hover hover:text-fg">×</button>
+      </div>
+      <div className="flex items-end gap-2">
+        <textarea ref={box} value={q} rows={2} maxLength={8000} disabled={running} aria-label={`Question about line ${line}`}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") { e.preventDefault(); closeComposer(); }
+            else if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
+          }}
+          placeholder="Why is this line the way it is? Type a question and press Enter"
+          className="min-h-[44px] min-w-0 flex-1 resize-none rounded-md border border-line bg-transparent px-2 py-1.5 outline-none placeholder:text-dim focus:border-line2" />
+        <button type="button" onClick={send} disabled={!q.trim() || running} aria-label="Send question"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-dim hover:bg-hover hover:text-accent disabled:opacity-40"><Icon name="corner" size={14} /></button>
+      </div>
+      {askError && <p role="alert" className="mt-1 text-[11.5px] text-warn">{askError}</p>}
+    </div>
+  );
+}
+
 export default function CodePane() {
-  const { file, code, line, lit, selected, selectLine, hoverNodes } = useWb();
+  const { file, code, line, composer, lit, selected, selectLine, hoverNodes } = useWb();
   const { byId, explained, prOf } = useData();
   const lines = useMemo(() => code.data?.lines ?? [], [code.data]);
   // PRs in order of first appearance, so each gets a stable stripe colour within the file
@@ -46,10 +79,17 @@ export default function CodePane() {
         <span className="font-mono text-[12.5px] font-medium">{file.split("/").pop()}</span>
         <span className="truncate text-[11.5px] text-dim">{withReason} of {lines.length} lines have recorded reasons</span>
         {!code.data.complete && <span className="truncate text-[11.5px] text-warn" title={code.data.note}>Blame incomplete{code.data.note ? `: ${code.data.note}` : ""}</span>}
-        <span className="ml-auto hidden shrink-0 text-[11.5px] text-dim xl:inline">click a line to ask why</span>
+        <span className="ml-auto hidden shrink-0 text-[11.5px] text-dim xl:inline">click or select code to ask about it</span>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto py-2 font-mono text-[12px] leading-[21px]">
+      <div className="min-h-0 flex-1 overflow-auto py-2 font-mono text-[12px] leading-[21px]"
+        onMouseUp={() => { // selecting code text also opens the box, on the line where the selection starts
+          const sel = window.getSelection();
+          if (!sel || sel.isCollapsed || !sel.anchorNode) return;
+          const el = (sel.anchorNode instanceof Element ? sel.anchorNode : sel.anchorNode.parentElement)?.closest("[data-line]");
+          const n = Number(el?.getAttribute("data-line"));
+          if (n) selectLine(n);
+        }}>
         {lines.map((l, i) => {
           const n = l.blame ? byId[l.blame] : undefined;
           const isFirst = lines[i - 1]?.blame !== l.blame;
@@ -58,7 +98,8 @@ export default function CodePane() {
           const isLit = !!l.blame && (lit.has(l.blame) || (pr ? lit.has(pr) : false) || selected === l.blame);
           const focus = line === i + 1;
           return (
-            <div key={i} onClick={() => selectLine(i + 1)}
+            <Fragment key={i}>
+            <div data-line={i + 1} onClick={() => { if (!window.getSelection()?.toString()) selectLine(i + 1); }}
               onMouseEnter={() => hoverNodes(l.blame ? (pr ? [l.blame, pr] : [l.blame]) : [])} onMouseLeave={() => hoverNodes([])}
               title={n ? `${n.ref} · ${n.author} · ${fmtDate(n.time)}${pr && byId[pr] ? ` · PR ${byId[pr].ref}` : ""}${reason ? "" : " · no recorded reason"}` : "No recorded origin"}
               className={`flex cursor-pointer items-stretch transition-colors ${focus ? "bg-accent/10" : isLit ? "bg-hover" : "hover:bg-panel"}`}>
@@ -72,6 +113,8 @@ export default function CodePane() {
                 </span>
               )}
             </div>
+            {composer === i + 1 && <Composer line={i + 1} text={l.text} />}
+            </Fragment>
           );
         })}
       </div>

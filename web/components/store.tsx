@@ -16,6 +16,7 @@ interface Ctx {
   file: string | null;
   code: { data: CodeFile | null; loading: boolean; error: string };
   line: number | null;
+  composer: number | null; // line whose question box is open; nothing is asked until the user sends
   selected: string | null;
   claim: string | null;
   lit: Set<string>;
@@ -38,6 +39,8 @@ interface Ctx {
   selectNode: (id: string | null) => void;
   stepNode: (dir: 1 | -1) => void;
   selectLine: (line: number) => void;
+  closeComposer: () => void;
+  askLine: (question: string, line: number) => void;
   ask: (question: string) => void;
   openInvestigation: (id: string) => void;
   replay: () => void;
@@ -48,17 +51,17 @@ const C = createContext<Ctx>(null as never);
 export const useWb = () => useContext(C);
 
 const FB_KEY = "why-workbench:feedback";
-const LINE_QUESTION = "Why is this line the way it is?";
 
 /** Route-driven: the page decides the file and (for stored investigations) the investigation; the rest is in-page interaction. */
 export function Provider({ ws, repo, repoName, file, inv: initial, children }: { ws: string; repo: string; repoName: string; file: string | null; inv: Investigation | null; children: ReactNode }) {
   const router = useRouter();
-  const { byId, investigations, explained, isLocked, absorb, remember } = useData();
+  const { byId, isLocked, absorb, remember } = useData();
   const base = `/w/${ws}/${repo}`;
   const code = useFile(repoName, file);
   const locked = useCallback((id: string) => (byId[id] ? isLocked(byId[id]) : false), [byId, isLocked]);
   const [inv, setInv] = useState<Investigation | null>(initial);
   const [line, setLine] = useState<number | null>(initial?.line ?? null);
+  const [composer, setComposer] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hover, setHover] = useState<string[]>([]);
   const [claim, setClaim] = useState<string | null>(null);
@@ -123,17 +126,20 @@ export function Provider({ ws, repo, repoName, file, inv: initial, children }: {
       });
   }, [ws, provider, repoName, absorb, remember, openInvestigation]);
 
+  /** Selecting a line only opens its question box; the agent starts when the user sends a question. */
   const selectLine = useCallback((l: number) => {
-    setLine(l); setSelected(null); setClaim(null); setAskError("");
-    const blame = code.data?.lines[l - 1]?.blame;
-    // a blamed commit with no explicit links explains nothing: show the empty state instead of guessing
-    if (!blame || !file || !explained(blame)) { setInv(null); return; }
-    if (inv && inv.file === file && inv.line === l) { setSelected(blame); return; }
-    const stored = investigations.find((r) => r.file === file && r.line === l);
-    if (stored) { openInvestigation(stored.id); return; }
-    setInv(null);
-    ask(LINE_QUESTION, { file, line: l });
-  }, [code.data, file, inv, investigations, explained, openInvestigation, ask]);
+    setLine(l); setSelected(null); setClaim(null); setAskError(""); setComposer(l);
+    if (inv && !(inv.file === file && inv.line === l)) setInv(null);
+  }, [file, inv]);
+
+  const closeComposer = useCallback(() => setComposer(null), []);
+
+  const askLine = useCallback((question: string, l: number) => {
+    const q = question.trim();
+    if (!q || !file) return;
+    setComposer(null); setLine(l); setInv(null);
+    ask(q, { file, line: l });
+  }, [file, ask]);
 
   const stepNode = useCallback((dir: 1 | -1) => {
     if (!visible.length) return;
@@ -151,11 +157,11 @@ export function Provider({ ws, repo, repoName, file, inv: initial, children }: {
   }, []);
 
   const value: Ctx = {
-    inv, base, repoName, locked, file, code, line, selected, claim, lit, tab, hiddenKinds, showInferred, step, feedback, visible,
+    inv, base, repoName, locked, file, code, line, composer, selected, claim, lit, tab, hiddenKinds, showInferred, step, feedback, visible,
     running, live, askError, provider, setProvider,
     setTab, setShowInferred, setClaim,
     toggleKind: (k) => setHidden((h) => (h.includes(k) ? h.filter((x) => x !== k) : [...h, k])),
-    hoverNodes: setHover, selectNode: setSelected, stepNode, selectLine,
+    hoverNodes: setHover, selectNode: setSelected, stepNode, selectLine, closeComposer, askLine,
     ask: (q) => ask(q), openInvestigation,
     replay: () => inv && runTrace(inv), vote,
   };
