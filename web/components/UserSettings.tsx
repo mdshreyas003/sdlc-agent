@@ -4,6 +4,7 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { meApi } from "@/lib/api";
+import { ACCENTS, DEFAULT_APPEARANCE, readAppearance, setAppearance, type Appearance as AppearanceState } from "@/lib/appearance";
 import { useMe } from "@/lib/auth";
 import type { ModelProvider, TestResult, UserModels } from "@/lib/types";
 import { Icon } from "./icons";
@@ -64,8 +65,10 @@ function Profile() {
 
 function Appearance() {
   const [theme, setTheme] = useState<"dark" | "light" | "system">("system");
+  const [look, setLook] = useState<AppearanceState>(DEFAULT_APPEARANCE);
   useEffect(() => {
     try { const t = localStorage.getItem("wb-theme"); setTheme(t === "light" || t === "dark" ? t : "system"); } catch { /* private mode */ }
+    setLook(readAppearance());
   }, []);
   const pick = (t: "dark" | "light" | "system") => {
     const eff = t === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : t;
@@ -73,17 +76,65 @@ function Appearance() {
     try { if (t === "system") localStorage.removeItem("wb-theme"); else localStorage.setItem("wb-theme", t); } catch { /* private mode */ }
     setTheme(t);
   };
+  const set = (patch: Partial<AppearanceState>) => setLook(setAppearance(patch));
+  const dark = typeof document !== "undefined" && document.documentElement.dataset.theme === "dark";
+  const choice = (on: boolean) => `card flex h-14 items-center gap-3 px-3.5 text-left ${on ? "px-glow" : "card-link"}`;
   return (
-    <Panel title="Theme" sub="Stored in this browser only.">
-      <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-3">
-        {([["dark", "Dark", "moon"], ["light", "Light", "sun"], ["system", "System", "panel"]] as const).map(([k, l, ic]) => (
-          <button key={k} role="radio" aria-checked={theme === k} onClick={() => pick(k)}
-            className={`card flex h-20 flex-col items-start justify-between p-3 text-left ${theme === k ? "px-glow" : "card-link"}`}>
-            <Icon name={ic} size={16} className="text-dim" /><span className="font-medium">{l}</span>
-          </button>
-        ))}
-      </div>
-    </Panel>
+    <>
+      <Panel title="Theme" sub="Light, dark, or follow your system. Stored in this browser only.">
+        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-3">
+          {([["dark", "Dark", "moon"], ["light", "Light", "sun"], ["system", "System", "panel"]] as const).map(([k, l, ic]) => (
+            <button key={k} role="radio" aria-checked={theme === k} onClick={() => pick(k)}
+              className={`card flex h-20 flex-col items-start justify-between p-3 text-left ${theme === k ? "px-glow" : "card-link"}`}>
+              <Icon name={ic} size={16} className="text-dim" /><span className="font-medium">{l}</span>
+            </button>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel title="Accent color" sub="Used for links, selection and highlights.">
+        <div role="radiogroup" aria-label="Accent color" className="flex flex-wrap gap-3">
+          {ACCENTS.map((a) => {
+            const c = dark ? a.dark : a.light;
+            return (
+              <button key={a.key} role="radio" aria-checked={look.accent === a.key} onClick={() => set({ accent: a.key })} aria-label={a.label} title={a.label}
+                className={`grid h-10 w-10 place-items-center rounded-full border ${look.accent === a.key ? "border-fg" : "border-line hover:border-line2"}`}>
+                <span className="grid h-6 w-6 place-items-center rounded-full text-bg" style={{ background: c }}>{look.accent === a.key && <Icon name="check" size={13} />}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Panel>
+
+      <Panel title="Readability" sub="Contrast and typeface. Pick what is easiest on your eyes.">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <p className="label mb-2">Contrast</p>
+            <div role="radiogroup" aria-label="Contrast" className="grid gap-2">
+              {([["standard", "Standard", "Balanced, softer secondary text"], ["high", "High", "Darker text and stronger borders"]] as const).map(([k, l, d]) => (
+                <button key={k} role="radio" aria-checked={look.contrast === k} onClick={() => set({ contrast: k })} className={choice(look.contrast === k)}>
+                  <span><span className="block font-medium">{l}</span><span className="block text-[12px] text-dim">{d}</span></span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="label mb-2">Interface font</p>
+            <div role="radiogroup" aria-label="Interface font" className="grid gap-2">
+              {([["geist", "Geist", "The default typeface"], ["system", "System", "Your operating system's UI font"]] as const).map(([k, l, d]) => (
+                <button key={k} role="radio" aria-checked={look.font === k} onClick={() => set({ font: k })} className={choice(look.font === k)}>
+                  <span><span className="block font-medium">{l}</span><span className="block text-[12px] text-dim">{d}</span></span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <button onClick={() => { setLook(setAppearance(DEFAULT_APPEARANCE)); pick("system"); }} className={btnGhost}>Reset appearance</button>
+          <span className="text-[12px] text-dim">Applies at once and is remembered in this browser.</span>
+        </div>
+      </Panel>
+    </>
   );
 }
 

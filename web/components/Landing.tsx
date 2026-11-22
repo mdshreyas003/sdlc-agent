@@ -25,7 +25,6 @@ const SLIDES = [
 function Slide({ id, kicker, title, note, children }: { id: string; kicker: string; title: ReactNode; note?: ReactNode; children?: ReactNode }) {
   return (
     <section id={id} aria-labelledby={`${id}-h`} className="relative flex min-h-[100svh] snap-start items-center overflow-hidden border-b border-line/60 px-6 pb-14 pt-24 md:px-16">
-      <div aria-hidden className="px-grid pointer-events-none absolute inset-0 opacity-70 [mask-image:radial-gradient(75%_65%_at_50%_45%,#000,transparent)]" />
       <div className="relative mx-auto w-full max-w-[1080px]">
         <p className="font-mono text-[12px] uppercase tracking-[.14em] text-accent">{kicker}</p>
         <h2 id={`${id}-h`} className="mt-3 max-w-[820px] text-[32px] font-semibold leading-[1.08] tracking-tight md:text-[46px]">{title}</h2>
@@ -70,7 +69,7 @@ export default function Landing() {
       <main>
         {/* 01 · Hero */}
         <section id="top" className="relative flex min-h-[100svh] snap-start items-center overflow-hidden border-b border-line/60 px-6 pb-14 pt-24 md:px-16">
-          <div aria-hidden className="px-grid px-halo pointer-events-none absolute inset-0" />
+          <div aria-hidden className="px-halo pointer-events-none absolute inset-0" />
           <div className="relative mx-auto grid w-full max-w-[1180px] items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
             <div>
               <p className="font-mono text-[12px] uppercase tracking-[.14em] text-accent">The PR guard that remembers why</p>
@@ -167,7 +166,7 @@ export default function Landing() {
 
         {/* 09 · Close */}
         <section id="start" aria-labelledby="start-h" className="relative flex min-h-[100svh] snap-start items-center overflow-hidden px-6 pb-14 pt-24 md:px-16">
-          <div aria-hidden className="px-grid px-halo pointer-events-none absolute inset-0" />
+          <div aria-hidden className="px-halo pointer-events-none absolute inset-0" />
           <div className="relative mx-auto w-full max-w-[1080px] text-center">
             <h2 id="start-h" className="text-[38px] font-semibold leading-[1.06] tracking-tight md:text-[60px]">Connect a repo.<br /><Em>Never lose the why.</Em></h2>
             <div className="mt-10"><LandingCta className={`${btnAccent} h-12 px-8 text-[15px]`} /></div>
