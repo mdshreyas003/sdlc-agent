@@ -1,6 +1,6 @@
 # Brightcart explainer (silent video + voice-over script)
 
-A 4.5 minute, silent, black-and-white explainer. You record the voice yourself.
+A short (about 2 minutes 25), silent, black-and-white explainer. It uses 10 scenes: BC1-BC6, BC8, BC9, BC11, BC12 (BC7 and BC10 are cut). You record the voice yourself.
 No audio, no music, no TTS is used.
 
 Files:
@@ -40,7 +40,7 @@ done
 cd ../seg-brightcart
 for i in 1 2 3 4 5 6 7 8 9 10 11 12; do echo "file 'BC$i.mp4'"; done > list.txt
 cd ../remotion
-npx remotion ffmpeg -y -f concat -safe 0 -i ../seg-brightcart/list.txt -c copy -an ../brightcart-silent.mp4
+npx remotion ffmpeg -y -f concat -safe 0 -i ../seg-brightcart/list-short.txt -c copy -an ../brightcart-silent.mp4
 ```
 
 ## Lay your voice over the video
