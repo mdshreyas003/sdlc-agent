@@ -90,15 +90,6 @@ def build_server(harness: Harness | None = None, harness_for=None, workspace_for
         Returns evidence (commits, PRs, tickets, threads) with verbatim quotes and links, or refused=true."""
         return why(harness_for() if harness_for else harness, anchor, workspace_for() if workspace_for else None)
 
-    if workspace:
-        from . import state
-
-        @server.tool(name="memory", annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False))
-        def memory_tool(anchor: str = "") -> dict:
-            """Team-approved decisions (ADRs), rules and past incidents for this workspace, each citing its evidence ids.
-            Read these before editing; they were reviewed by a senior developer. Empty `anchor` lists everything."""
-            return recall(state.backend().list_memory(workspace), anchor)
-
     @server.tool(name="memory", annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False))
     def memory_tool(anchor: str = "") -> dict:
         """Team-approved decisions (ADRs), rules and past incidents for this workspace, each citing its evidence ids.
@@ -124,4 +115,4 @@ def main(workspace: str) -> None:
 
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     harness = Harness(config.neo4j_driver(), scopes=flat_scopes(config.scopes(workspace)))
-    build_server(harness, workspace).run()
+    build_server(harness, workspace=workspace).run()

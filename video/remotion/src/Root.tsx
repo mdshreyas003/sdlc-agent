@@ -10,6 +10,7 @@ import { S6 } from "./scenes/S6";
 import { S7 } from "./scenes/S7";
 import { S8 } from "./scenes/S8";
 import { S9 } from "./scenes/S9";
+import * as BC from "./bc/scenes";
 
 // S4 is the Playwright live demo — not animated, not registered here.
 const SCENES: Array<{ id: SceneId; component: React.FC }> = [
@@ -21,6 +22,18 @@ const SCENES: Array<{ id: SceneId; component: React.FC }> = [
   { id: "S7", component: S7 },
   { id: "S8", component: S8 },
   { id: "S9", component: S9 },
+  { id: "BC1", component: BC.BC1 },
+  { id: "BC2", component: BC.BC2 },
+  { id: "BC3", component: BC.BC3 },
+  { id: "BC4", component: BC.BC4 },
+  { id: "BC5", component: BC.BC5 },
+  { id: "BC6", component: BC.BC6 },
+  { id: "BC7", component: BC.BC7 },
+  { id: "BC8", component: BC.BC8 },
+  { id: "BC9", component: BC.BC9 },
+  { id: "BC10", component: BC.BC10 },
+  { id: "BC11", component: BC.BC11 },
+  { id: "BC12", component: BC.BC12 },
 ];
 
 export const RemotionRoot: React.FC = () => (

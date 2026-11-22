@@ -1,0 +1,497 @@
+MCP server: hackfront mcp --workspace brightcart
+Tools: why, memory
+
+> why("src/payments/charge.py")
+{
+  "anchor": "src/payments/charge.py",
+  "refused": false,
+  "evidence": [
+    {
+      "id": "github:brightcart%2Fpayments:pull_request:142",
+      "kind": "pull_request",
+      "title": "Add card payments with automatic retries",
+      "quote": "Implements SHOP-101. Try again when the payment provider fails so fewer customers see an error.",
+      "url": "https://github.com/brightcart/payments/pull/142",
+      "time": "2025-11-19T16:00:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:commit:223d0daeea820dbe8b15327ebcc86bb503005061",
+      "kind": "git_commit",
+      "title": "Add card payments that try again when the provider fails (SHOP-101)",
+      "quote": "Add card payments that try again when the provider fails (SHOP-101)\n\nTry up to 10 times.",
+      "url": "https://github.com/brightcart/payments/commit/223d0daeea820dbe8b15327ebcc86bb503005061",
+      "time": "2025-11-20T10:00:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+      "kind": "git_commit",
+      "title": "Try a card payment at most 3 times instead of 10",
+      "quote": "Try a card payment at most 3 times instead of 10\n\nSHOP-412: repeated attempts charged customers twice.",
+      "url": "https://github.com/brightcart/payments/commit/fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+      "time": "2026-03-03T17:12:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+      "kind": "git_commit",
+      "title": "Give every payment a unique payment ID (#218)",
+      "quote": "Give every payment a unique payment ID (#218)\n\nThe ID is reused on every attempt, so a repeat is recognised and not charged again.",
+      "url": "https://github.com/brightcart/payments/commit/dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+      "time": "2026-03-04T08:55:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:pull_request:218",
+      "kind": "pull_request",
+      "title": "Try a payment at most 3 times and give every payment a unique ID",
+      "quote": "Fixes SHOP-412. Replaces the try-up-to-10-times policy from https://brightcart.slack.com/archives/C9PRD/p1763463600000100. We decided to try a card payment at most 3 times instead of 10 because repeated attempts charged 214 customers twice during the outage. Alternative rejected: a setting that lets teams raise the limit, since checkout needs to finish within 8 seconds (SHOP-455) so more than 3 at",
+      "url": "https://github.com/brightcart/payments/pull/218",
+      "time": "2026-03-04T09:30:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:pull_request_review_comment:1994004",
+      "kind": "discussion_message",
+      "title": null,
+      "quote": "Why not make this a setting? -> No: the 8 second checkout limit makes more than 3 pointless (see SHOP-412).",
+      "url": "https://github.com/brightcart/payments/pull/218#discussion_r1994004",
+      "time": "2026-03-04T09:50:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:pull_request:301",
+      "kind": "pull_request",
+      "title": "Raise payment attempts from 3 to 8 to reduce failed checkouts",
+      "quote": "Failed checkouts are up 3% (SHOP-470). Raising MAX_PAYMENT_ATTEMPTS from 3 to 8 in src/payments/charge.py should recover short provider hiccups. Closed without merging: it undoes #218 and skipped the review rule from #240.",
+      "url": "https://github.com/brightcart/payments/pull/301",
+      "time": "2026-04-20T08:00:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:pull_request:310",
+      "kind": "pull_request",
+      "title": "Retry failed payments later from a queue",
+      "quote": "Resolves SHOP-470 without raising the limit. We decided to park a failed order on a queue and try it again after a pause instead of adding attempts now, because more attempts while the payment provider is struggling make things worse for customers (SHOP-412). Keeps the limit of 3 from #218; the reliability team approved. Closes #301.",
+      "url": "https://github.com/brightcart/payments/pull/310",
+      "time": "2026-04-22T09:00:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "github:brightcart%2Fpayments:commit:e87a1ac3b62da40f864bd6a7cf4a67d0b2faff4a",
+      "kind": "git_commit",
+      "title": "Retry failed payments later from a queue instead of raising the limit (SHOP-470)",
+      "quote": "Retry failed payments later from a queue instead of raising the limit (SHOP-470)\n\nKeeps the limit of 3 from #218.",
+      "url": "https://github.com/brightcart/payments/commit/e87a1ac3b62da40f864bd6a7cf4a67d0b2faff4a",
+      "time": "2026-04-22T10:00:00Z",
+      "relation": "direct"
+    },
+    {
+      "id": "jira:SHOP:issue:SHOP-470",
+      "kind": "issue",
+      "title": "Failed checkouts up 3% week over week",
+      "quote": "The share of customers who see 'payment failed' is up 3% week over week since we limited payment attempts (SHOP-412). Resolved on 22 April by retrying failed payments later from a queue (https://github.com/brightcart/payments/pull/310). The limit of 3 stays.",
+      "url": "https://brightcart.atlassian.net/browse/SHOP-470",
+      "time": "2026-04-14T09:00:00Z",
+      "relation": "REFERENCES github:brightcart%2Fpayments:commit:e87a1ac3b62da40f864bd6a7cf4a67d0b2faff4a"
+    },
+    {
+      "id": "jira:SHOP:issue:SHOP-412",
+      "kind": "issue",
+      "title": "Customers charged twice during payment outage",
+      "quote": "Update 24 April: root cause revised. The double charges happened because the provider confirmed some payments late, and a unique payment ID alone would have prevented every one of them. The limit of 3 attempts only reduces load during an outage; it is a safety net, not the fix. Incident 2026-03-02, root cause found: during an 11 minute payment-provider outage 214 customers were charged 2-6 times f",
+      "url": "https://brightcart.atlassian.net/browse/SHOP-412",
+      "time": "2026-03-02T14:20:00Z",
+      "relation": "REFERENCES github:brightcart%2Fpayments:commit:e87a1ac3b62da40f864bd6a7cf4a67d0b2faff4a"
+    },
+    {
+      "id": "slack:brightcart:thread:1776157800.000100",
+      "kind": "discussion_thread",
+      "title": null,
+      "quote": "Failed checkouts are up since we limited payment attempts. Can we raise the limit? SHOP-470",
+      "url": "https://brightcart.slack.com/archives/C7CHK/p1776157800000100",
+      "time": "2026-04-14T09:10:00.000100Z",
+      "relation": "REFERENCES github:brightcart%2Fpayments:commit:e87a1ac3b62da40f864bd6a7cf4a67d0b2faff4a"
+    }
+  ],
+  "note": null
+}
+
+> memory("src/payments/charge.py")
+{
+  "anchor": "src/payments/charge.py",
+  "items": [
+    {
+      "id": "05181466ef",
+      "version": 3,
+      "kind": "rule",
+      "title": "Every payment carries a unique payment ID",
+      "body": "## Rule\nEvery payment must carry a unique payment ID. Never try a payment again without the same ID; reuse it for every attempt of one order.\n\n## Applies to\npayments service: src/payments/charge.py, src/payments/api.py\n\n## Why\nWithout it, a repeat after an error charges the customer twice (SHOP-412, SHOP-430, #233).",
+      "evidence": [
+        "github:brightcart%2Fpayments:commit:52c8ca9baf746093f35133b7f2410b9cadff1f57",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-430",
+        "github:brightcart%2Fpayments:pull_request_review:1994005",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "github:brightcart%2Fpayments:pull_request_review:1994001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-412"
+      ]
+    },
+    {
+      "id": "fb253472c1",
+      "version": 3,
+      "kind": "rule",
+      "title": "Changes to payment attempts or checkout wait time need a reliability review",
+      "body": "## Rule\nAny change to how many times we try a payment, or how long checkout waits, must be reviewed by the reliability team and checked against the 8 second limit (SHOP-455).\n\n## Applies to\nsrc/payments/charge.py and src/checkout/ (the review is enforced by CODEOWNERS)\n\n## Why\nThe SHOP-415 review traced the SHOP-412 double charges to an unreviewed change to payment attempts (#240).",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:240",
+        "github:brightcart%2Fpayments:commit:b6c536d74ce2d6d6ab8d8d20c18bc6f64735505c",
+        "slack:brightcart:thread:1772704800.000100",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-455",
+        "jira:SHOP:issue:SHOP-412",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "slack:brightcart:message:1772706000.000200",
+        "slack:brightcart:message:1772707200.000201",
+        "slack:brightcart:message:1772708100.000202",
+        "jira:SHOP:comment:30010"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-412"
+      ]
+    },
+    {
+      "id": "b54c341934",
+      "version": 3,
+      "kind": "adr",
+      "title": "Try a card payment at most 3 times",
+      "body": "## Context\nOn 2 March 2026 a payment-provider outage made us charge 214 customers two to six times for the same order (SHOP-412).\n\n## Decision\nTry a card payment at most 3 times, and give every payment a unique payment ID so the provider recognises a repeat and never charges twice (#218). We rejected a setting that lets teams raise the limit: checkout must finish within 8 seconds (SHOP-455), so more than 3 attempts would not help the customer anyway.\n\n## Consequences\nA few customers see 'payment failed' sooner and their order is retried later. Raising the limit needs new data and a reliability review.",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:commit:c1dd69599e6cc2ccce080afab2f0b4cf024efff8",
+        "github:brightcart%2Fpayments:pull_request_review_comment:1994006",
+        "github:brightcart%2Fpayments:pull_request:247",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "jira:SHOP:comment:30001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:33+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-412"
+      ]
+    }
+  ],
+  "note": null
+}
+
+> memory("#310")
+{
+  "anchor": "#310",
+  "items": [
+    {
+      "id": "05181466ef",
+      "version": 3,
+      "kind": "rule",
+      "title": "Every payment carries a unique payment ID",
+      "body": "## Rule\nEvery payment must carry a unique payment ID. Never try a payment again without the same ID; reuse it for every attempt of one order.\n\n## Applies to\npayments service: src/payments/charge.py, src/payments/api.py\n\n## Why\nWithout it, a repeat after an error charges the customer twice (SHOP-412, SHOP-430, #233).",
+      "evidence": [
+        "github:brightcart%2Fpayments:commit:52c8ca9baf746093f35133b7f2410b9cadff1f57",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-430",
+        "github:brightcart%2Fpayments:pull_request_review:1994005",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "github:brightcart%2Fpayments:pull_request_review:1994001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100"
+      ]
+    },
+    {
+      "id": "fb253472c1",
+      "version": 3,
+      "kind": "rule",
+      "title": "Changes to payment attempts or checkout wait time need a reliability review",
+      "body": "## Rule\nAny change to how many times we try a payment, or how long checkout waits, must be reviewed by the reliability team and checked against the 8 second limit (SHOP-455).\n\n## Applies to\nsrc/payments/charge.py and src/checkout/ (the review is enforced by CODEOWNERS)\n\n## Why\nThe SHOP-415 review traced the SHOP-412 double charges to an unreviewed change to payment attempts (#240).",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:240",
+        "github:brightcart%2Fpayments:commit:b6c536d74ce2d6d6ab8d8d20c18bc6f64735505c",
+        "slack:brightcart:thread:1772704800.000100",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-455",
+        "jira:SHOP:issue:SHOP-412",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "slack:brightcart:message:1772706000.000200",
+        "slack:brightcart:message:1772707200.000201",
+        "slack:brightcart:message:1772708100.000202",
+        "jira:SHOP:comment:30010"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-412"
+      ]
+    },
+    {
+      "id": "b54c341934",
+      "version": 3,
+      "kind": "adr",
+      "title": "Try a card payment at most 3 times",
+      "body": "## Context\nOn 2 March 2026 a payment-provider outage made us charge 214 customers two to six times for the same order (SHOP-412).\n\n## Decision\nTry a card payment at most 3 times, and give every payment a unique payment ID so the provider recognises a repeat and never charges twice (#218). We rejected a setting that lets teams raise the limit: checkout must finish within 8 seconds (SHOP-455), so more than 3 attempts would not help the customer anyway.\n\n## Consequences\nA few customers see 'payment failed' sooner and their order is retried later. Raising the limit needs new data and a reliability review.",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:commit:c1dd69599e6cc2ccce080afab2f0b4cf024efff8",
+        "github:brightcart%2Fpayments:pull_request_review_comment:1994006",
+        "github:brightcart%2Fpayments:pull_request:247",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "jira:SHOP:comment:30001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:33+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:comment:30001",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100"
+      ]
+    }
+  ],
+  "note": null
+}
+
+> memory("SHOP-412")
+{
+  "anchor": "SHOP-412",
+  "items": [
+    {
+      "id": "05181466ef",
+      "version": 3,
+      "kind": "rule",
+      "title": "Every payment carries a unique payment ID",
+      "body": "## Rule\nEvery payment must carry a unique payment ID. Never try a payment again without the same ID; reuse it for every attempt of one order.\n\n## Applies to\npayments service: src/payments/charge.py, src/payments/api.py\n\n## Why\nWithout it, a repeat after an error charges the customer twice (SHOP-412, SHOP-430, #233).",
+      "evidence": [
+        "github:brightcart%2Fpayments:commit:52c8ca9baf746093f35133b7f2410b9cadff1f57",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-430",
+        "github:brightcart%2Fpayments:pull_request_review:1994005",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "github:brightcart%2Fpayments:pull_request_review:1994001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-412",
+        "jira:SHOP:issue:SHOP-415",
+        "slack:brightcart:thread:1772463600.000100"
+      ]
+    },
+    {
+      "id": "fb253472c1",
+      "version": 3,
+      "kind": "rule",
+      "title": "Changes to payment attempts or checkout wait time need a reliability review",
+      "body": "## Rule\nAny change to how many times we try a payment, or how long checkout waits, must be reviewed by the reliability team and checked against the 8 second limit (SHOP-455).\n\n## Applies to\nsrc/payments/charge.py and src/checkout/ (the review is enforced by CODEOWNERS)\n\n## Why\nThe SHOP-415 review traced the SHOP-412 double charges to an unreviewed change to payment attempts (#240).",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:240",
+        "github:brightcart%2Fpayments:commit:b6c536d74ce2d6d6ab8d8d20c18bc6f64735505c",
+        "slack:brightcart:thread:1772704800.000100",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-455",
+        "jira:SHOP:issue:SHOP-412",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "slack:brightcart:message:1772706000.000200",
+        "slack:brightcart:message:1772707200.000201",
+        "slack:brightcart:message:1772708100.000202",
+        "jira:SHOP:comment:30010"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-412",
+        "jira:SHOP:issue:SHOP-415",
+        "slack:brightcart:thread:1772704800.000100"
+      ]
+    },
+    {
+      "id": "b54c341934",
+      "version": 3,
+      "kind": "adr",
+      "title": "Try a card payment at most 3 times",
+      "body": "## Context\nOn 2 March 2026 a payment-provider outage made us charge 214 customers two to six times for the same order (SHOP-412).\n\n## Decision\nTry a card payment at most 3 times, and give every payment a unique payment ID so the provider recognises a repeat and never charges twice (#218). We rejected a setting that lets teams raise the limit: checkout must finish within 8 seconds (SHOP-455), so more than 3 attempts would not help the customer anyway.\n\n## Consequences\nA few customers see 'payment failed' sooner and their order is retried later. Raising the limit needs new data and a reliability review.",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:commit:c1dd69599e6cc2ccce080afab2f0b4cf024efff8",
+        "github:brightcart%2Fpayments:pull_request_review_comment:1994006",
+        "github:brightcart%2Fpayments:pull_request:247",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "jira:SHOP:comment:30001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:33+00:00",
+      "matched_evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:pull_request:247",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100"
+      ]
+    }
+  ],
+  "note": null
+}
+
+> memory("payment")
+{
+  "anchor": "payment",
+  "items": [
+    {
+      "id": "05181466ef",
+      "version": 3,
+      "kind": "rule",
+      "title": "Every payment carries a unique payment ID",
+      "body": "## Rule\nEvery payment must carry a unique payment ID. Never try a payment again without the same ID; reuse it for every attempt of one order.\n\n## Applies to\npayments service: src/payments/charge.py, src/payments/api.py\n\n## Why\nWithout it, a repeat after an error charges the customer twice (SHOP-412, SHOP-430, #233).",
+      "evidence": [
+        "github:brightcart%2Fpayments:commit:52c8ca9baf746093f35133b7f2410b9cadff1f57",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-430",
+        "github:brightcart%2Fpayments:pull_request_review:1994005",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "github:brightcart%2Fpayments:pull_request_review:1994001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": []
+    },
+    {
+      "id": "4ad6d22fea",
+      "version": 3,
+      "kind": "rule",
+      "title": "Never show full card numbers in our records",
+      "body": "## Rule\nFull card numbers must never appear in our records. Show only the last 4 digits.\n\n## Applies to\npayments service: src/payments/logging.py\n\n## Why\nSecurity review, enforced in #229.",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:229",
+        "github:brightcart%2Fpayments:commit:18f362c8081b9888ce98aa537c1e2101d25ef74d",
+        "slack:brightcart:thread:1772962200.000100",
+        "slack:brightcart:message:1772963100.000200"
+      ],
+      "approved_by": "mei-s",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": []
+    },
+    {
+      "id": "fb253472c1",
+      "version": 3,
+      "kind": "rule",
+      "title": "Changes to payment attempts or checkout wait time need a reliability review",
+      "body": "## Rule\nAny change to how many times we try a payment, or how long checkout waits, must be reviewed by the reliability team and checked against the 8 second limit (SHOP-455).\n\n## Applies to\nsrc/payments/charge.py and src/checkout/ (the review is enforced by CODEOWNERS)\n\n## Why\nThe SHOP-415 review traced the SHOP-412 double charges to an unreviewed change to payment attempts (#240).",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:240",
+        "github:brightcart%2Fpayments:commit:b6c536d74ce2d6d6ab8d8d20c18bc6f64735505c",
+        "slack:brightcart:thread:1772704800.000100",
+        "jira:SHOP:issue:SHOP-415",
+        "jira:SHOP:issue:SHOP-455",
+        "jira:SHOP:issue:SHOP-412",
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "slack:brightcart:message:1772706000.000200",
+        "slack:brightcart:message:1772707200.000201",
+        "slack:brightcart:message:1772708100.000202",
+        "jira:SHOP:comment:30010"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:34+00:00",
+      "matched_evidence": []
+    },
+    {
+      "id": "b54c341934",
+      "version": 3,
+      "kind": "adr",
+      "title": "Try a card payment at most 3 times",
+      "body": "## Context\nOn 2 March 2026 a payment-provider outage made us charge 214 customers two to six times for the same order (SHOP-412).\n\n## Decision\nTry a card payment at most 3 times, and give every payment a unique payment ID so the provider recognises a repeat and never charges twice (#218). We rejected a setting that lets teams raise the limit: checkout must finish within 8 seconds (SHOP-455), so more than 3 attempts would not help the customer anyway.\n\n## Consequences\nA few customers see 'payment failed' sooner and their order is retried later. Raising the limit needs new data and a reliability review.",
+      "evidence": [
+        "github:brightcart%2Fpayments:pull_request:218",
+        "github:brightcart%2Fpayments:commit:c1dd69599e6cc2ccce080afab2f0b4cf024efff8",
+        "github:brightcart%2Fpayments:pull_request_review_comment:1994006",
+        "github:brightcart%2Fpayments:pull_request:247",
+        "github:brightcart%2Fpayments:pull_request:233",
+        "github:brightcart%2Fpayments:commit:dc35e9251d7c1a863d7b49abd5fcba65dbfcb33b",
+        "slack:brightcart:thread:1763463600.000100",
+        "jira:SHOP:issue:SHOP-412",
+        "slack:brightcart:thread:1772463600.000100",
+        "github:brightcart%2Fpayments:commit:fceb89df7dcd8c52beb34b561b74e8fa480e0fa3",
+        "github:brightcart%2Fpayments:pull_request_review:1994001",
+        "jira:SHOP:comment:30001"
+      ],
+      "approved_by": "daniel-p",
+      "approved_at": "2026-11-22T05:30:33+00:00",
+      "matched_evidence": []
+    }
+  ],
+  "note": null
+}

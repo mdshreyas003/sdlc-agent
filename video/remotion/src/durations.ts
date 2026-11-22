@@ -15,6 +15,19 @@ export const SECONDS = {
   S7: 64.284,
   S8: 55.548,
   S9: 50.532,
+  // Brightcart explainer (BC): words / 2.3 + 1 s, from video/script-brightcart.md
+  BC1: 17.5,
+  BC2: 23.2,
+  BC3: 19.7,
+  BC4: 21.9,
+  BC5: 16.7,
+  BC6: 21.9,
+  BC7: 24,
+  BC8: 27.5,
+  BC9: 22.7,
+  BC10: 24.5,
+  BC11: 45.8,
+  BC12: 18,
 } as const;
 
 export type SceneId = keyof typeof SECONDS;

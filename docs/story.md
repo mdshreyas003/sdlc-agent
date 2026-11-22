@@ -92,6 +92,22 @@ The same screen shows the last step. SHOP-412 was edited on 24 April. Every entr
 
 People (tan) and decisions (green) in the graph database: Daniel approved three, Mei approved two, and one decision supersedes another.
 
+## Easy start, sync, and asking why
+
+**Start in one click.** A new workspace can start from a ready-made demo, or connect GitHub, Jira and team chat with a token and a *Test connection* button. Nothing needs to be installed.
+
+**See what a sync will pull before you run it.** The ingestion page lists every source, the order it reads in (newest first), and the page limits (20 pages standard, 100 deep).
+
+![Ingestion](story-assets/09-ingestion.jpg)
+
+**Watch the sync run.** The sync page shows each source with its status, pages read, records fetched, records stored and errors. Every run keeps its log.
+
+![Sync](story-assets/08-sync.jpg)
+
+**Ask why from the code.** Open a file. Every line shows who last changed it, and a coloured stripe links it to the pull request that explains it. "17 of 17 lines have recorded reason" means nothing in this file is unexplained. Click a line to ask why; the answer needs a model key and cites exact quotes, or says *Not established*.
+
+![Ask why](story-assets/10-blame.jpg)
+
 ## When an ADR is created, and what it suggests
 
 An entry is **never** created by a model on its own and never goes live without a person.
@@ -128,7 +144,9 @@ The graph holds these labels, so a tool can colour and filter by them:
 
 `hackfront story` writes `Person`, `Decision` and the kind labels. They are a one-way copy for viewing: the agent's read-only queries only ever look at `Artifact`, and a decision is never cited as evidence.
 
-**In Bloom:** create a perspective, give each label above a colour, show `title` (records) and `name` (people, decisions) as the caption. Then add these as search phrases. Every query below was run against the live story and returns rows.
+**Why every record looks the same colour in Neo4j Browser.** Every record has two labels: `Artifact` (all records) and its kind (`Issue`, `PullRequest`, `Commit`, `Thread`, `Message`). Neo4j Browser paints a node by its first label, which is always `Artifact`, so records look the same orange. People and decisions do not carry `Artifact`, so they show in their own colours (see screenshot 7). The nodes are different; only Browser's painting hides it.
+
+**Fix it in Bloom:** open the perspective, find the `Artifact` category and **hide it**. Each record then shows under its own kind. Give each kind a colour and show `title` (records) and `name` (people, decisions) as the caption. Suggested colours: Issue purple, PullRequest teal, Commit brown, Thread yellow, Message pink, Decision green, Person tan. Then add these as search phrases. Every query below was run against the live story and returns rows.
 
 | Search phrase | Cypher | What the judges see |
 |---|---|---|

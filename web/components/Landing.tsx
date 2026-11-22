@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 import Reveal from "./Reveal";
 import { Logo } from "./Logo";
@@ -18,6 +19,7 @@ const SLIDES = [
   ["flow", "The flow"],
   ["triage", "Triage"],
   ["moment", "The moment"],
+  ["real", "Real data"],
   ["inside", "Architecture"],
   ["graph", "The graph"],
   ["start", "Sign in"],
@@ -37,6 +39,20 @@ function Slide({ id, kicker, title, note, children }: { id: string; kicker: stri
 }
 
 const Figure = ({ children }: { children: ReactNode }) => <Reveal className="overflow-hidden rounded-2xl border border-line">{children}</Reveal>;
+function Shot({ src, w, h, alt, tag, cap }: { src: string; w: number; h: number; alt: string; tag: string; cap: string }) {
+  return (
+    <Reveal className="overflow-hidden rounded-2xl border border-line bg-panel">
+      <figure>
+        <Image src={src} width={w} height={h} alt={alt} sizes="(min-width: 768px) 520px, 100vw" className="h-auto w-full" />
+        <figcaption className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[14px] text-mute">
+          <span className="font-mono text-[11.5px] uppercase tracking-[.14em] text-accent">{tag}</span>
+          <span>{cap} <span className="text-dim">· simulated data</span></span>
+        </figcaption>
+      </figure>
+    </Reveal>
+  );
+}
+
 const Em = ({ children }: { children: ReactNode }) => <span className="text-accent">{children}</span>;
 
 function Glyph({ kind }: { kind: "quote" | "live" | "guard" }) {
@@ -154,8 +170,23 @@ export default function Landing() {
           <p className="mt-3 text-[12px] text-dim">Illustrative example.</p>
         </Slide>
 
-        {/* 08 · Architecture */}
-        <Slide id="inside" kicker="08 · Under the hood" title={<>Simple parts. <Em>One graph.</Em></>}>
+        {/* 08 · Real data: live screens of the product, run on the simulated Brightcart story (docs/story.md) */}
+        <Slide id="real" kicker="08 · Real data" title={<>This is a real run, <Em>on simulated data.</Em></>} note="Brightcart is a made-up store. The screens below are live output of the real product.">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Shot src="/story/03-incident-cluster-before.jpg" w={800} h={537} tag="Before" alt="Neo4j graph of the Brightcart incident ticket with its threads, pull requests and commits: 36 records, 63 links." cap="36 records, 63 links" />
+            <Shot src="/story/04-incident-cluster-after-stage1.jpg" w={800} h={537} tag="After a new ticket and Slack thread" alt="The same graph after a new ticket and Slack thread joined the incident: 40 records, 69 links." cap="40 records, 69 links" />
+            <Shot src="/story/05-staged-update-and-source-changed.jpg" w={800} h={450} tag="Decision note" alt="A decision note in the review screen, with a staged update and a source changed banner showing old text struck through next to new text." cap="A ticket was edited. The note says “source changed”." />
+            <Shot src="/story/07-who-decided-what.jpg" w={800} h={450} tag="Who decided what" alt="Graph of people and decisions: Daniel approved three decisions, Mei approved two, and one decision replaces another." cap="Daniel approved three. Mei approved two." />
+          </div>
+          <ul className="mt-5 grid gap-3 text-[15px] md:grid-cols-3">
+            {["The Brightcart store, people and numbers are simulated.", "The graph, triage, notes and checks are the real code.", "The graph grew. Nothing was imported again."].map((t) => (
+              <li key={t} className="rounded-xl border border-line bg-panel p-4 leading-snug text-fg">{t}</li>
+            ))}
+          </ul>
+        </Slide>
+
+        {/* 09 · Architecture */}
+        <Slide id="inside" kicker="09 · Under the hood" title={<>Simple parts. <Em>One graph.</Em></>}>
           <Figure><ArchDiagram /></Figure>
           <ul className="mt-5 flex flex-wrap gap-2 text-[13px]">
             {["GitHub: read-only", "Never stores source files", "No endpoint returns code", "Models never trained on your data"].map((t) => (
@@ -164,13 +195,13 @@ export default function Landing() {
           </ul>
         </Slide>
 
-        {/* 09 · Graph */}
-        <Slide id="graph" kicker="09 · Why a graph" title={<>“Is this still live?” is a <Em>path.</Em></>} note="The guard is one query: diff, function, live Decision, incident, person.">
+        {/* 10 · Graph */}
+        <Slide id="graph" kicker="10 · Why a graph" title={<>“Is this still live?” is a <Em>path.</Em></>} note="The guard is one query: diff, function, live Decision, incident, person.">
           <Figure><GraphDiagram /></Figure>
           <p className="mt-4 font-mono text-[12px] text-dim">Graph database: Neo4j</p>
         </Slide>
 
-        {/* 10 · Close */}
+        {/* 11 · Close */}
         <section id="start" aria-labelledby="start-h" className="relative flex min-h-[100svh] snap-start items-center overflow-hidden px-6 pb-14 pt-24 md:px-16">
           <div aria-hidden className="px-halo pointer-events-none absolute inset-0" />
           <div className="relative mx-auto w-full max-w-[1080px] text-center">
