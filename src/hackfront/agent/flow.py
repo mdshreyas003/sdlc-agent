@@ -54,6 +54,17 @@ def extract_seeds(text: str, max_each: int = 4) -> list[tuple[str, str]]:
             + [("find_text", p) for p in prs[:max_each]])
 
 
+CHAIN_KINDS = ("git_commit", "discussion_thread", "discussion_message")
+MAX_CHAINS = 3
+
+
+def chain_calls(evidence: dict[str, dict], *done: list[str]) -> list[tuple[str, str]]:
+    """evidence_chain on the first few commits/chat items not yet expanded: commit -> PR -> issue -> discussion."""
+    before = {k for d in done for k in d}
+    ids = [i for i, e in evidence.items() if e.get("kind") in CHAIN_KINDS and f"evidence_chain({i})" not in before]
+    return [("evidence_chain", i) for i in ids[:MAX_CHAINS]]
+
+
 def extract_ids(text: str) -> list[str]:
     return [i for i in ID_IN_TEXT.findall(text) if ID_RE.fullmatch(i)]
 
@@ -144,7 +155,12 @@ def build(h: Harness, provider: str, model: str, check_claims: bool = True):
 
     def retrieve(s):
         out = run_calls([(c.tool, c.arg) for c in s["plan"].calls[:5]], s)
-        return {**out, "attempts": s["attempts"] + 1}
+        # keyword/file lookups mostly return commits and chat; follow their explicit links so PRs and issues surface
+        fresh = {i: out["evidence"][i] for r in out["ran"] for i in r["ids"] if i in out["evidence"]}
+        more = run_calls(chain_calls(fresh, s.get("done_calls") or [], out["done_calls"]), {**s, **out})
+        return {"evidence": more["evidence"], "done_calls": out["done_calls"] + more["done_calls"],
+                "rejected": out["rejected"] + more["rejected"], "cypher": out["cypher"] + more["cypher"],
+                "ran": out["ran"] + more["ran"], "attempts": s["attempts"] + 1}
 
     def evaluate(s):
         if not s["evidence"]:  # nothing to judge; skip the LLM call
