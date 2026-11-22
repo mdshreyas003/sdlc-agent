@@ -66,11 +66,11 @@ Evidence gathered so far:
 Gap reported by the last sufficiency check: {gap}
 
 Choose the next 1-5 calls. Without a foothold use find_text / file_history. Once evidence exists, prefer
-evidence_chain or neighbors on the most promising ids to follow commit -> PR -> issue -> discussion links.
+evidence_chain or neighbors on the most promising ids to follow commit -> PR -> issue -> discussion / document links.
 Ids for neighbors/evidence_chain/get must be copied exactly from the evidence above.
 Prefer the fixed tools. Use cypher_query only for multi-hop, aggregate or filter questions they cannot express."""
 
-PROMPT_VERSION = "v4"
+PROMPT_VERSION = "v5"
 
 
 class CypherOut(BaseModel):

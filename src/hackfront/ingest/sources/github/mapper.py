@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 from datetime import datetime, timezone
 from typing import Mapping
 
@@ -16,7 +18,7 @@ from ...contracts import (
     SourceReference,
 )
 
-ADAPTER_VERSION = "github-rest/0.1"
+ADAPTER_VERSION = "github-rest/0.2"
 
 
 def _text(value: object) -> str | None:
@@ -157,6 +159,34 @@ def map_pull_request(payload: Mapping[str, object], owner: str, repository: str)
         ),
         provenance=_provenance(payload, source_uri, "$"),
         raw_payload=payload,
+    )
+
+
+def map_document(payload: Mapping[str, object], owner: str, repository: str, path: str) -> Artifact:
+    """Map a GitHub Contents API Markdown/design document into a source-neutral artifact."""
+    encoded = payload.get("content")
+    if not isinstance(encoded, str) or payload.get("encoding") != "base64":
+        raise ValueError("GitHub document payload requires base64 content")
+    try:
+        content = base64.b64decode("".join(encoded.split()), validate=True).decode("utf-8-sig")
+    except (binascii.Error, UnicodeDecodeError):
+        raise ValueError("GitHub document content is not valid UTF-8 base64") from None
+
+    html_url = _text(payload.get("html_url")) or f"https://github.com/{owner}/{repository}/blob/HEAD/{path}"
+    api_url = _text(payload.get("url")) or f"https://api.github.com/repos/{owner}/{repository}/contents/{path}"
+    title = path
+    source_metadata = {key: payload[key] for key in ("name", "path", "sha", "size", "html_url") if key in payload}
+    return Artifact(
+        source=SourceIdentity("github", f"{owner}/{repository}", "document", path, html_url),
+        kind=RecordKind.DOCUMENT,
+        observed_at=_observed_at(),
+        title=title,
+        text=content,
+        context={"repository": f"{owner}/{repository}", "path": path},
+        change=Change(paths=(path,)),
+        provenance=Provenance(source_uri=api_url, locator="$.content", observed_at=_observed_at(),
+                              adapter_version=ADAPTER_VERSION),
+        raw_payload=source_metadata,
     )
 
 

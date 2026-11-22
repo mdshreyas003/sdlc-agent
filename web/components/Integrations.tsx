@@ -21,6 +21,7 @@ const SPEC: Record<Source, { title: string; icon: IconName; fields: FieldSpec[];
     help: [
       "Create a fine-grained personal access token at GitHub > Settings > Developer settings.",
       "Give it read-only access to the repositories you want: Contents, Pull requests, Issues and Metadata.",
+      "Whycode also indexes Markdown/ADR documents in docs/, doc/, adr/, adrs/, and the repository root README (up to 100 files, 256 KB each).",
       "Owner is the user or organisation that owns them.",
     ],
   },

@@ -261,6 +261,7 @@ def _github(job, client, owner, repo, writer) -> None:
     _stream(job, f"{base}:commits", lambda c: adapter.commits_page(owner, repo, cursor=c), writer, GH_VERSION)
     _stream(job, f"{base}:pulls", lambda c: adapter.pull_requests_page(owner, repo, cursor=c), writer, GH_VERSION,
             tap=lambda items: prs.extend(int(a.source.source_id) for a in items))
+    _stream(job, f"{base}:docs", lambda c: adapter.documents_page(owner, repo), writer, GH_VERSION)
     _each(job, f"{base}:pr_activity", [(n, k) for n in prs for k in ("issue_comments", "reviews", "review_comments")],
           lambda p: lambda c: adapter.pull_request_activity_page(owner, repo, p[0], p[1], cursor=c), writer, GH_VERSION)
 
